@@ -7,10 +7,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 FONT = sys.argv[1]
 OUT = sys.argv[2]
 APPS = [
-    ("fisifoto", "Fo", "red"), ("fisivetor", "Ve", "red"), ("fisifilme", "Fi", "red"),
-    ("fisirevela", "Rv", "red"), ("fisiefeitos", "Ef", "red"), ("fisisom", "Sm", "red"),
-    ("fisipdf", "Pd", "blue"), ("fisilayout", "Ly", "blue"), ("fisitexto", "Tx", "blue"),
-    ("fisislides", "Sl", "blue"), ("fisiplanilha", "Pl", "blue"), ("fisicad", "Cd", "blue"),
+    ("fisilab-foto", "Fo", "red"), ("fisilab-vetor", "Ve", "red"), ("fisilab-filme", "Fi", "red"),
+    ("fisilab-revela", "Rv", "red"), ("fisilab-efeitos", "Ef", "red"), ("fisilab-som", "Sm", "red"),
+    ("fisilab-pdf", "Pd", "blue"), ("fisilab-layout", "Ly", "blue"), ("fisilab-texto", "Tx", "blue"),
+    ("fisilab-slides", "Sl", "blue"), ("fisilab-planilha", "Pl", "blue"), ("fisilab-cad", "Cd", "blue"),
 ]
 NAVY_TOP, NAVY_BOT = (0x22, 0x31, 0x45), (0x14, 0x1D, 0x29)
 CREAM = (0xF2, 0xEA, 0xDA)

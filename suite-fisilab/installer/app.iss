@@ -1,9 +1,9 @@
 ﻿; Instalador de UM aplicativo da Suíte FisiLab (Inno Setup 6).
 ;
 ; Não chame direto: use build-installers.ps1, que compila o app, monta a pasta de staging e passa:
-;   /DAppSlug=fisifoto /DAppName=FisiFoto /DAppVersion=0.9.0 /DAppTagline="Editor de imagens"
+;   /DAppSlug=fisilab-foto /DAppName=Foto /DAppVersion=0.9.0 /DAppTagline="Editor de imagens"
 ;   /DAppEquivalent="Adobe Photoshop" /DAppUpstream=PhotoCraft /DAppGuid={...}
-;   /DStageDir=...\dist\stage\fisifoto /DOutDir=...\dist\instaladores
+;   /DStageDir=...\dist\stage\fisilab-foto /DOutDir=...\dist\instaladores
 ;
 ; O staging tem: <slug>.exe, <slug>-cli.exe, os arquivos de dados do app, LICENCA.txt, SOBRE.txt,
 ; NOTICE.txt, MODIFICACOES.md e (opcional) assoc.iss com as associações de arquivo do app.
@@ -45,7 +45,7 @@ UsePreviousAppDir=yes
 LicenseFile={#StageDir}\LICENCA.txt
 InfoBeforeFile={#StageDir}\SOBRE.txt
 OutputDir={#OutDir}
-OutputBaseFilename={#AppName}-Setup-{#AppVersion}
+OutputBaseFilename=FisiLab-{#AppName}-Setup-{#AppVersion}
 SetupIconFile={#StageDir}\{#AppSlug}.ico
 UninstallDisplayIcon={app}\{#AppSlug}.exe
 UninstallDisplayName={#AppName} (Suíte FisiLab)
@@ -88,7 +88,7 @@ Source: "{#StageDir}\LICENCA.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\SOBRE.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\{#AppName}"; Filename: "{app}\{#AppSlug}.exe"; Comment: "{cm:AppDesc}"; AppUserModelID: "br.ufrgs.fisilab.{#AppSlug}"
+Name: "{group}\{#AppName}"; Filename: "{app}\{#AppSlug}.exe"; Comment: "{cm:AppDesc}"; AppUserModelID: "br.ufrgs.fisilab.{#LowerCase(AppName)}"
 Name: "{group}\{cm:SuiteSite}"; Filename: "{#SuiteUrl}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppSlug}.exe"; Comment: "{cm:AppDesc}"; Tasks: desktopicon
 

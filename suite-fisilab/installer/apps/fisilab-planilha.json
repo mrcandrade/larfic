@@ -1,0 +1,48 @@
+{
+  "packages": [
+    "gridcraft",
+    "gridcraft-cli"
+  ],
+  "features": [],
+  "env": {
+    "GRIDCRAFT_REQUIRE_WINRES": "1"
+  },
+  "exes": [
+    "fisilab-planilha.exe",
+    "fisilab-planilha-cli.exe"
+  ],
+  "files": [],
+  "stage_commands": [],
+  "assoc": [
+    {
+      "ext": "xlsx",
+      "description": "Planilha",
+      "owner": false
+    },
+    {
+      "ext": "xlsm",
+      "description": "Planilha",
+      "owner": false
+    },
+    {
+      "ext": "xlsb",
+      "description": "Planilha",
+      "owner": false
+    },
+    {
+      "ext": "ods",
+      "description": "Planilha",
+      "owner": false
+    },
+    {
+      "ext": "csv",
+      "description": "Planilha",
+      "owner": false
+    },
+    {
+      "ext": "tsv",
+      "description": "Planilha",
+      "owner": false
+    }
+  ]
+}

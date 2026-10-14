@@ -28,7 +28,7 @@ pub fn show(ctx: &Context, app: &AppInfo) {
         return;
     }
     let t = tons(ctx.global_style().visuals.dark_mode);
-    egui::Window::new(format!("Sobre o {}", app.name))
+    egui::Window::new(format!("{} — Suíte FisiLab", app.name))
         .id(Id::new("fisilab-brand-about"))
         .open(&mut open)
         .collapsible(false)
@@ -69,7 +69,7 @@ pub fn show(ctx: &Context, app: &AppInfo) {
                 ui.label(RichText::new("Créditos").size(17.0).strong());
                 ui.add_space(2.0);
                 ui.label(format!(
-                    "O {} é uma versão modificada do {} ({}), distribuído sob a licença MIT ou Apache 2.0, \
+                    "{} é uma versão modificada do {} ({}), distribuída sob a licença MIT ou Apache 2.0, \
                      à escolha de quem o usa. Agradecemos aos autores e contribuidores do projeto original: \
                      todo o trabalho de edição, formatos de arquivo e ferramentas é deles.",
                     app.name, app.upstream_name, app.upstream_copyright

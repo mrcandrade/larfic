@@ -5,8 +5,8 @@
   "github_owner": "mrcandrade",
   "apps": [
     {
-      "slug": "fisifoto",
-      "name": "FisiFoto",
+      "slug": "fisilab-foto",
+      "name": "Foto",
       "monogram": "Fo",
       "category": "Imagem e mídia",
       "tagline": "Editor de imagens",
@@ -17,8 +17,8 @@
       "guid": "137BD1A9-E2DB-5FFF-9FCA-6B917F9B9101"
     },
     {
-      "slug": "fisivetor",
-      "name": "FisiVetor",
+      "slug": "fisilab-vetor",
+      "name": "Vetor",
       "monogram": "Ve",
       "category": "Imagem e mídia",
       "tagline": "Ilustração vetorial",
@@ -29,8 +29,8 @@
       "guid": "8921FF3B-3591-5E7A-83C4-FDD23A65135A"
     },
     {
-      "slug": "fisifilme",
-      "name": "FisiFilme",
+      "slug": "fisilab-filme",
+      "name": "Filme",
       "monogram": "Fi",
       "category": "Imagem e mídia",
       "tagline": "Editor de vídeo",
@@ -41,8 +41,8 @@
       "guid": "34564400-F225-509D-8283-F5861AA79BDF"
     },
     {
-      "slug": "fisirevela",
-      "name": "FisiRevela",
+      "slug": "fisilab-revela",
+      "name": "Revela",
       "monogram": "Rv",
       "category": "Imagem e mídia",
       "tagline": "Revelação e catálogo de fotos",
@@ -53,8 +53,8 @@
       "guid": "B8B9414F-7579-5C51-B504-7C37B1B19603"
     },
     {
-      "slug": "fisiefeitos",
-      "name": "FisiEfeitos",
+      "slug": "fisilab-efeitos",
+      "name": "Efeitos",
       "monogram": "Ef",
       "category": "Imagem e mídia",
       "tagline": "Animação gráfica e composição",
@@ -65,8 +65,8 @@
       "guid": "4E3D77BF-0F5C-5BC8-BEF2-50296FCB3DA5"
     },
     {
-      "slug": "fisisom",
-      "name": "FisiSom",
+      "slug": "fisilab-som",
+      "name": "Som",
       "monogram": "Sm",
       "category": "Imagem e mídia",
       "tagline": "Gravação e edição de áudio",
@@ -77,8 +77,8 @@
       "guid": "0C633444-961A-5822-986C-D8AD18059BE0"
     },
     {
-      "slug": "fisitexto",
-      "name": "FisiTexto",
+      "slug": "fisilab-texto",
+      "name": "Texto",
       "monogram": "Tx",
       "category": "Documentos",
       "tagline": "Processador de texto",
@@ -89,8 +89,8 @@
       "guid": "5A402EC7-019E-5285-B08E-452BACC10032"
     },
     {
-      "slug": "fisiplanilha",
-      "name": "FisiPlanilha",
+      "slug": "fisilab-planilha",
+      "name": "Planilha",
       "monogram": "Pl",
       "category": "Documentos",
       "tagline": "Planilhas",
@@ -101,8 +101,8 @@
       "guid": "2FBA5794-7461-5CEA-A6F0-E20AAC004E1B"
     },
     {
-      "slug": "fisislides",
-      "name": "FisiSlides",
+      "slug": "fisilab-slides",
+      "name": "Slides",
       "monogram": "Sl",
       "category": "Documentos",
       "tagline": "Apresentações",
@@ -113,8 +113,8 @@
       "guid": "0783058A-8BDA-5604-8E31-617A305539B9"
     },
     {
-      "slug": "fisipdf",
-      "name": "FisiPDF",
+      "slug": "fisilab-pdf",
+      "name": "PDF",
       "monogram": "Pd",
       "category": "Documentos",
       "tagline": "Leitor e editor de PDF",
@@ -125,8 +125,8 @@
       "guid": "A60272B7-849F-5A48-9291-6FCFA43F25EB"
     },
     {
-      "slug": "fisilayout",
-      "name": "FisiLayout",
+      "slug": "fisilab-layout",
+      "name": "Layout",
       "monogram": "Ly",
       "category": "Documentos",
       "tagline": "Diagramação e editoração",
@@ -137,8 +137,8 @@
       "guid": "CEC093E7-EA3F-560C-AD1C-A57341651C3E"
     },
     {
-      "slug": "fisicad",
-      "name": "FisiCAD",
+      "slug": "fisilab-cad",
+      "name": "CAD",
       "monogram": "Cd",
       "category": "Engenharia",
       "tagline": "Desenho técnico e CAD",

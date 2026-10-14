@@ -7,7 +7,7 @@
     1. cargo build --release (com as features e variáveis de ambiente de installer/apps/<slug>.json);
     2. monta dist/stage/<slug>: exes, arquivos de dados, ícone, LICENCA.txt, SOBRE.txt, NOTICE.txt,
        MODIFICACOES.md e assoc.iss (associações de arquivo);
-    3. compila installer/app.iss com o Inno Setup -> dist/instaladores/<Nome>-Setup-<versão>.exe.
+    3. compila installer/app.iss com o Inno Setup -> dist/instaladores/FisiLab-<Nome>-Setup-<versão>.exe.
   Depois gera o instalador da suíte completa (SuiteFisiLab-Setup-<data>.exe) e
   dist/instaladores/manifest.json (nomes, versões, tamanhos e SHA-256), que o portal PHP lê.
 
@@ -16,7 +16,7 @@
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File installer\build-installers.ps1
-  powershell -ExecutionPolicy Bypass -File installer\build-installers.ps1 -Apps fisifoto,fisipdf
+  powershell -ExecutionPolicy Bypass -File installer\build-installers.ps1 -Apps fisilab-foto,fisilab-pdf
   powershell -ExecutionPolicy Bypass -File installer\build-installers.ps1 -SkipBuild   # só reempacota
   powershell -ExecutionPolicy Bypass -File installer\build-installers.ps1 -Fast        # release sem LTO pesado
 #>
@@ -117,6 +117,12 @@ foreach ($a in $Selected) {
     New-Item -ItemType Directory -Force -Path (Split-Path $dst) | Out-Null
     if (Test-Path $src -PathType Container) { Copy-Item -Recurse $src $dst } else { Copy-Item $src $dst }
   }
+  # Comandos extras de staging (ex.: o PDF baixa os modelos de OCR com `cargo xtask models`).
+  foreach ($c in $cfg.stage_commands) {
+    $cmd = $c.run.Replace('{stage}', $stage)
+    Push-Location $root
+    try { Invoke-Native "$cmd  # $($c.why)" { cmd /c $cmd } } finally { Pop-Location }
+  }
   Copy-Item (Join-Path $root "assets\fisilab\$slug.ico") $stage
   Copy-Item (Join-Path $root 'NOTICE') (Join-Path $stage 'NOTICE.txt')
   Copy-Item (Join-Path $root 'MODIFICACOES.md') $stage -ErrorAction SilentlyContinue
@@ -207,9 +213,9 @@ Código-fonte: https://github.com/mrcandrade/$slug
 
 # Manifesto de downloads (todos os instaladores presentes em dist/instaladores, não só os de agora).
 function Get-Entry($a) {
-  $f = Get-ChildItem $OutDir -Filter "$($a.name)-Setup-*.exe" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+  $f = Get-ChildItem $OutDir -Filter "FisiLab-$($a.name)-Setup-*.exe" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
   if (-not $f) { return $null }
-  $ver = $f.BaseName.Substring("$($a.name)-Setup-".Length)
+  $ver = $f.BaseName.Substring("FisiLab-$($a.name)-Setup-".Length)
   [ordered]@{
     slug = $a.slug; name = $a.name; version = $ver; file = $f.Name; size = $f.Length
     sha256 = (Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLower()

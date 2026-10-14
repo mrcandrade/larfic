@@ -1,0 +1,68 @@
+{
+  "packages": [
+    "wordcraft",
+    "wordcraft-cli"
+  ],
+  "features": [],
+  "env": {
+    "WORDCRAFT_REQUIRE_WINRES": "1"
+  },
+  "exes": [
+    "fisilab-texto.exe",
+    "fisilab-texto-cli.exe"
+  ],
+  "files": [],
+  "stage_commands": [],
+  "assoc": [
+    {
+      "ext": "docx",
+      "description": "Documento do Word",
+      "owner": false
+    },
+    {
+      "ext": "docm",
+      "description": "Documento do Word habilitado para macro",
+      "owner": false
+    },
+    {
+      "ext": "dotx",
+      "description": "Modelo do Word",
+      "owner": false
+    },
+    {
+      "ext": "dotm",
+      "description": "Modelo do Word habilitado para macro",
+      "owner": false
+    },
+    {
+      "ext": "doc",
+      "description": "Documento do Word 97-2003",
+      "owner": false
+    },
+    {
+      "ext": "dot",
+      "description": "Modelo do Word 97-2003",
+      "owner": false
+    },
+    {
+      "ext": "odt",
+      "description": "Texto OpenDocument",
+      "owner": false
+    },
+    {
+      "ext": "rtf",
+      "description": "Documento Rich Text",
+      "owner": false
+    },
+    {
+      "ext": "md",
+      "description": "Documento Markdown",
+      "owner": false
+    },
+    {
+      "ext": "txt",
+      "description": "Documento de texto",
+      "owner": false
+    }
+  ]
+}

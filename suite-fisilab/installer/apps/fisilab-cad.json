@@ -1,0 +1,28 @@
+{
+  "packages": [
+    "cadcraft",
+    "cadcraft-cli"
+  ],
+  "features": [],
+  "env": {
+    "CADCRAFT_REQUIRE_WINRES": "1"
+  },
+  "exes": [
+    "fisilab-cad.exe",
+    "fisilab-cad-cli.exe"
+  ],
+  "files": [],
+  "stage_commands": [],
+  "assoc": [
+    {
+      "ext": "dxf",
+      "description": "Desenho CAD",
+      "owner": false
+    },
+    {
+      "ext": "dwg",
+      "description": "Desenho CAD",
+      "owner": false
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "packages": [
+    "photocraft",
+    "photocraft-cli"
+  ],
+  "features": [
+    "heif"
+  ],
+  "env": {
+    "PHOTOCRAFT_REQUIRE_WINRES": "1"
+  },
+  "exes": [
+    "fisilab-foto.exe",
+    "fisilab-foto-cli.exe"
+  ],
+  "files": [],
+  "stage_commands": [],
+  "assoc": [
+    {
+      "ext": "pcraft",
+      "description": "Documento do Foto",
+      "owner": true
+    },
+    {
+      "ext": "psd",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "psb",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "png",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "jpg",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "jpeg",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "webp",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "tif",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "tiff",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "gif",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "bmp",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "avif",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "exr",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "hdr",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "tga",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "qoi",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "ora",
+      "description": "Imagem",
+      "owner": false
+    },
+    {
+      "ext": "kra",
+      "description": "Imagem",
+      "owner": false
+    }
+  ]
+}

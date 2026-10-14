@@ -1,0 +1,20 @@
+{
+  "packages": [
+    "lightcraft",
+    "lightcraft-cli"
+  ],
+  "features": [
+    "lightcraft/heif",
+    "lightcraft-cli/heif"
+  ],
+  "env": {
+    "LIGHTCRAFT_REQUIRE_WINRES": "1"
+  },
+  "exes": [
+    "fisilab-revela.exe",
+    "fisilab-revela-cli.exe"
+  ],
+  "files": [],
+  "stage_commands": [],
+  "assoc": []
+}

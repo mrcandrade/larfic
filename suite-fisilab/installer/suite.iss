@@ -1,6 +1,6 @@
 ﻿; Instalador da Suíte FisiLab completa (Inno Setup 6).
 ;
-; Leva dentro os instaladores individuais (<Nome>-Setup-<versão>.exe) e roda, em modo silencioso,
+; Leva dentro os instaladores individuais (FisiLab-<Nome>-Setup-<versão>.exe) e roda, em modo silencioso,
 ; os dos aplicativos marcados. Assim cada app fica registrado sozinho em "Aplicativos instalados",
 ; pode ser atualizado pelo instalador dele e desinstalado separadamente.
 ;

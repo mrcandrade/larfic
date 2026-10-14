@@ -1,0 +1,17 @@
+{
+  "packages": [
+    "effectcraft",
+    "effectcraft-cli"
+  ],
+  "features": [],
+  "env": {
+    "EFFECTCRAFT_REQUIRE_WINRES": "1"
+  },
+  "exes": [
+    "fisilab-efeitos.exe",
+    "fisilab-efeitos-cli.exe"
+  ],
+  "files": [],
+  "stage_commands": [],
+  "assoc": []
+}

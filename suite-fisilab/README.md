@@ -28,20 +28,20 @@ GitHub nem compilar nada: basta baixar o instalador.
 
 | | Programa | Para que serve | Substitui | Baseado em |
 |---|---|---|---|---|
-| <img src="brand/icons/fisifoto/fisifoto-64.png" width="32"> | **FisiFoto** | Editor de imagens | Adobe Photoshop | [PhotoCraft](https://github.com/storytold/photocraft) |
-| <img src="brand/icons/fisivetor/fisivetor-64.png" width="32"> | **FisiVetor** | Ilustração vetorial | Adobe Illustrator | [VectorCraft](https://github.com/storytold/vectorcraft) |
-| <img src="brand/icons/fisifilme/fisifilme-64.png" width="32"> | **FisiFilme** | Editor de vídeo | Adobe Premiere Pro | [FilmCraft](https://github.com/storytold/filmcraft) |
-| <img src="brand/icons/fisirevela/fisirevela-64.png" width="32"> | **FisiRevela** | Revelação e catálogo de fotos | Adobe Lightroom | [LightCraft](https://github.com/storytold/lightcraft) |
-| <img src="brand/icons/fisiefeitos/fisiefeitos-64.png" width="32"> | **FisiEfeitos** | Animação gráfica e composição | Adobe After Effects | [EffectCraft](https://github.com/storytold/effectcraft) |
-| <img src="brand/icons/fisisom/fisisom-64.png" width="32"> | **FisiSom** | Gravação e edição de áudio | Avid Pro Tools | [SoundCraft](https://github.com/storytold/soundcraft) |
-| <img src="brand/icons/fisitexto/fisitexto-64.png" width="32"> | **FisiTexto** | Processador de texto | Microsoft Word | [WordCraft](https://github.com/storytold/wordcraft) |
-| <img src="brand/icons/fisiplanilha/fisiplanilha-64.png" width="32"> | **FisiPlanilha** | Planilhas | Microsoft Excel | [GridCraft](https://github.com/storytold/gridcraft) |
-| <img src="brand/icons/fisislides/fisislides-64.png" width="32"> | **FisiSlides** | Apresentações | Microsoft PowerPoint | [DeckCraft](https://github.com/storytold/deckcraft) |
-| <img src="brand/icons/fisipdf/fisipdf-64.png" width="32"> | **FisiPDF** | Leitor e editor de PDF | Adobe Acrobat | [PdfCraft](https://github.com/storytold/pdfcraft) |
-| <img src="brand/icons/fisilayout/fisilayout-64.png" width="32"> | **FisiLayout** | Diagramação e editoração | Adobe InDesign | [DesignCraft](https://github.com/storytold/designcraft) |
-| <img src="brand/icons/fisicad/fisicad-64.png" width="32"> | **FisiCAD** | Desenho técnico e CAD | Autodesk AutoCAD | [CADCraft](https://github.com/storytold/cadcraft) |
+| <img src="brand/icons/fisilab-foto/fisilab-foto-64.png" width="32"> | **Foto** | Editor de imagens | Adobe Photoshop | [PhotoCraft](https://github.com/storytold/photocraft) |
+| <img src="brand/icons/fisilab-vetor/fisilab-vetor-64.png" width="32"> | **Vetor** | Ilustração vetorial | Adobe Illustrator | [VectorCraft](https://github.com/storytold/vectorcraft) |
+| <img src="brand/icons/fisilab-filme/fisilab-filme-64.png" width="32"> | **Filme** | Editor de vídeo | Adobe Premiere Pro | [FilmCraft](https://github.com/storytold/filmcraft) |
+| <img src="brand/icons/fisilab-revela/fisilab-revela-64.png" width="32"> | **Revela** | Revelação e catálogo de fotos | Adobe Lightroom | [LightCraft](https://github.com/storytold/lightcraft) |
+| <img src="brand/icons/fisilab-efeitos/fisilab-efeitos-64.png" width="32"> | **Efeitos** | Animação gráfica e composição | Adobe After Effects | [EffectCraft](https://github.com/storytold/effectcraft) |
+| <img src="brand/icons/fisilab-som/fisilab-som-64.png" width="32"> | **Som** | Gravação e edição de áudio | Avid Pro Tools | [SoundCraft](https://github.com/storytold/soundcraft) |
+| <img src="brand/icons/fisilab-texto/fisilab-texto-64.png" width="32"> | **Texto** | Processador de texto | Microsoft Word | [WordCraft](https://github.com/storytold/wordcraft) |
+| <img src="brand/icons/fisilab-planilha/fisilab-planilha-64.png" width="32"> | **Planilha** | Planilhas | Microsoft Excel | [GridCraft](https://github.com/storytold/gridcraft) |
+| <img src="brand/icons/fisilab-slides/fisilab-slides-64.png" width="32"> | **Slides** | Apresentações | Microsoft PowerPoint | [DeckCraft](https://github.com/storytold/deckcraft) |
+| <img src="brand/icons/fisilab-pdf/fisilab-pdf-64.png" width="32"> | **PDF** | Leitor e editor de PDF | Adobe Acrobat | [PdfCraft](https://github.com/storytold/pdfcraft) |
+| <img src="brand/icons/fisilab-layout/fisilab-layout-64.png" width="32"> | **Layout** | Diagramação e editoração | Adobe InDesign | [DesignCraft](https://github.com/storytold/designcraft) |
+| <img src="brand/icons/fisilab-cad/fisilab-cad-64.png" width="32"> | **CAD** | Desenho técnico e CAD | Autodesk AutoCAD | [CADCraft](https://github.com/storytold/cadcraft) |
 
-O código de cada programa fica em um repositório próprio (`github.com/mrcandrade/<nome>`),
+O código de cada programa fica em um repositório próprio (`github.com/mrcandrade/fisilab-<nome>`, por exemplo `fisilab-foto`),
 incluído aqui como submódulo em [`apps/`](apps/).
 
 ## Instalação
@@ -51,7 +51,7 @@ Para quem vai **usar** os programas:
 1. Acesse o portal de downloads da suíte (no servidor da UFRGS) ou a página de *Releases* deste
    repositório.
 2. Baixe **`SuiteFisiLab-Setup-<data>.exe`** (todos os programas, você escolhe quais na instalação)
-   ou só o instalador do programa que quiser, por exemplo `FisiFoto-Setup-0.9.0.exe`.
+   ou só o instalador do programa que quiser, por exemplo `FisiLab-Foto-Setup-0.9.0.exe`.
 3. Execute o instalador. **Não é preciso senha de administrador**: por padrão, ele instala só para
    o seu usuário. Em laboratórios, quem administra pode escolher "para todos os usuários".
 
@@ -61,8 +61,8 @@ clique em *Mais informações* › *Executar assim mesmo* (veja [Assinatura de c
 Instalação sem interação (laboratórios, imagens de máquina):
 
 ```bat
-SuiteFisiLab-Setup-<data>.exe /VERYSILENT /ALLUSERS /COMPONENTS="fisifoto,fisitexto,fisiplanilha"
-FisiFoto-Setup-0.9.0.exe /VERYSILENT /ALLUSERS /NORESTART
+SuiteFisiLab-Setup-<data>.exe /VERYSILENT /ALLUSERS /COMPONENTS="fisilab-foto,fisilab-texto,fisilab-planilha"
+FisiLab-Foto-Setup-0.9.0.exe /VERYSILENT /ALLUSERS /NORESTART
 ```
 
 ## O que muda em relação aos projetos originais
@@ -78,7 +78,7 @@ Em todos os programas:
   logos da UFRGS e do CTA.
 - **Interface em português (Brasil) por padrão**, quando o programa tem a tradução.
 - Links de comunidade apontando para a suíte; nada envia dados para os servidores do projeto original.
-- Ícones, executáveis (`fisifoto.exe` etc.), identificadores e pastas de configuração novos, para
+- Ícones, executáveis (`fisilab-foto.exe` etc.), identificadores e pastas de configuração novos, para
   não conflitar com instalações do original.
 
 Cada repositório tem um `MODIFICACOES.md` com a lista detalhada.
@@ -142,7 +142,7 @@ Windows e [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRS
 git clone --recurse-submodules https://github.com/mrcandrade/larfic
 cd larfic\suite-fisilab
 powershell -ExecutionPolicy Bypass -File installer\build-installers.ps1          # todos
-powershell -ExecutionPolicy Bypass -File installer\build-installers.ps1 -Apps fisifoto,fisipdf
+powershell -ExecutionPolicy Bypass -File installer\build-installers.ps1 -Apps fisilab-foto,fisilab-pdf
 ```
 
 Os instaladores e o `manifest.json` (versões, tamanhos e SHA-256) ficam em `dist/instaladores/`.
@@ -176,7 +176,7 @@ installer\build-installers.ps1 -SignTool 'signtool sign /fd sha256 /tr http://ti
 Cada repositório de programa mantém o original como `upstream`:
 
 ```bash
-cd apps/fisifoto
+cd apps/fisilab-foto
 git fetch upstream && git merge upstream/main   # resolva conflitos, rode os testes
 ```
 

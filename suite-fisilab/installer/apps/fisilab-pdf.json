@@ -1,0 +1,33 @@
+{
+  "packages": [
+    "pdfcraft",
+    "pdfcraft-cli"
+  ],
+  "features": [],
+  "env": {
+    "PDFCRAFT_REQUIRE_WINRES": "1"
+  },
+  "exes": [
+    "fisilab-pdf.exe",
+    "fisilab-pdf-cli.exe"
+  ],
+  "files": [
+    {
+      "from": "assets\u0007pp-icon\\LICENSE-document.txt",
+      "to": "LICENSE-document.txt"
+    }
+  ],
+  "stage_commands": [
+    {
+      "run": "cargo xtask models \"{stage}\\models\"",
+      "why": "modelos de OCR (baixados e verificados por SHA-256)"
+    }
+  ],
+  "assoc": [
+    {
+      "ext": "pdf",
+      "description": "Documento PDF",
+      "owner": false
+    }
+  ]
+}

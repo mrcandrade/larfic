@@ -2,7 +2,7 @@
 /**
  * Entrega o instalador de um programa (ou da suíte) e conta o download.
  *
- *   baixar.php?app=fisifoto   |   baixar.php?app=suite
+ *   baixar.php?app=fisilab-foto   |   baixar.php?app=suite
  *
  * Só aceita slugs que existem no manifest.json, e só entrega o arquivo que o manifesto indica,
  * de dentro de downloads/: nada vindo da URL vira caminho de arquivo.

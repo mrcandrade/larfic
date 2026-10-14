@@ -98,6 +98,6 @@ location /fisilab/suite/ {
 
 ## Atualizar uma versão
 
-Gere de novo os instaladores (só os que mudaram: `-Apps fisifoto`), rode `publicar-portal.ps1` e
+Gere de novo os instaladores (só os que mudaram: `-Apps fisilab-foto`), rode `publicar-portal.ps1` e
 envie com o mesmo `rsync`. O manifesto sempre aponta para o instalador mais recente de cada
 programa; apague do servidor os `.exe` antigos quando quiser.

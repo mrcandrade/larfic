@@ -49,7 +49,7 @@ pub const ABOUT_MENU_LABEL: &str = "Sobre a Suíte FisiLab…";
 /// O que cada aplicativo informa sobre si mesmo.
 #[derive(Clone, Copy, Debug)]
 pub struct AppInfo {
-    /// Nome na suíte, por exemplo "FisiFoto".
+    /// Nome na suíte, por exemplo "Foto".
     pub name: &'static str,
     /// O que o programa faz, por exemplo "Editor de imagens".
     pub tagline: &'static str,

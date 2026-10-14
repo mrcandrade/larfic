@@ -1,0 +1,38 @@
+{
+  "packages": [
+    "deckcraft",
+    "deckcraft-cli"
+  ],
+  "features": [],
+  "env": {
+    "DECKCRAFT_REQUIRE_WINRES": "1"
+  },
+  "exes": [
+    "fisilab-slides.exe",
+    "fisilab-slides-cli.exe"
+  ],
+  "files": [],
+  "stage_commands": [],
+  "assoc": [
+    {
+      "ext": "deckcraft",
+      "description": "Apresentação do Slides",
+      "owner": true
+    },
+    {
+      "ext": "pptx",
+      "description": "Apresentação do PowerPoint",
+      "owner": false
+    },
+    {
+      "ext": "ppsx",
+      "description": "Apresentação do PowerPoint",
+      "owner": false
+    },
+    {
+      "ext": "potx",
+      "description": "Apresentação do PowerPoint",
+      "owner": false
+    }
+  ]
+}

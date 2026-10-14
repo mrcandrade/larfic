@@ -1,0 +1,17 @@
+{
+  "packages": [
+    "filmcraft",
+    "filmcraft-cli"
+  ],
+  "features": [],
+  "env": {
+    "FILMCRAFT_REQUIRE_WINRES": "1"
+  },
+  "exes": [
+    "fisilab-filme.exe",
+    "fisilab-filme-cli.exe"
+  ],
+  "files": [],
+  "stage_commands": [],
+  "assoc": []
+}
