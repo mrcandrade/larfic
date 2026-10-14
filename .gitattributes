@@ -1,0 +1,4 @@
+# Scripts de shell precisam de LF mesmo em clones no Windows.
+*.sh text eol=lf
+*.ps1 text eol=crlf
+*.iss text eol=crlf
