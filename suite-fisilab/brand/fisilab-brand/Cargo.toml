@@ -1,0 +1,13 @@
+[package]
+name = "fisilab-brand"
+version = "1.0.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Identidade visual da Suíte FisiLab (UFRGS): paleta, tela de abertura com a logo do CTA e janela Sobre"
+publish = false
+
+# Copiado (não editar aqui) de larfic/suite-fisilab/brand/fisilab-brand por scripts/sync-brand.ps1.
+# A fonte única fica no repositório LARFIC; cada app da suíte leva uma cópia em crates/fisilab-brand.
+
+[dependencies]
+egui = { version = "0.36", default-features = false }

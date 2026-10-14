@@ -1,0 +1,152 @@
+{
+  "suite": "Suíte FisiLab",
+  "lab": "FisiLab — LARFIC · UFRGS",
+  "partner": "CTA — Centro de Tecnologia Acadêmica",
+  "github_owner": "mrcandrade",
+  "apps": [
+    {
+      "slug": "fisifoto",
+      "name": "FisiFoto",
+      "monogram": "Fo",
+      "category": "Imagem e mídia",
+      "tagline": "Editor de imagens",
+      "equivalent": "Adobe Photoshop",
+      "upstream": "PhotoCraft",
+      "upstream_slug": "photocraft",
+      "description": "Edição e retoque de fotos com camadas, máscaras, pincéis, filtros e abertura de arquivos PSD.",
+      "guid": "137BD1A9-E2DB-5FFF-9FCA-6B917F9B9101"
+    },
+    {
+      "slug": "fisivetor",
+      "name": "FisiVetor",
+      "monogram": "Ve",
+      "category": "Imagem e mídia",
+      "tagline": "Ilustração vetorial",
+      "equivalent": "Adobe Illustrator",
+      "upstream": "VectorCraft",
+      "upstream_slug": "vectorcraft",
+      "description": "Desenho vetorial para ilustrações, diagramas, logotipos e figuras de artigos, com SVG e PDF.",
+      "guid": "8921FF3B-3591-5E7A-83C4-FDD23A65135A"
+    },
+    {
+      "slug": "fisifilme",
+      "name": "FisiFilme",
+      "monogram": "Fi",
+      "category": "Imagem e mídia",
+      "tagline": "Editor de vídeo",
+      "equivalent": "Adobe Premiere Pro",
+      "upstream": "FilmCraft",
+      "upstream_slug": "filmcraft",
+      "description": "Edição de vídeo não linear com linha do tempo, cortes, trilhas de áudio, títulos e legendas.",
+      "guid": "34564400-F225-509D-8283-F5861AA79BDF"
+    },
+    {
+      "slug": "fisirevela",
+      "name": "FisiRevela",
+      "monogram": "Rv",
+      "category": "Imagem e mídia",
+      "tagline": "Revelação e catálogo de fotos",
+      "equivalent": "Adobe Lightroom",
+      "upstream": "LightCraft",
+      "upstream_slug": "lightcraft",
+      "description": "Revelação não destrutiva de fotos RAW, ajustes de cor e exposição, e organização em catálogo.",
+      "guid": "B8B9414F-7579-5C51-B504-7C37B1B19603"
+    },
+    {
+      "slug": "fisiefeitos",
+      "name": "FisiEfeitos",
+      "monogram": "Ef",
+      "category": "Imagem e mídia",
+      "tagline": "Animação gráfica e composição",
+      "equivalent": "Adobe After Effects",
+      "upstream": "EffectCraft",
+      "upstream_slug": "effectcraft",
+      "description": "Animação com quadros-chave, composição em camadas e efeitos visuais para vídeos e apresentações.",
+      "guid": "4E3D77BF-0F5C-5BC8-BEF2-50296FCB3DA5"
+    },
+    {
+      "slug": "fisisom",
+      "name": "FisiSom",
+      "monogram": "Sm",
+      "category": "Imagem e mídia",
+      "tagline": "Gravação e edição de áudio",
+      "equivalent": "Avid Pro Tools",
+      "upstream": "SoundCraft",
+      "upstream_slug": "soundcraft",
+      "description": "Gravação, edição, mixagem e efeitos de áudio para podcasts, aulas e música.",
+      "guid": "0C633444-961A-5822-986C-D8AD18059BE0"
+    },
+    {
+      "slug": "fisitexto",
+      "name": "FisiTexto",
+      "monogram": "Tx",
+      "category": "Documentos",
+      "tagline": "Processador de texto",
+      "equivalent": "Microsoft Word",
+      "upstream": "WordCraft",
+      "upstream_slug": "wordcraft",
+      "description": "Redação e formatação de documentos, relatórios e trabalhos, com abertura e gravação de DOCX.",
+      "guid": "5A402EC7-019E-5285-B08E-452BACC10032"
+    },
+    {
+      "slug": "fisiplanilha",
+      "name": "FisiPlanilha",
+      "monogram": "Pl",
+      "category": "Documentos",
+      "tagline": "Planilhas",
+      "equivalent": "Microsoft Excel",
+      "upstream": "GridCraft",
+      "upstream_slug": "gridcraft",
+      "description": "Planilhas com fórmulas, formatação e gráficos, compatíveis com arquivos XLSX e CSV.",
+      "guid": "2FBA5794-7461-5CEA-A6F0-E20AAC004E1B"
+    },
+    {
+      "slug": "fisislides",
+      "name": "FisiSlides",
+      "monogram": "Sl",
+      "category": "Documentos",
+      "tagline": "Apresentações",
+      "equivalent": "Microsoft PowerPoint",
+      "upstream": "DeckCraft",
+      "upstream_slug": "deckcraft",
+      "description": "Criação de apresentações de slides para aulas, seminários e defesas, com arquivos PPTX.",
+      "guid": "0783058A-8BDA-5604-8E31-617A305539B9"
+    },
+    {
+      "slug": "fisipdf",
+      "name": "FisiPDF",
+      "monogram": "Pd",
+      "category": "Documentos",
+      "tagline": "Leitor e editor de PDF",
+      "equivalent": "Adobe Acrobat",
+      "upstream": "PdfCraft",
+      "upstream_slug": "pdfcraft",
+      "description": "Leitura, anotação, edição, organização de páginas e preenchimento de formulários em PDF.",
+      "guid": "A60272B7-849F-5A48-9291-6FCFA43F25EB"
+    },
+    {
+      "slug": "fisilayout",
+      "name": "FisiLayout",
+      "monogram": "Ly",
+      "category": "Documentos",
+      "tagline": "Diagramação e editoração",
+      "equivalent": "Adobe InDesign",
+      "upstream": "DesignCraft",
+      "upstream_slug": "designcraft",
+      "description": "Diagramação de pôsteres, revistas, livros e materiais impressos, com exportação para PDF e EPUB.",
+      "guid": "CEC093E7-EA3F-560C-AD1C-A57341651C3E"
+    },
+    {
+      "slug": "fisicad",
+      "name": "FisiCAD",
+      "monogram": "Cd",
+      "category": "Engenharia",
+      "tagline": "Desenho técnico e CAD",
+      "equivalent": "Autodesk AutoCAD",
+      "upstream": "CADCraft",
+      "upstream_slug": "cadcraft",
+      "description": "Desenho técnico 2D e projeto assistido por computador, com leitura e gravação de DXF/DWG.",
+      "guid": "F7916044-C4E8-5351-8ED1-11AB7C72FA96"
+    }
+  ]
+}

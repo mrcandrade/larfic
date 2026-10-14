@@ -1,0 +1,25 @@
+# Suíte FisiLab — portal de downloads (Apache 2.4)
+Options -Indexes
+DirectoryIndex index.php
+AddDefaultCharset UTF-8
+
+# Arquivos internos não são servidos diretamente.
+<FilesMatch "^(config(\.local)?|lib)\.php$|\.(md|json|ps1|iss|bak)$|^\.">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'none'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType image/gif "access plus 30 days"
+  ExpiresByType font/ttf "access plus 30 days"
+</IfModule>
