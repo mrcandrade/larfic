@@ -13,7 +13,7 @@
   ],
   "files": [
     {
-      "from": "assets\u0007pp-icon\\LICENSE-document.txt",
+      "from": "assets/app-icon/LICENSE-document.txt",
       "to": "LICENSE-document.txt"
     }
   ],
