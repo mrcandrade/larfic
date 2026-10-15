@@ -1,0 +1,30 @@
+[submodule "suite-fisilab/apps/fisilab-foto"]
+	path = suite-fisilab/apps/fisilab-foto
+	url = https://github.com/mrcandrade/fisilab-foto.git
+[submodule "suite-fisilab/apps/fisilab-filme"]
+	path = suite-fisilab/apps/fisilab-filme
+	url = https://github.com/mrcandrade/fisilab-filme.git
+[submodule "suite-fisilab/apps/fisilab-revela"]
+	path = suite-fisilab/apps/fisilab-revela
+	url = https://github.com/mrcandrade/fisilab-revela.git
+[submodule "suite-fisilab/apps/fisilab-pdf"]
+	path = suite-fisilab/apps/fisilab-pdf
+	url = https://github.com/mrcandrade/fisilab-pdf.git
+[submodule "suite-fisilab/apps/fisilab-efeitos"]
+	path = suite-fisilab/apps/fisilab-efeitos
+	url = https://github.com/mrcandrade/fisilab-efeitos.git
+[submodule "suite-fisilab/apps/fisilab-layout"]
+	path = suite-fisilab/apps/fisilab-layout
+	url = https://github.com/mrcandrade/fisilab-layout.git
+[submodule "suite-fisilab/apps/fisilab-texto"]
+	path = suite-fisilab/apps/fisilab-texto
+	url = https://github.com/mrcandrade/fisilab-texto.git
+[submodule "suite-fisilab/apps/fisilab-slides"]
+	path = suite-fisilab/apps/fisilab-slides
+	url = https://github.com/mrcandrade/fisilab-slides.git
+[submodule "suite-fisilab/apps/fisilab-planilha"]
+	path = suite-fisilab/apps/fisilab-planilha
+	url = https://github.com/mrcandrade/fisilab-planilha.git
+[submodule "suite-fisilab/apps/fisilab-cad"]
+	path = suite-fisilab/apps/fisilab-cad
+	url = https://github.com/mrcandrade/fisilab-cad.git
