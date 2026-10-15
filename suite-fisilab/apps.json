@@ -17,18 +17,6 @@
       "guid": "137BD1A9-E2DB-5FFF-9FCA-6B917F9B9101"
     },
     {
-      "slug": "fisilab-vetor",
-      "name": "Vetor",
-      "monogram": "Ve",
-      "category": "Imagem e mídia",
-      "tagline": "Ilustração vetorial",
-      "equivalent": "Adobe Illustrator",
-      "upstream": "VectorCraft",
-      "upstream_slug": "vectorcraft",
-      "description": "Desenho vetorial para ilustrações, diagramas, logotipos e figuras de artigos, com SVG e PDF.",
-      "guid": "8921FF3B-3591-5E7A-83C4-FDD23A65135A"
-    },
-    {
       "slug": "fisilab-filme",
       "name": "Filme",
       "monogram": "Fi",
@@ -63,18 +51,6 @@
       "upstream_slug": "effectcraft",
       "description": "Animação com quadros-chave, composição em camadas e efeitos visuais para vídeos e apresentações.",
       "guid": "4E3D77BF-0F5C-5BC8-BEF2-50296FCB3DA5"
-    },
-    {
-      "slug": "fisilab-som",
-      "name": "Som",
-      "monogram": "Sm",
-      "category": "Imagem e mídia",
-      "tagline": "Gravação e edição de áudio",
-      "equivalent": "Avid Pro Tools",
-      "upstream": "SoundCraft",
-      "upstream_slug": "soundcraft",
-      "description": "Gravação, edição, mixagem e efeitos de áudio para podcasts, aulas e música.",
-      "guid": "0C633444-961A-5822-986C-D8AD18059BE0"
     },
     {
       "slug": "fisilab-texto",

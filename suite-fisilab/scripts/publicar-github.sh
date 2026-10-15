@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publica os 12 programas da Suíte FisiLab no GitHub e os liga ao repositório LARFIC.
+# Publica os 10 programas da Suíte FisiLab no GitHub e os liga ao repositório LARFIC.
 #
 # Para cada programa:
 #   1. cria o fork do projeto original com o nome novo (ex.: storytold/photocraft -> <dono>/fisilab-foto),
@@ -44,7 +44,6 @@ while IFS='|' read -r up slug name desc; do
   cd - >/dev/null
 done <<'EOF'
 photocraft|fisilab-foto|Foto|Foto — editor de imagens livre (alternativa ao Adobe Photoshop). Suíte FisiLab · UFRGS, baseado no PhotoCraft.
-vectorcraft|fisilab-vetor|Vetor|Vetor — ilustração vetorial livre (alternativa ao Adobe Illustrator). Suíte FisiLab · UFRGS, baseado no VectorCraft.
 filmcraft|fisilab-filme|Filme|Filme — editor de vídeo livre (alternativa ao Adobe Premiere Pro). Suíte FisiLab · UFRGS, baseado no FilmCraft.
 lightcraft|fisilab-revela|Revela|Revela — revelação e catálogo de fotos (alternativa ao Adobe Lightroom). Suíte FisiLab · UFRGS, baseado no LightCraft.
 pdfcraft|fisilab-pdf|PDF|PDF — leitor e editor de PDF livre (alternativa ao Adobe Acrobat). Suíte FisiLab · UFRGS, baseado no PdfCraft.
@@ -54,17 +53,16 @@ wordcraft|fisilab-texto|Texto|Texto — processador de texto livre (alternativa 
 deckcraft|fisilab-slides|Slides|Slides — apresentações (alternativa ao Microsoft PowerPoint). Suíte FisiLab · UFRGS, baseado no DeckCraft.
 gridcraft|fisilab-planilha|Planilha|Planilha — planilhas (alternativa ao Microsoft Excel). Suíte FisiLab · UFRGS, baseado no GridCraft.
 cadcraft|fisilab-cad|CAD|CAD — desenho técnico e CAD (alternativa ao Autodesk AutoCAD). Suíte FisiLab · UFRGS, baseado no CADCraft.
-soundcraft|fisilab-som|Som|Som — gravação e edição de áudio (alternativa ao Avid Pro Tools). Suíte FisiLab · UFRGS, baseado no SoundCraft.
 EOF
 
 # Submódulos no repositório LARFIC
 cd "$LARFIC_DIR"
-for slug in fisilab-foto fisilab-vetor fisilab-filme fisilab-revela fisilab-pdf fisilab-efeitos fisilab-layout fisilab-texto fisilab-slides fisilab-planilha fisilab-cad fisilab-som; do
+for slug in fisilab-foto fisilab-filme fisilab-revela fisilab-pdf fisilab-efeitos fisilab-layout fisilab-texto fisilab-slides fisilab-planilha fisilab-cad; do
   if [ ! -e "suite-fisilab/apps/$slug" ]; then
     git submodule add "https://github.com/$OWNER/$slug.git" "suite-fisilab/apps/$slug"
   fi
 done
 git add .gitmodules suite-fisilab/apps
-git commit -m "Suíte FisiLab: repositórios dos 12 programas como submódulos" || true
+git commit -m "Suíte FisiLab: repositórios dos 10 programas como submódulos" || true
 git push origin main
 echo "Pronto."

@@ -58,7 +58,7 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 
 [Types]
 Name: "completa"; Description: "Instalação completa (todos os programas)"
-Name: "midia"; Description: "Imagem, vídeo e áudio"
+Name: "midia"; Description: "Imagem e vídeo"
 Name: "documentos"; Description: "Documentos e escritório"
 Name: "personalizada"; Description: "Personalizada (escolher os programas)"; Flags: iscustom
 

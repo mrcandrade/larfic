@@ -19,9 +19,9 @@
 
 ---
 
-A Suíte FisiLab é o primeiro projeto do LARFIC: doze programas de código aberto para o dia a dia
-acadêmico, com nomes em português, identidade visual da UFRGS e do CTA, tela de abertura,
-interface em português por padrão e instaladores simples para Windows. Não é preciso usar o
+A Suíte FisiLab é o primeiro projeto do LARFIC: dez programas de código aberto para o dia a dia
+acadêmico, com nomes em português, ícones próprios, tela de abertura com a logo do CTA,
+interface em português (quando o programa tem tradução) e instaladores simples para Windows. Não é preciso usar o
 GitHub nem compilar nada: basta baixar o instalador.
 
 ## Programas
@@ -29,11 +29,9 @@ GitHub nem compilar nada: basta baixar o instalador.
 | | Programa | Para que serve | Substitui | Baseado em |
 |---|---|---|---|---|
 | <img src="brand/icons/fisilab-foto/fisilab-foto-64.png" width="32"> | **Foto** | Editor de imagens | Adobe Photoshop | [PhotoCraft](https://github.com/storytold/photocraft) |
-| <img src="brand/icons/fisilab-vetor/fisilab-vetor-64.png" width="32"> | **Vetor** | Ilustração vetorial | Adobe Illustrator | [VectorCraft](https://github.com/storytold/vectorcraft) |
 | <img src="brand/icons/fisilab-filme/fisilab-filme-64.png" width="32"> | **Filme** | Editor de vídeo | Adobe Premiere Pro | [FilmCraft](https://github.com/storytold/filmcraft) |
 | <img src="brand/icons/fisilab-revela/fisilab-revela-64.png" width="32"> | **Revela** | Revelação e catálogo de fotos | Adobe Lightroom | [LightCraft](https://github.com/storytold/lightcraft) |
 | <img src="brand/icons/fisilab-efeitos/fisilab-efeitos-64.png" width="32"> | **Efeitos** | Animação gráfica e composição | Adobe After Effects | [EffectCraft](https://github.com/storytold/effectcraft) |
-| <img src="brand/icons/fisilab-som/fisilab-som-64.png" width="32"> | **Som** | Gravação e edição de áudio | Avid Pro Tools | [SoundCraft](https://github.com/storytold/soundcraft) |
 | <img src="brand/icons/fisilab-texto/fisilab-texto-64.png" width="32"> | **Texto** | Processador de texto | Microsoft Word | [WordCraft](https://github.com/storytold/wordcraft) |
 | <img src="brand/icons/fisilab-planilha/fisilab-planilha-64.png" width="32"> | **Planilha** | Planilhas | Microsoft Excel | [GridCraft](https://github.com/storytold/gridcraft) |
 | <img src="brand/icons/fisilab-slides/fisilab-slides-64.png" width="32"> | **Slides** | Apresentações | Microsoft PowerPoint | [DeckCraft](https://github.com/storytold/deckcraft) |
@@ -71,12 +69,14 @@ Em todos os programas:
 
 - **Nome e marca próprios.** O nome, o wordmark e os logos "ArtCraft" são marcas registradas e não
   fazem parte da licença aberta, então foram retirados e substituídos.
-- **Tema de cores "UFRGS Noite" (padrão) e "UFRGS Dia"**, com as cores das logos do LARFIC, da UFRGS
-  e do CTA ([paleta](brand/fisilab-brand/src/palette.rs)). Os temas originais continuam disponíveis.
+- **Paleta de cores original de cada programa**, com as opções **"Noite"** (escura) e **"Dia"**
+  (clara) no seletor de temas. O tema padrão é o mesmo do projeto original; os outros temas
+  originais continuam disponíveis.
 - **Tela de abertura** com a logo do CTA animada (clique ou tecla para pular).
 - **Janela "Sobre a Suíte FisiLab"** (menu Ajuda) com créditos ao projeto original, o manifesto e as
   logos da UFRGS e do CTA.
-- **Interface em português (Brasil) por padrão**, quando o programa tem a tradução.
+- **Interface em português (Brasil) na primeira execução**, quando o programa tem a tradução
+  (o Slides ainda não tem e abre em inglês).
 - Links de comunidade apontando para a suíte; nada envia dados para os servidores do projeto original.
 - Ícones, executáveis (`fisilab-foto.exe` etc.), identificadores e pastas de configuração novos, para
   não conflitar com instalações do original.
@@ -90,7 +90,7 @@ de projetos de código aberto criados pelo **ArtCraft Team e por seus contribuid
 ([github.com/storytold](https://github.com/storytold)), publicados sob a licença **MIT ou Apache 2.0**,
 à escolha de quem usa. Todo o trabalho de edição, formatos de arquivo e ferramentas é deles.
 
-O FisiLab adaptou o nome, a identidade visual, o tema de cores, a tela de abertura, os textos e o
+O FisiLab adaptou o nome, os ícones, a tela de abertura, a janela Sobre, os textos e o
 instalador, e distribui a suíte para a comunidade da UFRGS. As modificações são publicadas sob as
 mesmas licenças. Os nomes e marcas dos projetos originais pertencem aos seus titulares; esta suíte
 não é afiliada nem endossada por eles. Adobe, Microsoft, Autodesk e Avid, e os nomes dos seus
@@ -119,7 +119,7 @@ suite-fisilab/
 ├── MANIFESTO.md
 ├── apps/<nome>/              submódulos: um repositório por programa
 ├── brand/
-│   ├── fisilab-brand/        crate Rust: paleta, tela de abertura (CTA) e janela Sobre
+│   ├── fisilab-brand/        crate Rust: tela de abertura (CTA), janela Sobre e cores da marca
 │   └── icons/<nome>/         ícones gerados (.ico e .png)
 ├── installer/
 │   ├── app.iss               instalador de um programa (Inno Setup 6)
@@ -158,9 +158,9 @@ está em [portal/LEIAME.md](portal/LEIAME.md).
 
 ### Mudar a identidade visual
 
-A paleta, a tela de abertura e a janela Sobre ficam em um só lugar,
+A tela de abertura, a janela Sobre e as cores da marca ficam em um só lugar,
 [`brand/fisilab-brand`](brand/fisilab-brand). Depois de alterar, rode
-`scripts\sync-brand.ps1` para copiar o crate para os doze programas e gere novos instaladores.
+`scripts\sync-brand.ps1` para copiar o crate para os dez programas e gere novos instaladores.
 
 ### Assinatura de código
 

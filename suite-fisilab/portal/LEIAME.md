@@ -54,7 +54,7 @@ servidor da UFRGS. Mostra os programas, conta os downloads, publica o manifesto 
 
 | Arquivo | Para que serve |
 |---|---|
-| `index.php` | Página principal: suíte completa, os 12 programas, manifesto, créditos, ajuda |
+| `index.php` | Página principal: suíte completa, os 10 programas, manifesto, créditos, ajuda |
 | `baixar.php?app=<nome>` | Entrega o instalador e conta o download (`app=suite` para a suíte completa) |
 | `manifesto.php` | O manifesto, lido de `dados/MANIFESTO.md` |
 | `estatisticas.php` | Contagem de downloads por programa e mês (protegida por token) |

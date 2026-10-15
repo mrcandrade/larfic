@@ -3,7 +3,7 @@
 //! Um crate pequeno, só com `egui`, que cada aplicativo da suíte usa para:
 //!
 //! - [`palette`]: as cores da marca (vermelho da chama, marinho, creme, azul CTA e azul UFRGS) e os
-//!   tons dos temas "UFRGS Noite" (escuro) e "UFRGS Dia" (claro);
+//!   tons escuro e claro usados pela janela Sobre (os apps mantêm a paleta original deles);
 //! - [`splash`]: a animação de abertura com a logo do CTA;
 //! - [`about`]: a janela "Sobre", com créditos ao projeto de origem, o manifesto e as logos.
 //!

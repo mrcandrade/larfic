@@ -20,7 +20,7 @@ page_head('Suíte FisiLab — programas livres para a UFRGS');
       <p class="sobretitulo">FisiLab — LARFIC · UFRGS <span aria-hidden="true">·</span> em parceria com o CTA</p>
       <h1>Programas livres para estudar, ensinar e criar.</h1>
       <p class="lead">A Suíte FisiLab reúne <?= count($apps) ?> programas de código aberto para editar
-      imagens, vídeos e áudio, escrever documentos, montar planilhas e apresentações, trabalhar com
+      imagens e vídeos, escrever documentos, montar planilhas e apresentações, trabalhar com
       PDF e fazer desenho técnico. São gratuitos, em português e sem rastreamento. Para estudantes,
       professores e técnicos da UFRGS.</p>
       <div class="acoes">
@@ -107,8 +107,8 @@ page_head('Suíte FisiLab — programas livres para a UFRGS');
     <p>Os programas da Suíte FisiLab <strong>não foram escritos do zero pelo FisiLab</strong>. São
     versões modificadas de projetos de código aberto criados pelo <strong>ArtCraft Team</strong> e
     por seus contribuidores, publicados sob as licenças MIT e Apache 2.0. Todo o trabalho de edição,
-    formatos de arquivo e ferramentas é deles. O FisiLab adaptou o nome, a identidade visual, o tema
-    de cores, a tela de abertura, os textos em português e o instalador, e distribui a suíte para a
+    formatos de arquivo e ferramentas é deles. O FisiLab adaptou o nome, os ícones, a tela de abertura,
+    a janela Sobre, os textos em português e o instalador, e distribui a suíte para a
     comunidade da UFRGS.</p>
     <div class="tabela-rolagem">
       <table class="tabela">

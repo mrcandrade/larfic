@@ -1,8 +1,8 @@
-//! Cores da marca e os tons dos temas "UFRGS Noite" e "UFRGS Dia".
+//! Cores da marca e os tons escuro ([`NOITE`]) e claro ([`DIA`]) da identidade da suíte.
 //!
 //! As cores de marca foram tiradas das logos: o vermelho e o marinho da chama do LARFIC, o creme do
-//! fundo dela, o azul do CTA e o azul e o vermelho da UFRGS. Os temas dos apps devem ler estes tons
-//! em vez de inventar outros, para que a suíte inteira tenha a mesma cara.
+//! fundo dela, o azul do CTA e o azul e o vermelho da UFRGS. Os apps mantêm a paleta original deles;
+//! estes tons ficam para o que é da suíte (a janela Sobre e a tela de abertura).
 
 use egui::Color32;
 
@@ -25,7 +25,7 @@ pub const AZUL_CTA_CLARO: Color32 = Color32::from_rgb(0x6E, 0x9E, 0xD8);
 /// Azul da UFRGS.
 pub const AZUL_UFRGS: Color32 = Color32::from_rgb(0x00, 0x5A, 0x93);
 
-/// Os papéis de cor que um tema precisa. Os dois temas da suíte são [`NOITE`] e [`DIA`].
+/// Os papéis de cor da identidade da suíte, em versão escura ([`NOITE`]) e clara ([`DIA`]).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Tons {
     /// Escuro (true) ou claro.
@@ -64,7 +64,7 @@ pub struct Tons {
     pub sucesso: Color32,
 }
 
-/// "UFRGS Noite": o tema escuro padrão da suíte.
+/// Tons escuros da identidade da suíte.
 pub const NOITE: Tons = Tons {
     escuro: true,
     fundo: Color32::from_rgb(0x0E, 0x14, 0x1C),
@@ -85,7 +85,7 @@ pub const NOITE: Tons = Tons {
     sucesso: Color32::from_rgb(0x5F, 0xB8, 0x7E),
 };
 
-/// "UFRGS Dia": o tema claro da suíte, no creme do papel da logo.
+/// Tons claros da identidade da suíte, no creme do papel da logo.
 pub const DIA: Tons = Tons {
     escuro: false,
     fundo: Color32::from_rgb(0xDD, 0xD3, 0xC1),

@@ -48,8 +48,8 @@ intelectual: quem o produz ou quem vende a ferramenta.
 ## 4. O que é a Suíte FisiLab
 
 A Suíte FisiLab reúne programas livres que cobrem tarefas do dia a dia acadêmico (edição de
-imagens e vídeo, ilustração, documentos, planilhas, apresentações, PDF, áudio e CAD), com nomes em
-português, uma identidade visual comum e instaladores simples para Windows.
+imagens e vídeo, documentos, planilhas, apresentações, PDF e CAD), com nomes em
+português, ícones e tela de abertura comuns e instaladores simples para Windows.
 
 **Nós não escrevemos esses programas do zero.** Eles são versões modificadas de projetos de código
 aberto criados pelo ArtCraft Team e por seus contribuidores, publicados sob as licenças MIT e
