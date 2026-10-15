@@ -23,7 +23,7 @@ cd "$DIST"
 : > SHA256SUMS.txt
 for f in *.exe; do sha256sum "$f" >> SHA256SUMS.txt; done
 
-NOTES=$(python - "$MANIFEST" <<'EOF'
+NOTES=$(PYTHONIOENCODING=utf-8 python -X utf8 - "$MANIFEST" <<'EOF'
 import json, sys
 m = json.load(open(sys.argv[1], encoding="utf-8"))
 s = m["suite"]
