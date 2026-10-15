@@ -59,7 +59,7 @@ clique em *Mais informações* › *Executar assim mesmo* (veja [Assinatura de c
 Instalação sem interação (laboratórios, imagens de máquina):
 
 ```bat
-SuiteFisiLab-Setup-<data>.exe /VERYSILENT /ALLUSERS /COMPONENTS="fisilab-foto,fisilab-texto,fisilab-planilha"
+SuiteFisiLab-Setup-<data>.exe /VERYSILENT /ALLUSERS /COMPONENTS="fisilab_foto,fisilab_texto,fisilab_planilha"
 FisiLab-Foto-Setup-0.9.0.exe /VERYSILENT /ALLUSERS /NORESTART
 ```
 

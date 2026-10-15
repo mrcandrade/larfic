@@ -26,6 +26,8 @@ param(
   [string] $AppsRoot,
   [switch] $SkipBuild,
   [switch] $SkipSuite,
+  # Só gera o instalador da suíte com os instaladores que já estão em dist/instaladores.
+  [switch] $OnlySuite,
   # codegen-units=16 e thin-LTO local: compila bem mais rápido, executável um pouco maior/lento.
   [switch] $Fast,
   # Comando de assinatura do Inno Setup, por exemplo: 'signtool sign /fd sha256 /a /tr http://timestamp.digicert.com /td sha256 $f'
@@ -86,6 +88,7 @@ if (-not $Selected) { throw "Nenhum app selecionado (-Apps $($Apps -join ','))" 
 
 $Manifest = @()
 $suiteEntry = $null
+if ($OnlySuite) { $Selected = @() }
 foreach ($a in $Selected) {
   $slug = $a.slug
   $root = Join-Path $AppsRoot $slug
@@ -285,9 +288,10 @@ Manifesto: https://github.com/mrcandrade/larfic/blob/main/suite-fisilab/MANIFEST
     if ($app.category -eq 'Documentos') { $types = 'completa documentos personalizada' }
     if ($app.category -eq 'Engenharia') { $types = 'completa personalizada' }
     $sizeMb = [math]::Round($e.size / 1MB)
-    $comp += "Name: ""$($app.slug)""; Description: ""$($app.name) — $($app.tagline) (alternativa ao $($app.equivalent))""; Types: $types; ExtraDiskSpaceRequired: $($e.size * 3)"
-    $files += "Source: ""{#InstallersDir}\$($e.file)""; DestDir: ""{tmp}""; Flags: deleteafterinstall; Components: $($app.slug)"
-    $run += "Filename: ""{tmp}\$($e.file)""; Parameters: ""/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- {code:ModeSwitch}""; StatusMsg: ""Instalando $($app.name)…""; Flags: waituntilterminated; Components: $($app.slug)"
+    $cid = $app.slug -replace '-', '_'   # o Inno não aceita hífen em nome de componente
+    $comp += "Name: ""$cid""; Description: ""$($app.name) — $($app.tagline) (alternativa ao $($app.equivalent))""; Types: $types; ExtraDiskSpaceRequired: $($e.size * 3)"
+    $files += "Source: ""{#InstallersDir}\$($e.file)""; DestDir: ""{tmp}""; Flags: deleteafterinstall; Components: $cid"
+    $run += "Filename: ""{tmp}\$($e.file)""; Parameters: ""/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- {code:ModeSwitch}""; StatusMsg: ""Instalando $($app.name)…""; Flags: waituntilterminated; Components: $cid"
   }
   Write-Text (Join-Path $PSScriptRoot 'suite-apps.iss') (($comp + '' + $files + '' + $run) -join "`n")
   $isccArgs = @("/DSuiteVersion=$suiteVersion", "/DInstallersDir=$OutDir", "/DOutDir=$OutDir", "/DTextDir=$suiteStage", '/Qp')
