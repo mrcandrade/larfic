@@ -50,10 +50,18 @@ function Find-Iscc {
 }
 $Iscc = Find-Iscc
 
-function Invoke-Native([string] $What, [scriptblock] $Block) {
-  Write-Host "==> $What" -ForegroundColor Cyan
-  & $Block
-  if ($LASTEXITCODE -ne 0) { throw "$What falhou (código $LASTEXITCODE)" }
+function Invoke-Native([string] $What, [scriptblock] $Block, [int] $Attempts = 1) {
+  for ($i = 1; $i -le $Attempts; $i++) {
+    Write-Host "==> $What" -ForegroundColor Cyan
+    & $Block
+    if ($LASTEXITCODE -eq 0) { return }
+    if ($i -lt $Attempts) {
+      # Antivírus e o Explorer às vezes seguram o .exe recém-gerado ("EndUpdateResource failed").
+      Write-Warning "$What falhou (código $LASTEXITCODE); nova tentativa em 20 s ($i/$Attempts)"
+      Start-Sleep -Seconds 20
+    }
+  }
+  throw "$What falhou (código $LASTEXITCODE)"
 }
 
 function Write-Text([string] $Path, [string] $Text) {
@@ -70,6 +78,8 @@ function Get-WorkspaceVersion([string] $Root) {
 }
 
 $Catalog = Get-Content (Join-Path $Suite 'apps.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+# Aceita -Apps a,b,c também quando chega como um texto só (powershell -File).
+if ($Apps) { $Apps = @($Apps | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 $Selected = $Catalog.apps
 if ($Apps) { $Selected = $Catalog.apps | Where-Object { $Apps -contains $_.slug } }
 if (-not $Selected) { throw "Nenhum app selecionado (-Apps $($Apps -join ','))" }
@@ -208,7 +218,7 @@ Código-fonte: https://github.com/mrcandrade/$slug
     "/DStageDir=$stage", "/DOutDir=$OutDir", '/Qp'
   )
   if ($SignTool) { $isccArgs += @("/Ssigntool=$SignTool", '/DSignTool=signtool') }
-  Invoke-Native "Inno Setup: $($a.name)" { & $Iscc @isccArgs (Join-Path $PSScriptRoot 'app.iss') }
+  Invoke-Native "Inno Setup: $($a.name)" { & $Iscc @isccArgs (Join-Path $PSScriptRoot 'app.iss') } -Attempts 4
 }
 
 # Manifesto de downloads (todos os instaladores presentes em dist/instaladores, não só os de agora).
@@ -282,7 +292,7 @@ Manifesto: https://github.com/mrcandrade/larfic/blob/main/suite-fisilab/MANIFEST
   Write-Text (Join-Path $PSScriptRoot 'suite-apps.iss') (($comp + '' + $files + '' + $run) -join "`n")
   $isccArgs = @("/DSuiteVersion=$suiteVersion", "/DInstallersDir=$OutDir", "/DOutDir=$OutDir", "/DTextDir=$suiteStage", '/Qp')
   if ($SignTool) { $isccArgs += @("/Ssigntool=$SignTool", '/DSignTool=signtool') }
-  Invoke-Native 'Inno Setup: Suíte FisiLab' { & $Iscc @isccArgs (Join-Path $PSScriptRoot 'suite.iss') }
+  Invoke-Native 'Inno Setup: Suíte FisiLab' { & $Iscc @isccArgs (Join-Path $PSScriptRoot 'suite.iss') } -Attempts 4
   $sf = Get-Item (Join-Path $OutDir "SuiteFisiLab-Setup-$suiteVersion.exe")
   $suiteEntry = [ordered]@{
     slug = 'suite'; name = 'Suíte FisiLab'; version = $suiteVersion; file = $sf.Name; size = $sf.Length
