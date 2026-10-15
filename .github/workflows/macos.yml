@@ -1,0 +1,136 @@
+# Instaladores macOS da Suíte FisiLab: um DMG universal (Intel e Apple Silicon) por programa, anexado à Release.
+#
+# Roda sozinho quando uma Release é publicada, ou à mão em Actions › "macOS (DMG)" › Run workflow (informe a tag
+# da Release, por exemplo suite-2026.10.15).
+#
+# Sem certificado da Apple os programas saem com assinatura ad hoc: abrem no macOS 11 ou mais novo depois de
+# "Abrir Mesmo Assim" em Ajustes do Sistema › Privacidade e Segurança. Se um dia o laboratório tiver uma conta
+# Apple Developer, basta criar os segredos APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, KEYCHAIN_PASSWORD,
+# APPLE_ID, APPLE_PASSWORD e APPLE_TEAM_ID: o package.sh de cada programa já assina e notariza com eles.
+name: macOS (DMG)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag da Release que recebe os pacotes (ex.: suite-2026.10.15)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+jobs:
+  package:
+    name: ${{ matrix.app }}
+    runs-on: macos-15
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - fisilab-foto
+          - fisilab-filme
+          - fisilab-revela
+          - fisilab-efeitos
+          - fisilab-texto
+          - fisilab-planilha
+          - fisilab-slides
+          - fisilab-pdf
+          - fisilab-layout
+          - fisilab-cad
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      APP_DIR: suite-fisilab/apps/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: false
+
+      - name: Código do programa (submódulo)
+        run: git submodule update --init --depth 1 "$APP_DIR"
+
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
+        with:
+          toolchain: stable
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: ${{ env.APP_DIR }}
+          key: macos-${{ matrix.app }}
+
+      - name: Certificado da Apple (só se houver)
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          if [ -n "$APPLE_CERTIFICATE" ]; then
+            packaging/macos/import-cert.sh
+          else
+            echo "Sem certificado: assinatura ad hoc."
+          fi
+
+      - name: Compila e empacota (DMG universal)
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: packaging/macos/package.sh --arch universal
+
+      - name: Confere o DMG
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          ls -la dist/release
+          for dmg in dist/release/*.dmg; do
+            hdiutil verify "$dmg"
+            mnt=$(mktemp -d)
+            hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$dmg"
+            ls -la "$mnt"
+            for app in "$mnt"/*.app; do
+              codesign --verify --strict --deep --verbose=2 "$app"
+              plutil -p "$app/Contents/Info.plist" | grep -E 'CFBundle(Identifier|Name|ShortVersionString|Executable)'
+              exe="$app/Contents/MacOS/$(defaults read "$app/Contents/Info" CFBundleExecutable)"
+              lipo -info "$exe"
+              "$exe" --version || echo "::warning::$exe --version falhou (pode precisar de tela)"
+            done
+            hdiutil detach "$mnt"
+          done
+
+      - name: Anexa à Release
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          files=(dist/release/*.dmg)
+          [ ${#files[@]} -gt 0 ] || { echo "nenhum DMG gerado"; exit 1; }
+          gh release upload "$TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+
+  checksums:
+    name: SHA256SUMS-macos.txt
+    needs: package
+    if: always()
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Soma de verificação dos DMGs da Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir pkgs && cd pkgs
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.dmg'
+          sha256sum * | tee ../SHA256SUMS-macos.txt
+          cd .. && gh release upload "$TAG" SHA256SUMS-macos.txt --clobber --repo "$GITHUB_REPOSITORY"

@@ -37,6 +37,23 @@ Na mesma página de downloads há, para cada programa (Ubuntu 22.04 ou mais novo
 Os pacotes Linux são gerados pelo GitHub Actions (`.github/workflows/linux.yml` na raiz do
 repositório) sempre que uma Release é publicada.
 
+### macOS
+
+Para cada programa há um **DMG universal** (`FisiLab-Foto-0.9.0-macOS.dmg`), para macOS 11 ou mais novo,
+em Macs com Intel ou Apple Silicon: abra o DMG e arraste o programa para a pasta *Aplicativos*.
+
+Os programas ainda não têm assinatura da Apple (só assinatura *ad hoc*). Na primeira vez, o macOS avisa
+que não pode verificar o desenvolvedor: em *Ajustes do Sistema › Privacidade e Segurança*, clique em
+*Abrir Mesmo Assim* (no macOS 14 ou anterior, também serve botão direito › *Abrir*). Para computadores
+do laboratório, dá para liberar de uma vez pelo Terminal:
+`xattr -dr com.apple.quarantine /Applications/Foto.app`.
+
+Os DMGs são gerados pelo GitHub Actions (`.github/workflows/macos.yml`) sempre que uma Release é
+publicada. Com uma conta Apple Developer (US$ 99 por ano), basta cadastrar os segredos `APPLE_CERTIFICATE`,
+`APPLE_CERTIFICATE_PASSWORD`, `KEYCHAIN_PASSWORD`, `APPLE_ID`, `APPLE_PASSWORD` e `APPLE_TEAM_ID` no
+repositório: o workflow passa a assinar e notarizar, e o aviso deixa de aparecer. O ícone `.icns` e a
+janela do DMG de cada programa vêm de `scripts/gerar_mac.py`.
+
 ## O que muda em relação aos projetos originais
 
 Em todos os programas:
@@ -99,6 +116,9 @@ Os pacotes Linux não são gerados aqui: ao publicar a Release (próxima seção
 `Linux (AppImage e .deb)` do GitHub Actions compila os dez programas no Ubuntu 22.04 e anexa os
 pacotes e o `SHA256SUMS-linux.txt` à mesma Release. Para refazer só os pacotes Linux: Actions ›
 *Linux (AppImage e .deb)* › *Run workflow*, informando a tag.
+
+Os DMGs do macOS seguem o mesmo caminho, pelo workflow `macOS (DMG)`, que anexa os DMGs e o
+`SHA256SUMS-macos.txt`. Para refazer só os DMGs: Actions › *macOS (DMG)* › *Run workflow*, informando a tag.
 
 ### Publicar os instaladores
 
