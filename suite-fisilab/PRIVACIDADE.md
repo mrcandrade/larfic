@@ -27,7 +27,8 @@ Os modelos baixados são conferidos por soma de verificação (SHA-256) antes de
 
 ## O que fica guardado no seu computador
 
-Cada programa guarda, na sua pasta de usuário (`%APPDATA%\FisiLab …` no Windows):
+Cada programa guarda, na sua pasta de usuário (`%APPDATA%\FisiLab …` no Windows; `~/.config/fisilab-…`
+e `~/.local/share/fisilab-…` no Linux):
 
 - **Preferências** e a **lista de arquivos recentes**, com o caminho completo dos arquivos;
 - **Registros (logs)** de funcionamento, que podem conter nomes e caminhos de arquivos, nunca o

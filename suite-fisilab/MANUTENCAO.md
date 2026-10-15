@@ -24,6 +24,19 @@ SuiteFisiLab-Setup-<data>.exe /VERYSILENT /ALLUSERS /COMPONENTS="fisilab_foto,fi
 FisiLab-Foto-Setup-0.9.0.exe /VERYSILENT /ALLUSERS /NORESTART
 ```
 
+### Linux
+
+Na mesma página de downloads há, para cada programa (Ubuntu 22.04 ou mais novo, ou equivalente, 64 bits):
+
+- **AppImage** (`FisiLab-Foto-0.9.0-x86_64.AppImage`): baixe, marque como executável
+  (`chmod +x FisiLab-Foto-0.9.0-x86_64.AppImage`, ou *Propriedades › Permitir executar*) e abra.
+  Não precisa de senha de administrador.
+- **.deb** (`fisilab-foto_0.9.0_amd64.deb`), para Ubuntu e Debian, com atalho no menu:
+  `sudo apt install ./fisilab-foto_0.9.0_amd64.deb`.
+
+Os pacotes Linux são gerados pelo GitHub Actions (`.github/workflows/linux.yml` na raiz do
+repositório) sempre que uma Release é publicada.
+
 ## O que muda em relação aos projetos originais
 
 Em todos os programas:
@@ -81,6 +94,11 @@ powershell -ExecutionPolicy Bypass -File installer\build-installers.ps1 -Apps fi
 ```
 
 Os instaladores e o `manifest.json` (versões, tamanhos e SHA-256) ficam em `dist/instaladores/`.
+
+Os pacotes Linux não são gerados aqui: ao publicar a Release (próxima seção), o workflow
+`Linux (AppImage e .deb)` do GitHub Actions compila os dez programas no Ubuntu 22.04 e anexa os
+pacotes e o `SHA256SUMS-linux.txt` à mesma Release. Para refazer só os pacotes Linux: Actions ›
+*Linux (AppImage e .deb)* › *Run workflow*, informando a tag.
 
 ### Publicar os instaladores
 

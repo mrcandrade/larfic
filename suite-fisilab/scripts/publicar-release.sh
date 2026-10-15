@@ -31,6 +31,9 @@ print("Programas livres para democratizar o acesso à tecnologia entre os alunos
 print("FisiLab — LARFIC · UFRGS em parceria com o CTA — Centro de Tecnologia Acadêmica.\n")
 print(f"**Para instalar tudo:** baixe `{s['file']}` ({s['size']/1048576:.0f} MB), execute e escolha os programas.")
 print("Não precisa de senha de administrador. Windows 10/11 de 64 bits.\n")
+print("**Linux (Ubuntu 22.04 ou mais novo):** cada programa também tem `FisiLab-<Nome>-<versão>-x86_64.AppImage`")
+print("(marque como executável e abra) e `fisilab-<nome>_<versão>_amd64.deb`. Os pacotes Linux chegam alguns")
+print("minutos depois de publicada a Release, gerados pelo GitHub Actions.\n")
 print("| Programa | Versão | Instalador | Tamanho |\n|---|---|---|---|")
 for a in m["apps"]:
     print(f"| {a['name']} | {a['version']} | `{a['file']}` | {a['size']/1048576:.0f} MB |")

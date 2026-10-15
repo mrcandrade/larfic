@@ -1,0 +1,130 @@
+# Instaladores Linux da Suíte FisiLab: AppImage e .deb dos dez programas, anexados à Release.
+#
+# Roda sozinho quando uma Release é publicada, ou à mão em Actions › "Linux (AppImage e .deb)" ›
+# Run workflow (informe a tag da Release, por exemplo suite-2026.10.15).
+#
+# Cada programa é compilado no Ubuntu 22.04 (glibc 2.35), para que os binários rodem também nas
+# distribuições mais novas, com o packaging/linux/package.sh do próprio programa.
+name: Linux (AppImage e .deb)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag da Release que recebe os pacotes (ex.: suite-2026.10.15)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: linux-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.event.release.tag_name || inputs.tag }}
+  NFPM_VERSION: "2.47.0"
+
+jobs:
+  package:
+    name: ${{ matrix.app }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - fisilab-foto
+          - fisilab-filme
+          - fisilab-revela
+          - fisilab-efeitos
+          - fisilab-texto
+          - fisilab-planilha
+          - fisilab-slides
+          - fisilab-pdf
+          - fisilab-layout
+          - fisilab-cad
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      APP_DIR: suite-fisilab/apps/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: false
+
+      - name: Código do programa (submódulo)
+        run: git submodule update --init --depth 1 "$APP_DIR"
+
+      - name: Libera espaço em disco
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Dependências do sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev \
+            libasound2-dev pkg-config desktop-file-utils appstream python3-yaml zsync
+
+      - name: nfpm ${{ env.NFPM_VERSION }} (checksum conferido)
+        run: |
+          base="https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}"
+          deb="nfpm_${NFPM_VERSION}_amd64.deb"
+          curl -fsSLO "$base/$deb"
+          curl -fsSL "$base/checksums.txt" -o nfpm-checksums.txt
+          grep " $deb\$" nfpm-checksums.txt | sha256sum -c -
+          sudo dpkg -i "$deb"
+          nfpm --version
+
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: ${{ env.APP_DIR }}
+          key: linux-${{ matrix.app }}
+
+      - name: Compila e empacota (AppImage e .deb)
+        working-directory: ${{ env.APP_DIR }}
+        run: packaging/linux/package.sh --formats "appimage deb"
+
+      - name: Confere os pacotes
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          ls -la dist/release
+          for deb in dist/release/*.deb; do dpkg-deb --info "$deb"; dpkg-deb --contents "$deb" | grep -E 'usr/bin/|metainfo|applications|icons/hicolor/256'; done
+          for app in dist/release/*.AppImage; do
+            chmod +x "$app"
+            APPIMAGE_EXTRACT_AND_RUN=1 "$app" --version || echo "::warning::$app --version falhou (pode precisar de tela)"
+          done
+
+      - name: Anexa à Release
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          files=(dist/release/*.AppImage dist/release/*.deb)
+          [ ${#files[@]} -gt 0 ] || { echo "nenhum pacote gerado"; exit 1; }
+          gh release upload "$TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+
+  checksums:
+    name: SHA256SUMS-linux.txt
+    needs: package
+    if: always()
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Soma de verificação dos pacotes Linux da Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir pkgs && cd pkgs
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.AppImage' --pattern '*.deb'
+          sha256sum * | tee ../SHA256SUMS-linux.txt
+          cd .. && gh release upload "$TAG" SHA256SUMS-linux.txt --clobber --repo "$GITHUB_REPOSITORY"
