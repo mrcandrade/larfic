@@ -43,6 +43,7 @@ EOF
 
 if gh release view "$TAG" --repo "$OWNER/larfic" >/dev/null 2>&1; then
   gh release upload "$TAG" --repo "$OWNER/larfic" --clobber ./*.exe manifest.json SHA256SUMS.txt
+  gh release edit "$TAG" --repo "$OWNER/larfic" --notes "$NOTES" >/dev/null
 else
   gh release create "$TAG" --repo "$OWNER/larfic" --title "Suíte FisiLab $VERSION" --notes "$NOTES" --latest \
     ./*.exe manifest.json SHA256SUMS.txt
