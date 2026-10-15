@@ -2,8 +2,8 @@
 # Publica os instaladores de dist/instaladores como uma Release do repositório LARFIC no GitHub.
 #
 # Cria a tag suite-<versão da suíte> (lida do manifest.json gerado por build-installers.ps1) e envia
-# o instalador da suíte completa, os 12 instaladores individuais, o manifest.json e um
-# SHA256SUMS.txt. O link "latest" fica estável:
+# o instalador da suíte completa, os 10 instaladores individuais, o manifest.json e um
+# SHA256SUMS.txt, com o texto da página gerado por notas_release.py. O link "latest" fica estável:
 #   https://github.com/<dono>/larfic/releases/latest/download/<arquivo>
 #
 # Uso (Git Bash, na raiz do repositório larfic):
@@ -23,26 +23,7 @@ cd "$DIST"
 : > SHA256SUMS.txt
 for f in *.exe; do sha256sum "$f" >> SHA256SUMS.txt; done
 
-NOTES=$(PYTHONIOENCODING=utf-8 python -X utf8 - "$MANIFEST" <<'EOF'
-import json, sys
-m = json.load(open(sys.argv[1], encoding="utf-8"))
-s = m["suite"]
-print("Programas livres para democratizar o acesso à tecnologia entre os alunos da UFRGS, disponibilizados pelo")
-print("FisiLab — LARFIC · UFRGS em parceria com o CTA — Centro de Tecnologia Acadêmica.\n")
-print(f"**Para instalar tudo:** baixe `{s['file']}` ({s['size']/1048576:.0f} MB), execute e escolha os programas.")
-print("Não precisa de senha de administrador. Windows 10/11 de 64 bits.\n")
-print("**Linux (Ubuntu 22.04 ou mais novo):** cada programa também tem `FisiLab-<Nome>-<versão>-x86_64.AppImage`")
-print("(marque como executável e abra) e `fisilab-<nome>_<versão>_amd64.deb`. Os pacotes Linux chegam alguns")
-print("minutos depois de publicada a Release, gerados pelo GitHub Actions.\n")
-print("| Programa | Versão | Instalador | Tamanho |\n|---|---|---|---|")
-for a in m["apps"]:
-    print(f"| {a['name']} | {a['version']} | `{a['file']}` | {a['size']/1048576:.0f} MB |")
-print("\nSe o Windows mostrar \"O Windows protegeu o computador\", clique em *Mais informações* › *Executar assim mesmo*.")
-print("Confira a integridade com `Get-FileHash <arquivo>` e compare com `SHA256SUMS.txt`.\n")
-print("Os programas são versões modificadas de projetos de código aberto do ArtCraft Team e contribuidores")
-print("(MIT ou Apache 2.0). Veja os créditos e o manifesto em `suite-fisilab/`.")
-EOF
-)
+NOTES=$(PYTHONIOENCODING=utf-8 python -X utf8 "$SUITE_DIR/scripts/notas_release.py" "$MANIFEST" "$SUITE_DIR/apps.json" "$OWNER/larfic" "$TAG")
 
 if gh release view "$TAG" --repo "$OWNER/larfic" >/dev/null 2>&1; then
   gh release upload "$TAG" --repo "$OWNER/larfic" --clobber ./*.exe manifest.json SHA256SUMS.txt
