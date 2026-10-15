@@ -16,6 +16,11 @@ on:
         description: "Tag da Release que recebe os pacotes (ex.: suite-2026.10.15)"
         required: true
         type: string
+      apps:
+        description: "Só estes programas, separados por vírgula (ex.: fisilab-foto,fisilab-pdf). Vazio = todos"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -29,24 +34,36 @@ env:
   NFPM_VERSION: "2.47.0"
 
 jobs:
+  matrix:
+    name: Programas
+    runs-on: ubuntu-22.04
+    outputs:
+      apps: ${{ steps.m.outputs.apps }}
+    steps:
+      - id: m
+        env:
+          APPS: ${{ inputs.apps }}
+          TODOS: '["fisilab-foto", "fisilab-filme", "fisilab-revela", "fisilab-efeitos", "fisilab-texto", "fisilab-planilha", "fisilab-slides", "fisilab-pdf", "fisilab-layout", "fisilab-cad"]'
+        run: |
+          python3 - >> "$GITHUB_OUTPUT" <<'PY'
+          import json, os
+          todos = json.loads(os.environ["TODOS"])
+          pedidos = [a.strip() for a in os.environ.get("APPS", "").split(",") if a.strip()]
+          desconhecidos = [a for a in pedidos if a not in todos]
+          if desconhecidos:
+              raise SystemExit(f"programas desconhecidos: {desconhecidos}")
+          print("apps=" + json.dumps(pedidos or todos))
+          PY
+
   package:
     name: ${{ matrix.app }}
+    needs: matrix
     runs-on: ubuntu-22.04
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
-        app:
-          - fisilab-foto
-          - fisilab-filme
-          - fisilab-revela
-          - fisilab-efeitos
-          - fisilab-texto
-          - fisilab-planilha
-          - fisilab-slides
-          - fisilab-pdf
-          - fisilab-layout
-          - fisilab-cad
+        app: ${{ fromJSON(needs.matrix.outputs.apps) }}
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
