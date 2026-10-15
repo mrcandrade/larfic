@@ -27,16 +27,12 @@ O LARFIC é um laboratório da UFRGS dedicado a projetos na interseção entre r
 
 ### [Suíte FisiLab](suite-fisilab/)
 
-Dez programas livres para estudantes, professores e técnicos da UFRGS, disponibilizados pelo
-FisiLab em parceria com o CTA — Centro de Tecnologia Acadêmica: alternativas ao Photoshop,
-Premiere, Lightroom, After Effects, Word, Excel, PowerPoint, Acrobat,
-InDesign e AutoCAD, com nomes em português, abertura com a logo do CTA e instaladores para Windows.
-Leia também o [Manifesto pelas Tecnologias Livres](suite-fisilab/MANIFESTO.md).
+Dez programas livres para democratizar o acesso à tecnologia entre os alunos da UFRGS,
+disponibilizados pelo FisiLab em parceria com o CTA — Centro de Tecnologia Acadêmica. Leia o
+[Manifesto pelas Tecnologias Livres](suite-fisilab/MANIFESTO.md).
 
 ## Apoio
 
 <p>
-  <a href="https://www.ufrgs.br"><img src="assets/ufrgs-logo.gif" alt="UFRGS" height="60"></a>
-  &nbsp;&nbsp;&nbsp;
-  <img src="assets/cta-logo.webp" alt="CTA — Centro de Tecnologia Acadêmica" height="60">
+  <a href="https://cta.if.ufrgs.br"><img src="assets/cta-logo.webp" alt="CTA — Centro de Tecnologia Acadêmica" height="60"></a>
 </p>

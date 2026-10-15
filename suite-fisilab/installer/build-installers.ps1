@@ -9,7 +9,8 @@
        MODIFICACOES.md e assoc.iss (associações de arquivo);
     3. compila installer/app.iss com o Inno Setup -> dist/instaladores/FisiLab-<Nome>-Setup-<versão>.exe.
   Depois gera o instalador da suíte completa (SuiteFisiLab-Setup-<data>.exe) e
-  dist/instaladores/manifest.json (nomes, versões, tamanhos e SHA-256), que o portal PHP lê.
+  dist/instaladores/manifest.json (nomes, versões, tamanhos e SHA-256), publicado com a Release
+  e lido pela verificação de atualização do PDF.
 
   Precisa de: Rust (MSVC), Visual Studio Build Tools + Windows SDK e Inno Setup 6
   (winget install JRSoftware.InnoSetup).
@@ -176,7 +177,7 @@ Alternativa livre ao $($a.equivalent)
 
 Parte da Suíte FisiLab, disponibilizada pelo FisiLab — LARFIC · UFRGS (Laboratório de Robótica,
 Inteligência Artificial e Física Computacional) em parceria com o CTA — Centro de Tecnologia
-Acadêmica, para uso de estudantes, professores e técnicos da UFRGS.
+Acadêmica, para democratizar o acesso à tecnologia entre os alunos da UFRGS.
 
 CRÉDITOS
 O $($a.name) é baseado no $($a.upstream), um projeto de código aberto do ArtCraft Team e de seus
@@ -264,8 +265,7 @@ OS PROGRAMAS SÃO FORNECIDOS "COMO ESTÃO", SEM GARANTIAS DE QUALQUER TIPO.
 Suíte FisiLab — programas livres para a UFRGS
 
 Disponibilizada pelo FisiLab — LARFIC · UFRGS (Laboratório de Robótica, Inteligência Artificial e
-Física Computacional) em parceria com o CTA — Centro de Tecnologia Acadêmica, para uso de
-estudantes, professores e técnicos da UFRGS.
+Física Computacional) em parceria com o CTA — Centro de Tecnologia Acadêmica, para democratizar o acesso à tecnologia entre os alunos da UFRGS.
 
 Programas incluídos:
 $table

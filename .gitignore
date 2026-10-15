@@ -1,9 +1,3 @@
 suite-fisilab/dist/
 suite-fisilab/installer/suite-apps.iss
 suite-fisilab/brand/fisilab-brand/target/
-suite-fisilab/portal/config.local.php
-suite-fisilab/portal/dados/downloads.json
-suite-fisilab/portal/dados/apps.json
-suite-fisilab/portal/dados/MANIFESTO.md
-suite-fisilab/portal/downloads/*.exe
-suite-fisilab/portal/downloads/manifest.json

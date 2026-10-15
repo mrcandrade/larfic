@@ -47,13 +47,14 @@ intelectual: quem o produz ou quem vende a ferramenta.
 
 ## 4. O que é a Suíte FisiLab
 
-A Suíte FisiLab reúne programas livres que cobrem tarefas do dia a dia acadêmico (edição de
-imagens e vídeo, documentos, planilhas, apresentações, PDF e CAD), com nomes em
-português, ícones e tela de abertura comuns e instaladores simples para Windows.
+A Suíte FisiLab existe para **democratizar o acesso à tecnologia entre os alunos da UFRGS**. Ela reúne
+programas livres que cobrem tarefas do dia a dia acadêmico (edição de imagens e vídeo, documentos,
+planilhas, apresentações, PDF e CAD), com nomes em português, ícones e tela de abertura comuns e
+instaladores simples para Windows, que qualquer aluno instala sem custo e sem senha de administrador.
 
 **Nós não escrevemos esses programas do zero.** Eles são versões modificadas de projetos de código
 aberto criados pelo ArtCraft Team e por seus contribuidores, publicados sob as licenças MIT e
-Apache 2.0. Nossa contribuição é adaptar, traduzir, empacotar, distribuir e dar suporte à comunidade
+Apache 2.0. Nossa contribuição é adaptar, traduzir, empacotar, distribuir e dar suporte aos alunos
 da UFRGS. Dar crédito a quem construiu antes de nós é uma obrigação legal e também um princípio.
 
 ## 5. Nossos compromissos
@@ -83,8 +84,6 @@ Tecnologia livre é construída coletivamente, e a universidade é um dos melhor
 </p>
 
 <p align="center">
-  <img src="../assets/ufrgs-logo.gif" alt="UFRGS" height="56">
-  &nbsp;&nbsp;&nbsp;
   <img src="../assets/cta-logo.webp" alt="CTA — Centro de Tecnologia Acadêmica" height="56">
 </p>
 

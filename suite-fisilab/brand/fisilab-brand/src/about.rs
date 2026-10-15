@@ -1,8 +1,8 @@
 //! A janela "Sobre a Suíte FisiLab": o app, quem o disponibiliza, para quem, o crédito ao projeto
-//! de origem, o manifesto e as logos da UFRGS e do CTA.
+//! de origem, o manifesto e a logo do CTA.
 
 use crate::palette::tons;
-use crate::textures::{CTA, LARFIC, UFRGS};
+use crate::textures::{CTA, LARFIC};
 use crate::AppInfo;
 use egui::load::SizedTexture;
 use egui::{Context, Id, RichText, vec2};
@@ -96,7 +96,7 @@ pub fn show(ctx: &Context, app: &AppInfo) {
                 ui.separator();
                 ui.add_space(8.0);
                 ui.horizontal(|ui| {
-                    // As duas logos lado a lado, sobre um cartão claro (elas foram desenhadas para fundo branco).
+                    // A logo do CTA sobre um cartão claro (ela foi desenhada para fundo branco).
                     let h = 44.0;
                     egui::Frame::new()
                         .fill(egui::Color32::WHITE)
@@ -104,15 +104,6 @@ pub fn show(ctx: &Context, app: &AppInfo) {
                         .inner_margin(egui::Margin::symmetric(14, 10))
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
-                                let u = UFRGS.texture(ctx);
-                                let r = ui.add(
-                                    egui::Image::new(SizedTexture::new(u.id(), vec2(h * UFRGS.aspect(), h)))
-                                        .sense(egui::Sense::click()),
-                                );
-                                if r.on_hover_text(crate::UFRGS_URL).clicked() {
-                                    ctx.open_url(egui::OpenUrl::new_tab(crate::UFRGS_URL));
-                                }
-                                ui.add_space(18.0);
                                 let c = CTA.texture(ctx);
                                 let r = ui.add(
                                     egui::Image::new(SizedTexture::new(c.id(), vec2(h * CTA.aspect(), h)))

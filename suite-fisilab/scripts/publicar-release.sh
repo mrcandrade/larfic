@@ -27,7 +27,7 @@ NOTES=$(python - "$MANIFEST" <<'EOF'
 import json, sys
 m = json.load(open(sys.argv[1], encoding="utf-8"))
 s = m["suite"]
-print("Programas livres para estudantes, professores e técnicos da UFRGS, disponibilizados pelo")
+print("Programas livres para democratizar o acesso à tecnologia entre os alunos da UFRGS, disponibilizados pelo")
 print("FisiLab — LARFIC · UFRGS em parceria com o CTA — Centro de Tecnologia Acadêmica.\n")
 print(f"**Para instalar tudo:** baixe `{s['file']}` ({s['size']/1048576:.0f} MB), execute e escolha os programas.")
 print("Não precisa de senha de administrador. Windows 10/11 de 64 bits.\n")

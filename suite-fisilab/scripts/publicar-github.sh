@@ -18,7 +18,7 @@ APPS_DIR="${1:?informe a pasta com os repositórios dos programas}"
 OWNER="${OWNER:-mrcandrade}"
 SUITE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LARFIC_DIR="$(cd "$SUITE_DIR/.." && pwd)"
-PORTAL_URL="${PORTAL_URL:-https://github.com/$OWNER/larfic/tree/main/suite-fisilab}"
+HOMEPAGE="${HOMEPAGE:-https://github.com/$OWNER/larfic/releases/latest}"
 
 # upstream  nome-novo  Nome  descrição
 while IFS='|' read -r up slug name desc; do
@@ -26,7 +26,7 @@ while IFS='|' read -r up slug name desc; do
   if ! gh repo view "$OWNER/$slug" >/dev/null 2>&1; then
     gh repo fork "storytold/$up" --fork-name "$slug" --clone=false --default-branch-only
   fi
-  gh repo edit "$OWNER/$slug" --description "$desc" --homepage "$PORTAL_URL" >/dev/null
+  gh repo edit "$OWNER/$slug" --description "$desc" --homepage "$HOMEPAGE" >/dev/null
   cd "$APPS_DIR/$slug"
   git remote remove origin 2>/dev/null || true
   git remote add origin "https://github.com/$OWNER/$slug.git"

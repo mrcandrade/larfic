@@ -30,6 +30,6 @@ foreach ($a in $Catalog.apps) {
   $assets = Join-Path $root 'assets\fisilab'
   New-Item -ItemType Directory -Force -Path $assets | Out-Null
   Copy-Item (Join-Path $Suite "brand\icons\$($a.slug)\*") $assets -Force
-  Copy-Item (Join-Path $Logos 'larfic-logo.png'), (Join-Path $Logos 'ufrgs-logo.gif'), (Join-Path $Logos 'cta-logo.webp') $assets -Force
+  Copy-Item (Join-Path $Logos 'larfic-logo.png'), (Join-Path $Logos 'cta-logo.webp') $assets -Force
   Write-Host "$($a.name): ok"
 }

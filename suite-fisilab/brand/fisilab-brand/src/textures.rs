@@ -10,8 +10,6 @@ pub(crate) struct Logo {
 
 /// Centro de Tecnologia Acadêmica.
 pub(crate) const CTA: Logo = Logo { name: "cta", size: [500, 174], rgba: include_bytes!("../assets/cta.rgba") };
-/// UFRGS.
-pub(crate) const UFRGS: Logo = Logo { name: "ufrgs", size: [400, 224], rgba: include_bytes!("../assets/ufrgs.rgba") };
 /// LARFIC (a chama).
 pub(crate) const LARFIC: Logo = Logo { name: "larfic", size: [256, 256], rgba: include_bytes!("../assets/larfic.rgba") };
 
