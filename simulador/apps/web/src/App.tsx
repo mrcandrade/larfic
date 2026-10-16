@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Course } from "@fisilab/core";
-import { SimView, getProgress, onProgressChange } from "@fisilab/ui-kit";
+import { Bench, SimView, Tutor, getProgress, onProgressChange, useTheme } from "@fisilab/ui-kit";
+import { tutorClient } from "./account.ts";
+import { AssignmentPage } from "./pages/AssignmentPage.tsx";
+import { TeacherPage } from "./pages/TeacherPage.tsx";
 import { catalog, findSim, pending } from "./catalog.ts";
 import { plan } from "./plan.ts";
-import { paramsFromQuery, simHref, useRoute } from "./router.ts";
+import { paramsFromQuery, practiceHref, simHref, useRoute } from "./router.ts";
+import { findPractice, practices } from "./practices.ts";
 
 const COURSES: { id: Course; name: string }[] = [
   { id: "FG I", name: "Física Geral I · Mecânica" },
@@ -21,8 +25,9 @@ export function App() {
 
   useEffect(() => {
     const sim = route.simId ? findSim(route.simId) : undefined;
-    document.title = sim ? `${sim.title} · FisiLab` : "FisiLab · Simulador";
-  }, [route.simId]);
+    const pr = route.practiceId ? findPractice(route.practiceId) : undefined;
+    document.title = sim ? `${sim.title} · FisiLab` : pr ? `${pr.title} · FisiLab` : "FisiLab · Simulador";
+  }, [route.simId, route.practiceId]);
 
   if (embed && route.page === "sim") return <SimPage simId={route.simId!} query={route.query} embed />;
 
@@ -33,10 +38,23 @@ export function App() {
           FisiLab
         </a>
         <span className="subtitle">Laboratório virtual de física para engenharia</span>
+        <a className="nav-link" href="#/professor">
+          Professor
+        </a>
         <ThemeToggle />
       </header>
       <main className="content">
-        {route.page === "sim" && route.simId ? <SimPage simId={route.simId} query={route.query} /> : <CatalogPage />}
+        {route.page === "sim" && route.simId ? (
+          <SimPage simId={route.simId} query={route.query} />
+        ) : route.page === "practice" && route.practiceId ? (
+          <PracticePage id={route.practiceId} />
+        ) : route.page === "teacher" ? (
+          <TeacherPage query={route.query} />
+        ) : route.page === "assignment" && route.code ? (
+          <AssignmentPage code={route.code} query={route.query} />
+        ) : (
+          <CatalogPage />
+        )}
       </main>
     </div>
   );
@@ -113,8 +131,9 @@ function CatalogPage() {
 
       {COURSES.filter((c) => !course || c.id === course).map((c) => {
         const items = published.filter(({ sim }) => sim.course === c.id);
+        const labs = practices.filter((p) => p.course === c.id && match(p.title, p.objective));
         const later = planned.filter((p) => p.course === c.id);
-        if (!items.length && !later.length) return null;
+        if (!items.length && !later.length && !labs.length) return null;
         const total = plan.filter((p) => p.course === c.id).length;
         const done = total - todo.filter((p) => p.course === c.id).length;
         return (
@@ -142,6 +161,22 @@ function CatalogPage() {
                             {pr.exercisesCorrect > 0 ? `${pr.exercisesCorrect} exercício(s) certo(s)` : "Visitada"}
                           </span>
                         )}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {labs.length > 0 && (
+              <ul className="cards">
+                {labs.map((p) => {
+                  const sim = findSim(p.sim);
+                  return (
+                    <li key={p.id}>
+                      <a className="card" href={practiceHref(p.id)}>
+                        <span className="card-topic">Prática · {sim?.title ?? p.sim}</span>
+                        <strong>{p.title}</strong>
+                        <span className="card-summary">{p.objective}</span>
                       </a>
                     </li>
                   );
@@ -220,6 +255,7 @@ function SimPage({ simId, query, embed }: { simId: string; query: URLSearchParam
         initialScenario={query.get("cenario") ?? undefined}
         initialParams={paramsFromQuery(query)}
         locked={locked}
+        sidebar={embed ? undefined : ({ runner, scenarioId }) => <Tutor runner={runner} scenarioId={scenarioId} client={tutorClient()} />}
         onParamsChange={(params, scenario) => {
           if (embed) return;
           const q = new URLSearchParams();
@@ -228,6 +264,42 @@ function SimPage({ simId, query, embed }: { simId: string; query: URLSearchParam
           if (locked?.length) q.set("travar", locked.join(","));
           history.replaceState(null, "", simHref(sim.id, q));
         }}
+      />
+    </>
+  );
+}
+
+function PracticePage({ id }: { id: string }) {
+  const practice = findPractice(id);
+  const theme = useTheme();
+  const sim = practice ? findSim(practice.sim) : undefined;
+  if (!practice || !sim) {
+    return (
+      <div className="notfound">
+        <h1>Prática não encontrada</h1>
+        <p>
+          <a href="#/">Voltar ao catálogo</a>
+        </p>
+      </div>
+    );
+  }
+  return (
+    <>
+      <nav className="crumbs">
+        <a href="#/">Catálogo</a> <span aria-hidden>›</span> {practice.course} <span aria-hidden>›</span> {practice.title}
+      </nav>
+      <SimView
+        key={practice.id}
+        sim={sim}
+        initialScenario={practice.scenario}
+        initialParams={practice.params}
+        locked={practice.locked}
+        sidebar={({ runner, scenarioId }) => (
+          <>
+            <Bench practice={practice} runner={runner} theme={theme} />
+            <Tutor runner={runner} scenarioId={scenarioId} client={tutorClient()} />
+          </>
+        )}
       />
     </>
   );

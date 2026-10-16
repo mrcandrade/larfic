@@ -25,7 +25,7 @@ export interface SimViewProps {
   onParamsChange?(params: Params, scenario: string): void;
   /** Painel extra (ex.: tutor de IA) que recebe o estado atual. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  sidebar?(ctx: { runner: Runner<any>; tick: number }): React.ReactNode;
+  sidebar?(ctx: { runner: Runner<any>; tick: number; scenarioId: string }): React.ReactNode;
 }
 
 export function SimView({ sim, initialParams, initialScenario, locked, embed, onParamsChange, sidebar }: SimViewProps) {
@@ -36,6 +36,7 @@ export function SimView({ sim, initialParams, initialScenario, locked, embed, on
   const runner = useMemo(() => new Runner(sim, params), [sim]); // eslint-disable-line react-hooks/exhaustive-deps
   const stageRef = useRef<StageHandle>(null);
   const [playing, setPlaying] = useState(false);
+  useTone(sim, runner, playing, params);
   const [speed, setSpeed] = useState(1);
   const [tick, setTick] = useState(0);
   const [predicted, setPredicted] = useState(false);
@@ -280,7 +281,7 @@ export function SimView({ sim, initialParams, initialScenario, locked, embed, on
           />
         </section>
       )}
-      {sidebar && <section className="fl-extra">{sidebar({ runner, tick })}</section>}
+      {sidebar && <section className="fl-extra">{sidebar({ runner, tick, scenarioId })}</section>}
     </div>
   );
 }
@@ -295,4 +296,32 @@ function fmt(v: number): string {
 
 function relDev(v: number, v0: number): number {
   return v0 === 0 ? v - v0 : (v - v0) / Math.abs(v0);
+}
+
+/** Toca o som da simulação (se ela tiver `tone`) enquanto está rodando. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function useTone(sim: AnySimulation, runner: Runner<any>, playing: boolean, params: Params) {
+  const nodes = useRef<{ ctx: AudioContext; osc: OscillatorNode; gain: GainNode } | null>(null);
+  useEffect(() => {
+    if (!sim.tone || !playing || typeof AudioContext === "undefined") return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    nodes.current = { ctx, osc, gain };
+    return () => {
+      osc.stop();
+      void ctx.close();
+      nodes.current = null;
+    };
+  }, [sim, playing]);
+  useEffect(() => {
+    const n = nodes.current;
+    if (!n || !sim.tone) return;
+    const { freq, gain } = sim.tone(params, runner.state);
+    n.osc.frequency.setTargetAtTime(Math.max(20, Math.min(20000, freq)), n.ctx.currentTime, 0.02);
+    n.gain.gain.setTargetAtTime(Math.max(0, Math.min(0.5, gain)), n.ctx.currentTime, 0.05);
+  }, [sim, runner, params, playing]);
 }
