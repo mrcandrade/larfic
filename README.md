@@ -31,6 +31,12 @@ Dez programas livres para democratizar o acesso à tecnologia entre os alunos da
 disponibilizados pelo FisiLab em parceria com o CTA — Centro de Tecnologia Acadêmica. Leia o
 [Manifesto pelas Tecnologias Livres](suite-fisilab/MANIFESTO.md).
 
+### [Simulador FisiLab](simulador/)
+
+Laboratório virtual de física para engenharia, em português, com simulações de nível
+universitário para as Físicas Gerais e Experimentais. A primeira simulação é o projétil com
+arrasto, com gráficos ao vivo, exportação CSV e roteiros didáticos.
+
 ## Apoio
 
 <p>

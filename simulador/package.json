@@ -1,0 +1,16 @@
+{
+  "name": "fisilab-simulador",
+  "private": true,
+  "description": "Laboratório virtual de física para engenharia",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev": "pnpm --filter @fisilab/web dev",
+    "build": "pnpm --filter @fisilab/web build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

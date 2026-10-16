@@ -1,0 +1,31 @@
+# Testes, checagem de tipos e build do Simulador FisiLab a cada push ou PR que mexa em simulador/.
+name: Simulador
+
+on:
+  push:
+    branches: [main]
+    paths: ["simulador/**", ".github/workflows/simulador.yml"]
+  pull_request:
+    paths: ["simulador/**", ".github/workflows/simulador.yml"]
+
+defaults:
+  run:
+    working-directory: simulador
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: simulador/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: simulador/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
