@@ -302,6 +302,7 @@ function relDev(v: number, v0: number): number {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function useTone(sim: AnySimulation, runner: Runner<any>, playing: boolean, params: Params) {
   const nodes = useRef<{ ctx: AudioContext; osc: OscillatorNode; gain: GainNode } | null>(null);
+  const timbre = useRef("");
   useEffect(() => {
     if (!sim.tone || !playing || typeof AudioContext === "undefined") return;
     const ctx = new AudioContext();
@@ -311,6 +312,7 @@ function useTone(sim: AnySimulation, runner: Runner<any>, playing: boolean, para
     osc.connect(gain).connect(ctx.destination);
     osc.start();
     nodes.current = { ctx, osc, gain };
+    timbre.current = "";
     return () => {
       osc.stop();
       void ctx.close();
@@ -320,7 +322,17 @@ function useTone(sim: AnySimulation, runner: Runner<any>, playing: boolean, para
   useEffect(() => {
     const n = nodes.current;
     if (!n || !sim.tone) return;
-    const { freq, gain } = sim.tone(params, runner.state);
+    const { freq, gain, harmonics } = sim.tone(params, runner.state);
+    // Timbre: amplitudes relativas dos harmônicos (1, 2, 3, ...) viram uma onda periódica.
+    const key = harmonics?.join(",") ?? "";
+    if (key !== timbre.current) {
+      timbre.current = key;
+      if (harmonics?.length) {
+        const imag = new Float32Array(harmonics.length + 1);
+        harmonics.forEach((a, i) => (imag[i + 1] = a));
+        n.osc.setPeriodicWave(n.ctx.createPeriodicWave(new Float32Array(harmonics.length + 1), imag));
+      } else n.osc.type = "sine";
+    }
     n.osc.frequency.setTargetAtTime(Math.max(20, Math.min(20000, freq)), n.ctx.currentTime, 0.02);
     n.gain.gain.setTargetAtTime(Math.max(0, Math.min(0.5, gain)), n.ctx.currentTime, 0.05);
   }, [sim, runner, params, playing]);
