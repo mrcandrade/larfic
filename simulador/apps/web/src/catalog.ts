@@ -30,8 +30,56 @@ import { faradayLenz } from "@fisilab/sim-faraday-lenz";
 import { rlLc } from "@fisilab/sim-rl-lc";
 import { rlcCa } from "@fisilab/sim-rlc-ca";
 import { ondaEm } from "@fisilab/sim-onda-em";
+import { hidrostatica } from "@fisilab/sim-hidrostatica";
+import { empuxo } from "@fisilab/sim-empuxo";
+import { bernoulli } from "@fisilab/sim-bernoulli";
+import { mhs } from "@fisilab/sim-mhs";
+import { amortecido } from "@fisilab/sim-amortecido";
+import { ressonancia } from "@fisilab/sim-ressonancia";
+import { ondaCorda } from "@fisilab/sim-onda-corda";
+import { ondasEstacionarias } from "@fisilab/sim-ondas-estacionarias";
+import { superposicao } from "@fisilab/sim-superposicao";
+import { cubaOndas } from "@fisilab/sim-cuba-ondas";
+import { somIntensidade } from "@fisilab/sim-som-intensidade";
+import { doppler } from "@fisilab/sim-doppler";
+import { calorimetria } from "@fisilab/sim-calorimetria";
+import { gasIdeal } from "@fisilab/sim-gas-ideal";
+import { processosPv } from "@fisilab/sim-processos-pv";
+import { refracao } from "@fisilab/sim-refracao";
+import { espelhos } from "@fisilab/sim-espelhos";
+import { lentes } from "@fisilab/sim-lentes";
+import { prisma } from "@fisilab/sim-prisma";
+import { fendaDupla } from "@fisilab/sim-fenda-dupla";
+import { filmesFinos } from "@fisilab/sim-filmes-finos";
+import { difracao } from "@fisilab/sim-difracao";
+import { relatividade } from "@fisilab/sim-relatividade";
+import { corpoNegro } from "@fisilab/sim-corpo-negro";
+import { fotoeletrico } from "@fisilab/sim-fotoeletrico";
+import { modelosAtomicos } from "@fisilab/sim-modelos-atomicos";
+import { deBroglie } from "@fisilab/sim-de-broglie";
+import { pocoQuantico } from "@fisilab/sim-poco-quantico";
+import { tunelamento } from "@fisilab/sim-tunelamento";
+import { decaimento } from "@fisilab/sim-decaimento";
+import { instrumentosMedida } from "@fisilab/sim-instrumentos-medida";
+import { quedaLivre } from "@fisilab/sim-queda-livre";
+import { trilhoDeAr } from "@fisilab/sim-trilho-de-ar";
+import { leiHooke } from "@fisilab/sim-lei-hooke";
+import { rodaMaxwell } from "@fisilab/sim-roda-maxwell";
+import { viscosidadeStokes } from "@fisilab/sim-viscosidade-stokes";
+import { tensaoSuperficial } from "@fisilab/sim-tensao-superficial";
+import { tuboKundt } from "@fisilab/sim-tubo-kundt";
+import { dilatacaoTermica } from "@fisilab/sim-dilatacao-termica";
+import { equivalenteMecanico } from "@fisilab/sim-equivalente-mecanico";
+import { conducaoCalor } from "@fisilab/sim-conducao-calor";
+import { multimetroOsciloscopio } from "@fisilab/sim-multimetro-osciloscopio";
+import { curvaIv } from "@fisilab/sim-curva-iv";
+import { ponteWheatstone } from "@fisilab/sim-ponte-wheatstone";
+import { transformador } from "@fisilab/sim-transformador";
+import { polarizacao } from "@fisilab/sim-polarizacao";
+import { espectroscopia } from "@fisilab/sim-espectroscopia";
 import { planoInclinado } from "@fisilab/sim-plano-inclinado";
 import { plan, type PlannedSim } from "./plan.ts";
+import { practices } from "./practices.ts";
 
 export interface CatalogEntry {
   sim: AnySimulation;
@@ -73,6 +121,53 @@ export const catalog: CatalogEntry[] = [
   { sim: rlLc, covers: ["Circuitos RL e LC"] },
   { sim: rlcCa, covers: ["RLC série/paralelo, ressonância, fasores"] },
   { sim: ondaEm, covers: ["Corrente de deslocamento, onda EM"] },
+  { sim: hidrostatica, covers: ["Pressão com profundidade, manômetro, prensa hidráulica"] },
+  { sim: empuxo, covers: ["Empuxo e flutuação (Arquimedes)"] },
+  { sim: bernoulli, covers: ["Continuidade e Bernoulli (tubo de Venturi, Torricelli)"] },
+  { sim: mhs, covers: ["Massa-mola, pêndulo, círculo de referência"] },
+  { sim: amortecido, covers: ["Amortecido (sub, crítico, super)"] },
+  { sim: ressonancia, covers: ["Forçado e ressonância"] },
+  { sim: ondaCorda, covers: ["Onda em corda (pulsos, reflexão, extremidade fixa/livre)"] },
+  { sim: ondasEstacionarias, covers: ["Ondas estacionárias e harmônicos"] },
+  { sim: superposicao, covers: ["Superposição, batimentos, velocidade de grupo e fase"] },
+  { sim: cubaOndas, covers: ["Interferência em 2D (cuba de ondas)"] },
+  { sim: somIntensidade, covers: ["Ondas sonoras, intensidade, decibéis"] },
+  { sim: doppler, covers: ["Efeito Doppler e cone de Mach"] },
+  { sim: calorimetria, covers: ["Calorimetria e mudança de fase"] },
+  { sim: gasIdeal, covers: ["Gás ideal molecular (pressão, temperatura, volume)"] },
+  { sim: processosPv, covers: ["Processos no diagrama PV (isotérmico, adiabático, isobárico, isocórico)"] },
+  { sim: refracao, covers: ["Reflexão, refração, Snell, reflexão interna total, fibra ótica"] },
+  { sim: espelhos, covers: ["Espelhos planos e esféricos"] },
+  { sim: lentes, covers: ["Lentes delgadas e espessas, associação"] },
+  { sim: prisma, covers: ["Prisma e dispersão"] },
+  { sim: fendaDupla, covers: ["Fenda dupla de Young"] },
+  { sim: filmesFinos, covers: ["Filmes finos, anéis de Newton, interferômetro de Michelson"] },
+  { sim: difracao, covers: ["Fenda simples, rede de difração, resolução (Rayleigh)"] },
+  { sim: relatividade, covers: ["Dilatação do tempo, contração, simultaneidade"] },
+  { sim: corpoNegro, covers: ["Radiação de corpo negro"] },
+  { sim: fotoeletrico, covers: ["Efeito fotoelétrico"] },
+  { sim: modelosAtomicos, covers: ["Modelos atômicos (Thomson, Rutherford, Bohr) e espectros"] },
+  { sim: deBroglie, covers: ["De Broglie, difração de elétrons, fenda dupla de elétrons um a um"] },
+  { sim: pocoQuantico, covers: ["Poço infinito e finito, oscilador harmônico"] },
+  { sim: tunelamento, covers: ["Tunelamento e barreira"] },
+  { sim: decaimento, covers: ["Decaimento radioativo, meia-vida, datação"] },
+  { sim: instrumentosMedida, covers: [] },
+  { sim: quedaLivre, covers: [] },
+  { sim: trilhoDeAr, covers: [] },
+  { sim: leiHooke, covers: [] },
+  { sim: rodaMaxwell, covers: [] },
+  { sim: viscosidadeStokes, covers: [] },
+  { sim: tensaoSuperficial, covers: [] },
+  { sim: tuboKundt, covers: [] },
+  { sim: dilatacaoTermica, covers: [] },
+  { sim: equivalenteMecanico, covers: [] },
+  { sim: conducaoCalor, covers: [] },
+  { sim: multimetroOsciloscopio, covers: [] },
+  { sim: curvaIv, covers: [] },
+  { sim: ponteWheatstone, covers: [] },
+  { sim: transformador, covers: [] },
+  { sim: polarizacao, covers: [] },
+  { sim: espectroscopia, covers: [] },
 ];
 
 export const simulations = catalog.map((c) => c.sim);
@@ -83,12 +178,12 @@ export function findSim(id: string): AnySimulation | undefined {
 
 /** Item do plano ainda sem simulação publicada. */
 export function pending(): PlannedSim[] {
-  const done = new Set(catalog.flatMap((c) => c.covers));
+  const done = new Set([...catalog.flatMap((c) => c.covers), ...practices.map((p) => p.title)]);
   return plan.filter((p) => !done.has(p.title));
 }
 
 /** Confere, em desenvolvimento, se os títulos de `covers` existem no plano. */
 export function unknownCovers(): string[] {
   const titles = new Set(plan.map((p) => p.title));
-  return catalog.flatMap((c) => c.covers).filter((t) => !titles.has(t));
+  return [...catalog.flatMap((c) => c.covers), ...practices.map((p) => p.title)].filter((t) => !titles.has(t));
 }

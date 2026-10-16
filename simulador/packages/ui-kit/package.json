@@ -10,7 +10,8 @@
   "dependencies": {
     "@fisilab/core": "workspace:*",
     "katex": "^0.16.22",
-    "uplot": "^1.6.32"
+    "@fisilab/analysis": "workspace:*",
+    "@fisilab/platform": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0"

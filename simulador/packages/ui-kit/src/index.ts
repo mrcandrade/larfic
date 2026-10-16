@@ -9,3 +9,6 @@ export { Predict } from "./Predict.tsx";
 export { Exercises } from "./Exercises.tsx";
 export { useTheme } from "./theme.ts";
 export { progress, getProgress, onProgressChange, type SimProgress } from "./progress.ts";
+export { Bench, type BenchProps } from "./Bench.tsx";
+export { Tutor, type TutorProps } from "./Tutor.tsx";
+export { GradedExercises, type GradedExercisesProps } from "./GradedExercises.tsx";

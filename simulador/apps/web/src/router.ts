@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 
 export interface Route {
-  page: "catalog" | "sim";
+  page: "catalog" | "sim" | "practice" | "teacher" | "assignment";
+  code?: string;
   simId?: string;
+  practiceId?: string;
   query: URLSearchParams;
 }
 
@@ -12,6 +14,9 @@ export function parseRoute(hash = location.hash): Route {
   const parts = path.split("/").filter(Boolean);
   const query = new URLSearchParams(qs);
   if (parts[0] === "sim" && parts[1]) return { page: "sim", simId: decodeURIComponent(parts[1]), query };
+  if (parts[0] === "pratica" && parts[1]) return { page: "practice", practiceId: decodeURIComponent(parts[1]), query };
+  if (parts[0] === "professor") return { page: "teacher", query };
+  if (parts[0] === "atividade" && parts[1]) return { page: "assignment", code: parts[1], query };
   return { page: "catalog", query };
 }
 
@@ -38,3 +43,5 @@ export function paramsFromQuery(q: URLSearchParams): Record<string, number> {
   });
   return out;
 }
+
+export const practiceHref = (id: string) => `#/pratica/${encodeURIComponent(id)}`;
