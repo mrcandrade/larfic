@@ -77,6 +77,37 @@ import { ponteWheatstone } from "@fisilab/sim-ponte-wheatstone";
 import { transformador } from "@fisilab/sim-transformador";
 import { polarizacao } from "@fisilab/sim-polarizacao";
 import { espectroscopia } from "@fisilab/sim-espectroscopia";
+import { movimentoRelativo } from "@fisilab/sim-movimento-relativo";
+import { curvaInclinada } from "@fisilab/sim-curva-inclinada";
+import { forcasConservativas } from "@fisilab/sim-forcas-conservativas";
+import { centroMassa } from "@fisilab/sim-centro-massa";
+import { foguete } from "@fisilab/sim-foguete";
+import { giroscopio } from "@fisilab/sim-giroscopio";
+import { equilibrioCorpos } from "@fisilab/sim-equilibrio-corpos";
+import { maresLagrange } from "@fisilab/sim-mares-lagrange";
+import { penduloDuplo } from "@fisilab/sim-pendulo-duplo";
+import { escoamentoViscoso } from "@fisilab/sim-escoamento-viscoso";
+import { aerofolio } from "@fisilab/sim-aerofolio";
+import { osciladoresAcoplados } from "@fisilab/sim-osciladores-acoplados";
+import { tubosSonoros } from "@fisilab/sim-tubos-sonoros";
+import { transferenciaCalor } from "@fisilab/sim-transferencia-calor";
+import { difusaoBrowniano } from "@fisilab/sim-difusao-browniano";
+import { refrigerador } from "@fisilab/sim-refrigerador";
+import { entropia } from "@fisilab/sim-entropia";
+import { vanDerWaals } from "@fisilab/sim-van-der-waals";
+import { eletrizacao } from "@fisilab/sim-eletrizacao";
+import { condutoresBlindagem } from "@fisilab/sim-condutores-blindagem";
+import { drude } from "@fisilab/sim-drude";
+import { magnetismoMateria } from "@fisilab/sim-magnetismo-materia";
+import { espectroEm } from "@fisilab/sim-espectro-em";
+import { relatividadeDinamica } from "@fisilab/sim-relatividade-dinamica";
+import { compton } from "@fisilab/sim-compton";
+import { espectrosLaser } from "@fisilab/sim-espectros-laser";
+import { incerteza } from "@fisilab/sim-incerteza";
+import { hidrogenio } from "@fisilab/sim-hidrogenio";
+import { sternGerlach } from "@fisilab/sim-stern-gerlach";
+import { semicondutores } from "@fisilab/sim-semicondutores";
+import { nuclear } from "@fisilab/sim-nuclear";
 import { planoInclinado } from "@fisilab/sim-plano-inclinado";
 import { plan, type PlannedSim } from "./plan.ts";
 import { practices } from "./practices.ts";
@@ -159,15 +190,46 @@ export const catalog: CatalogEntry[] = [
   { sim: viscosidadeStokes, covers: [] },
   { sim: tensaoSuperficial, covers: [] },
   { sim: tuboKundt, covers: [] },
-  { sim: dilatacaoTermica, covers: [] },
+  { sim: dilatacaoTermica, covers: ["Escalas, dilatação linear/volumétrica, lâmina bimetálica"] },
   { sim: equivalenteMecanico, covers: [] },
   { sim: conducaoCalor, covers: [] },
   { sim: multimetroOsciloscopio, covers: [] },
   { sim: curvaIv, covers: [] },
   { sim: ponteWheatstone, covers: [] },
-  { sim: transformador, covers: [] },
-  { sim: polarizacao, covers: [] },
+  { sim: transformador, covers: ["Transformador, correntes de Foucault, freio magnético"] },
+  { sim: polarizacao, covers: ["Malus, Brewster, polarizadores e lâminas de onda"] },
   { sim: espectroscopia, covers: [] },
+  { sim: movimentoRelativo, covers: ["Movimento relativo (barco no rio, avião com vento, chuva)"] },
+  { sim: curvaInclinada, covers: ["Curva com inclinação (loop, estrada compensada)"] },
+  { sim: forcasConservativas, covers: ["Forças conservativas vs não conservativas"] },
+  { sim: centroMassa, covers: ["Centro de massa de sistemas e corpos extensos"] },
+  { sim: foguete, covers: ["Foguete e massa variável"] },
+  { sim: giroscopio, covers: ["Giroscópio e precessão, pião"] },
+  { sim: equilibrioCorpos, covers: ["Equilíbrio de corpos (gangorra, escada, viga, guindaste)"] },
+  { sim: maresLagrange, covers: ["Marés e pontos de Lagrange"] },
+  { sim: penduloDuplo, covers: ["Pêndulo duplo e pêndulo forçado"] },
+  { sim: escoamentoViscoso, covers: ["Escoamento laminar vs turbulento, viscosidade, Poiseuille"] },
+  { sim: aerofolio, covers: ["Sustentação em aerofólio"] },
+  { sim: osciladoresAcoplados, covers: ["Osciladores acoplados e modos normais"] },
+  { sim: tubosSonoros, covers: ["Tubos abertos/fechados, instrumentos"] },
+  { sim: transferenciaCalor, covers: ["Condução, convecção, radiação"] },
+  { sim: difusaoBrowniano, covers: ["Livre caminho médio, difusão, movimento browniano"] },
+  { sim: refrigerador, covers: ["Refrigerador e bomba de calor"] },
+  { sim: entropia, covers: ["Entropia, irreversibilidade, expansão livre"] },
+  { sim: vanDerWaals, covers: ["Van der Waals, ponto crítico"] },
+  { sim: eletrizacao, covers: ["Carga por atrito, indução, eletroscópio"] },
+  { sim: condutoresBlindagem, covers: ["Blindagem, gaiola de Faraday, poder das pontas"] },
+  { sim: drude, covers: ["Modelo microscópico (Drude), resistividade"] },
+  { sim: magnetismoMateria, covers: ["Dia, para e ferromagnetismo, histerese"] },
+  { sim: espectroEm, covers: ["Espectro, energia, vetor de Poynting"] },
+  { sim: relatividadeDinamica, covers: ["Paradoxo dos gêmeos, Doppler relativístico, E = mc²"] },
+  { sim: compton, covers: ["Efeito Compton"] },
+  { sim: espectrosLaser, covers: ["Espectros de emissão e absorção, laser"] },
+  { sim: incerteza, covers: ["Princípio da incerteza, pacotes de onda"] },
+  { sim: hidrogenio, covers: ["Átomo de hidrogênio, orbitais"] },
+  { sim: sternGerlach, covers: ["Spin, Stern-Gerlach"] },
+  { sim: semicondutores, covers: ["Bandas de energia, semicondutores, diodo e LED"] },
+  { sim: nuclear, covers: ["Fissão, fusão, reação em cadeia"] },
 ];
 
 export const simulations = catalog.map((c) => c.sim);

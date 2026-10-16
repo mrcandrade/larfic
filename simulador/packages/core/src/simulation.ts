@@ -197,7 +197,7 @@ export interface Simulation<S = State> {
   pointer?: PointerHandlers<S>;
   actions?: SimAction<S>[];
   /** Som contínuo enquanto a simulação roda (o app toca com Web Audio; ganho 0 silencia). */
-  tone?(params: Params, state: S): { freq: number; gain: number };
+  tone?(params: Params, state: S): { freq: number; gain: number; harmonics?: number[] };
 }
 
 export type IntegratorName = "euler" | "rk4" | "verlet" | "rk45";
