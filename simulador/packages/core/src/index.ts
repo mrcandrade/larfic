@@ -7,3 +7,4 @@ export * from "./random.ts";
 export * from "./exercises.ts";
 export * from "./vec.ts";
 export * from "./mna.ts";
+export * from "./fields.ts";
