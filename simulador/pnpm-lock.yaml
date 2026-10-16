@@ -20,9 +20,18 @@ importers:
       '@fisilab/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fisilab/sim-ciclos-termicos':
+        specifier: workspace:*
+        version: link:../../sims/ciclos-termicos
+      '@fisilab/sim-circuitos-dc':
+        specifier: workspace:*
+        version: link:../../sims/circuitos-dc
       '@fisilab/sim-projetil-arrasto':
         specifier: workspace:*
         version: link:../../sims/projetil-arrasto
+      '@fisilab/ui-kit':
+        specifier: workspace:*
+        version: link:../../packages/ui-kit
       katex:
         specifier: ^0.16.22
         version: 0.16.47
@@ -32,9 +41,6 @@ importers:
       react-dom:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
-      uplot:
-        specifier: ^1.6.32
-        version: 1.6.32
     devDependencies:
       '@types/katex':
         specifier: ^0.16.8
@@ -53,6 +59,40 @@ importers:
         version: 8.3.4
 
   packages/core: {}
+
+  packages/ui-kit:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../core
+      katex:
+        specifier: ^0.16.22
+        version: 0.16.47
+      uplot:
+        specifier: ^1.6.32
+        version: 1.6.32
+    devDependencies:
+      '@types/katex':
+        specifier: ^0.16.8
+        version: 0.16.8
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+
+  sims/ciclos-termicos:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/circuitos-dc:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
 
   sims/projetil-arrasto:
     dependencies:
