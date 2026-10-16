@@ -23,7 +23,7 @@ describe("Cinemática 1D", () => {
   it("desenhar a(t) no palco altera o perfil", () => {
     const p = withOverrides(sim, { modo: 1 });
     const s0 = sim.init(p);
-    const s1 = sim.pointer!.down!(s0, p, { x: -13.9, y: -4 }, undefined as never);
+    const s1 = sim.pointer!.down!(s0, p, { x: -13.9, y: -4 });
     expect(s1).toBeDefined();
     expect((s1 as typeof s0).prof[0]).toBeGreaterThan(3);
   });
