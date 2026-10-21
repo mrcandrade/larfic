@@ -86,7 +86,9 @@ export function modeList(geom: number, beta = 1): Mode[] {
         const z = geom === DRUM ? besselZero(m, n) : besselZeroP(m, n);
         // Placa: ω ∝ (β/R)²; membrana: ω ∝ j/R.
         const factor = geom === DRUM ? z : z * z;
-        const label = geom === DRUM ? `(${m},${n}): ${m} diâm., ${n - 1} círc.` : `(${m},${n}): ${m} diâm., ${n} círc.`;
+        // Círculos nodais internos = zeros de J_m abaixo do argumento máximo z.
+        const circles = geom === DRUM || m > 0 ? n - 1 : n;
+        const label = `(${m},${n}): ${m} diâm., ${circles} círc.`;
         out.push({
           label,
           factor,

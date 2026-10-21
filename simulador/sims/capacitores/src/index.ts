@@ -104,6 +104,7 @@ export const capacitores = defineSim<CapState>({
     { key: "d", label: "Separação d entre as placas", unit: "cm", min: 1, max: 3, step: 0.25, default: 1.5, live: true },
     { key: "Lp", label: "Lado L das placas quadradas", unit: "cm", min: 4, max: 10, step: 1, default: 8 },
     { key: "kappa", label: "Constante dielétrica κ", unit: "", min: 1, max: 10, step: 0.1, default: 3, live: true },
+    { key: "ins", label: "Inserção inicial do dielétrico (fração de L)", unit: "", min: 0, max: 1, step: 0.05, default: 0 },
     {
       key: "bateria",
       label: "Bateria no início",
@@ -251,9 +252,13 @@ export const capacitores = defineSim<CapState>({
   ],
 
   init(p) {
-    const s: CapState = { slab: slabOut(geo(p).Lp), bat: true, Qfix: 0, drag: null };
-    if (Math.round(num(p, "bateria")) === 1) return { ...s, bat: false, Qfix: capNow(s, p) * num(p, "V") };
-    return s;
+    const Lp = geo(p).Lp;
+    const out: CapState = { slab: slabOut(Lp), bat: true, Qfix: 0, drag: null };
+    // Fração inicial inserida (0 = bloco fora, como antes); a carga com a bateria desligada é a do capacitor sem dielétrico.
+    const f = Math.max(0, Math.min(1, num(p, "ins")));
+    const slab = f > 0 ? Lp / 2 - f * Lp : out.slab;
+    if (Math.round(num(p, "bateria")) === 1) return { ...out, slab, bat: false, Qfix: capNow(out, p) * num(p, "V") };
+    return { ...out, slab };
   },
   static: true,
   step: (s) => s,

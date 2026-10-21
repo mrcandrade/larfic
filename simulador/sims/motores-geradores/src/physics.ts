@@ -148,7 +148,7 @@ export const PEND = {
   Apole: 0.03 * 0.03,
   /** Fator geométrico do freio: placa maciça e placa com fendas. */
   alphaSolid: 0.25,
-  alphaSlot: 0.025,
+  alphaSlot: 0.003,
 };
 
 /** Fração da face do polo coberta pela placa quando o pêndulo está em θ. */
@@ -178,3 +178,9 @@ export function pendDeriv(pp: Pendulum, th: number, w: number): [number, number]
 }
 
 export const pendEnergy = (pp: Pendulum, th: number, w: number) => 0.5 * pendInertia(pp) * w * w + pendMass(pp) * G * PEND.ell * (1 - Math.cos(th));
+
+/** Amplitude equivalente: ângulo de retorno com a energia mecânica atual, cos θ_a = 1 − E/(m g ℓ). */
+export function pendAmplitude(pp: Pendulum, th: number, w: number): number {
+  const c = 1 - pendEnergy(pp, th, w) / (pendMass(pp) * G * PEND.ell);
+  return Math.acos(Math.max(-1, Math.min(1, c)));
+}

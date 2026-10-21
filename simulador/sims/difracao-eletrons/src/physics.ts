@@ -41,8 +41,8 @@ export const braggTheta = (lambda: number, d: number) => Math.asin(Math.min(1, l
 export const ringRadius = (lambda: number, d: number, L = L_SCREEN) => L * Math.tan(2 * braggTheta(lambda, d));
 /** d a partir do raio medido (exato para tela plana). */
 export const dFromRadius = (lambda: number, r: number, L = L_SCREEN) => (r > 0 ? lambda / (2 * Math.sin(Math.atan(r / L) / 2)) : 0);
-/** Aproximação de ângulos pequenos: d ≈ 2Lλ/r. */
-export const dSmallAngle = (lambda: number, r: number, L = L_SCREEN) => (r > 0 ? (2 * L * lambda) / r : 0);
+/** Aproximação de ângulos pequenos: d ≈ Lλ/r. */
+export const dSmallAngle = (lambda: number, r: number, L = L_SCREEN) => (r > 0 ? (L * lambda) / r : 0);
 
 /** Largura (desvio padrão, m) do anel: feixe de 0,4 mm e cristalitos de 5 nm (Scherrer). */
 export const ringSigma = (lambda: number, L = L_SCREEN) => 4e-4 + (L * lambda) / 5e-9;

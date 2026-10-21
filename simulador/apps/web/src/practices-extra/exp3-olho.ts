@@ -30,7 +30,7 @@ $$V = P_0 - \\frac1p \\qquad R_x = \\frac{V}{1 - dV}$$
 onde $R_x$ é o **erro refrativo** do olho (negativo na miopia).
 6. Coloque uma lente mais forte que $P_0$: o borrão continua nulo? Por quê? Use a acomodação indicada no aparato para explicar.`,
   columns: [
-    { key: "P", label: "P", unit: "D", source: { param: "oculos" }, instrument: { id: "lente-prova", name: "Lente de prova (rótulo, ±0,06 D)", unit: "D", kind: "digital", resolution: 0.25, range: [-20, 20], accuracy: () => 0.06 } },
+    { key: "P", label: "P", unit: "D", source: { param: "oculos" }, instrument: { id: "lente-prova", name: "Lente de prova (rótulo, ±0,06 D)", unit: "D", kind: "digital", resolution: 0.01, range: [-20, 20], accuracy: () => 0.06 } },
     { key: "rb", label: "r_b", unit: "mm", source: { observable: "blur" }, instrument: { id: "reticulo", name: "Retículo micrométrico (0,001 mm)", unit: "mm", kind: "analogico", resolution: 0.001, range: [0, 5] } },
   ],
   minRows: 5,
@@ -41,7 +41,7 @@ onde $R_x$ é o **erro refrativo** do olho (negativo na miopia).
     xLabel: "P (D)",
     yLabel: "raio do borrão (mm)",
     results: [
-      { label: "vergência corretiva P₀", unit: "D", compute: (a, b) => -a / b, reference: -1 / PO + -2 / (1 - DV * 2) },
+      { label: "vergência corretiva P₀", unit: "D", compute: (a, b) => -a / b, reference: 1 / PO - 2 / (1 - DV * 2) },
       {
         label: "erro refrativo Rx",
         unit: "D",

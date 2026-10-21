@@ -10,7 +10,6 @@ import {
   LUDIAO,
   P0,
   PARADOXO,
-  PROF,
   P_VAPOR,
   RHO,
   U,
@@ -131,7 +130,7 @@ function passoLudiao(s: VC, p: Params, dt: number): VC {
   for (let i = 0; i < n; i++) {
     const Fup = forcaLudiao(d, dp);
     const meff = m + 0.5 * RHO * (LUDIAO.Vg + volumeAr(d, dp));
-    const arrasto = 0.5 * RHO * LUDIAO.Cd * LUDIAO.area * v * Math.abs(v) + 0.02 * v;
+    const arrasto = 0.5 * RHO * LUDIAO.Cd * LUDIAO.area * v * Math.abs(v) + 0.002 * v;
     const a = (-Fup - arrasto) / meff; // v e a positivos para baixo
     v += a * h;
     d += v * h;
@@ -521,7 +520,6 @@ function renderBomba(d: Draw, s: VC, p: Params) {
   // poço
   d.rect(X(-3), Y(-1.6), M.k * 6, M.k * 1.6, { fill: agua(d) });
   d.line(X(-3), Y(0), X(3), Y(0), { color: d.theme.text });
-  const fy = (Y(H) - Y(0)) / H;
   const pip = 0.35;
   // tubo
   d.rect(X(-pip / 2), Y(-1), M.k * pip, Y(H) - Y(-1), { stroke: d.theme.text, width: 2 });
@@ -548,7 +546,6 @@ function renderBomba(d: Draw, s: VC, p: Params) {
     d.line(X(-3.2), Y(hmax), X(4), Y(hmax), { color: d.theme.positive, dash: [6, 4] });
     d.text(`altura máxima de sucção: ${fmt(hmax, 3)} m`, X(4), Y(hmax) + 0.25, { size: 11, color: d.theme.positive, align: "right" });
   }
-  void fy;
   const lin = [
     succao ? "Bomba de sucção (aspirante)" : "Bomba de compressão (premente, Ctesíbio)",
     `Coluna de água: ${fmt(s.zc, 3)} m`,
@@ -982,6 +979,5 @@ export const vasosComunicantes = defineSim<VC>({
   },
 });
 
-void PROF;
 
 export default vasosComunicantes;

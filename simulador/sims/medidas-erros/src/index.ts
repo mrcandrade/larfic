@@ -33,6 +33,9 @@ export interface ME {
   ts: number[];
   ds: number[];
   falhas: number;
+  /** Tempo de queda (cronômetro/sensor da sim) e queda verdadeira da última pegada válida. */
+  ultT: number;
+  ultD: number;
   /** Marcadores de leitura (cm) e o que está sendo arrastado (0 nada, 1 L, 2 W, 3 mira). */
   xL: number;
   xW: number;
@@ -69,7 +72,7 @@ function pegar(s: ME, p: Params, tc: number): ME {
   const d = queda(tc - s.tRel);
   if (d > Lregua(p)) return { ...s, fase: 3, tArm: s.clock, falhas: s.falhas + 1 };
   const lido = lerRegua(d, res(p));
-  return { ...s, fase: 2, tArm: s.clock, dPego: d, ts: [...s.ts, tempoDeQueda(lido)], ds: [...s.ds, lido] };
+  return { ...s, fase: 2, tArm: s.clock, dPego: d, ultT: tc - s.tRel, ultD: d, ts: [...s.ts, tempoDeQueda(lido)], ds: [...s.ds, lido] };
 }
 
 /** Queda atual da régua (m) para o desenho. */
@@ -159,6 +162,8 @@ function init(p: Params): ME {
     ts: [],
     ds: [],
     falhas: 0,
+    ultT: 0,
+    ultD: 0,
     xL: 15,
     xW: 7.5,
     arr: 0,
@@ -533,6 +538,8 @@ export const medidasErros = defineSim<ME>({
     { key: "n", label: "Número de tentativas / dardos / sorteios", unit: "", value: (s, p) => [s.ts.length, 0, s.dardos.length, s.nMC][modo(p)] ?? 0 },
     { key: "tr", label: "Último tempo de reação", unit: "s", value: (s) => s.ts[s.ts.length - 1] ?? 0 },
     { key: "dr", label: "Última distância lida na régua", unit: "cm", value: (s) => (s.ds[s.ds.length - 1] ?? 0) * 100 },
+    { key: "tq", label: "Tempo de queda (cronômetro da sim)", unit: "s", value: (s) => s.ultT },
+    { key: "dq", label: "Queda até a pegada", unit: "m", value: (s) => s.ultD },
     { key: "trMed", label: "Tempo de reação médio", unit: "s", value: (s) => estatistica(s.ts).media },
     { key: "trDesv", label: "Desvio padrão do tempo de reação", unit: "s", value: (s) => estatistica(s.ts).desvio },
     { key: "trErr", label: "Incerteza da média (σ/√n)", unit: "s", value: (s) => estatistica(s.ts).erroMedia },

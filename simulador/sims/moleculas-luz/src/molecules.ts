@@ -141,7 +141,7 @@ export const MOLECULES: Molecule[] = [
     q: [-0.66, 0.33, 0.33],
     bonds: [[0, 1, 1], [0, 2, 1]],
     mu: 1.85,
-    rot: { lo: 0.7, hi: 650, p: 0.85 },
+    rot: { lo: 0.3, hi: 650, p: 0.85 },
     modes: bentModes(H2O_ATOMS, [3657, 1595, 3756]),
     elec: [{ lo: 100, hi: 190, p: 0.8, dis: true, label: "H + OH" }],
     leaves: 2,

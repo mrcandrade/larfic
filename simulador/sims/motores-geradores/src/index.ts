@@ -9,12 +9,12 @@ import {
   dynamoMean,
   dynamoOut,
   inst,
-  kTheta,
   loadTorque,
   motorDeriv,
   motorState,
   noLoadOmega,
   pendDeriv,
+  pendAmplitude,
   pendEnergy,
   rk4,
   stallTorque,
@@ -65,7 +65,7 @@ export function homo(p: Params) {
   const B = num(p, "B", 0.5);
   const a = num(p, "a", 10) / 100;
   const dev = device(p);
-  if (dev === 2) return { dev, B, a, k: wireK(B, 0.05, 0.02), J: 4e-7, b: 1e-4, R: num(p, "R", 2) * 0.05 };
+  if (dev === 2) return { dev, B, a, k: wireK(B, 0.05, 0.02), J: 4e-7, b: 1e-4, R: num(p, "R", 2) * 0.5 };
   const M = 8960 * Math.PI * a * a * 0.002;
   return { dev, B, a, k: diskK(B, a), J: 0.5 * M * a * a, b: 1e-4, R: num(p, "R", 2) * 0.01 };
 }
@@ -90,16 +90,17 @@ export const pendulum = (p: Params, slotted: boolean): Pendulum => {
 
 // ------------------------------------------------------------ passo de tempo
 function stepPend(pp: Pendulum, s: [number, number, number, number], dt: number, n: number): [number, number, number, number] {
-  let [th, w, Q, amp] = s;
+  let [th, w, Q] = s;
+  let amp: number;
   const h = dt / n;
   for (let k = 0; k < n; k++) {
     const [t2, w2] = rk4((a, b) => pendDeriv(pp, a, b), th, w, h);
     // calor = trabalho do freio (média do integrando no passo)
     Q += 0.5 * h * (brakeC(pp, th) * w * w + brakeC(pp, t2) * w2 * w2);
-    if (w * w2 < 0 || (w !== 0 && w2 === 0)) amp = Math.abs(t2);
     th = t2;
     w = w2;
   }
+  amp = pendAmplitude(pp, th, w);
   return [th, w, Q, amp];
 }
 
@@ -237,19 +238,18 @@ function drawMotor(d: Draw, p: Params, s: MGState) {
   d.circle(cx, cy, R, { stroke: th.muted, width: 1, dash: [3, 3] });
   for (let j = 0; j < mp.m; j++) {
     const a = s.vis + (j * Math.PI) / mp.m;
-    const act = Math.abs(Math.abs(Math.sin(s.th + (j * Math.PI) / mp.m)) * mp.k * (Math.PI / 2) - 0) > 0 && kTheta(mp.k, mp.m, s.th) / ( (mp.k) || 1) > 0 && j === activeCoil(mp.m, s.th);
+    const act = j === activeCoil(mp.m, s.th);
     const c = act ? th.series[1]! : th.muted;
     const x1 = cx + R * Math.cos(a), y1 = cy + R * Math.sin(a);
-    d.line(cx - (x1 - cx), cy - (y1 - cy), x1, y1, { color: c, width: act ? 4 : 2 });
+    d.line(2 * cx - x1, 2 * cy - y1, x1, y1, { color: c, width: act ? 4 : 2 });
     d.dot(x1, y1, act ? 5 : 3.5, c);
-    d.dot(cx - (x1 - cx), cy - (y1 - cy), act ? 5 : 3.5, c);
-    if (act && Math.abs(M.i) > 1e-4) {
-      // forças F = I L × B nos lados ativos (tangenciais)
-      const sgn = Math.sign(M.i) * Math.sign(Math.cos(a - Math.PI / 2 + Math.PI / 2) || 1);
-      const fx = -Math.sin(a) * sgn, fy = Math.cos(a) * sgn;
+    d.dot(2 * cx - x1, 2 * cy - y1, act ? 5 : 3.5, c);
+    if (act && Math.abs(M.tau) > 1e-7) {
+      // F = I L × B com B horizontal: forças verticais e opostas nos dois lados (binário)
       const L = clamp(Math.abs(M.tau) / Math.max(stallTorque(mp), 1e-9), 0.15, 1) * 2.2;
-      d.arrow(x1, y1, fx * L * Math.sign(Math.cos(a) || 1), fy * L * Math.sign(Math.cos(a) || 1), { color: th.series[2]!, width: 2 });
-      d.arrow(2 * cx - x1, 2 * cy - y1, -fx * L * Math.sign(Math.cos(a) || 1), -fy * L * Math.sign(Math.cos(a) || 1), { color: th.series[2]!, width: 2 });
+      const sg = Math.sign(M.tau) * (Math.sign(x1 - cx) || 1);
+      d.arrow(x1, y1, 0, sg * L, { color: th.series[2]!, width: 2 });
+      d.arrow(2 * cx - x1, 2 * cy - y1, 0, -sg * L, { color: th.series[2]!, width: 2 });
     }
   }
   d.dot(cx, cy, 4, th.text);
@@ -258,7 +258,7 @@ function drawMotor(d: Draw, p: Params, s: MGState) {
   d.polyline([[cx + 1.5, -3.6], [-4.5, -3.6], [-4.5, -6.8], [cx + 0.8, -6.8]], { color: th.text, width: 1.8 });
   battery(d, cx, -6.8, `V = ${fmt(mp.V)} V`);
   d.text("comutador e escovas", cx, -2.2, { size: 10, color: th.muted });
-  d.text(`F = I L × B`, cx + R + 0.2, cy + R + 0.4, { size: 10, color: th.series[2]!, align: "left" });
+  d.text("forças F = I L × B (verde) formam um binário", cx, cy + R + 1.4, { size: 10, color: th.series[2]! });
   d.text("Motor DC com comutador", -16.5, 8.7, { size: 14, weight: "700", align: "left" });
   d.text(`${mp.m} bobina${mp.m > 1 ? "s" : ""}, ${2 * mp.m} segmentos (animação 40× mais lenta)`, -16.5, 7.9, { size: 11, align: "left", color: th.muted });
   const x = -16.5;
@@ -427,11 +427,11 @@ function drawHomo(d: Draw, p: Params, s: MGState) {
     d.text(v, x + 7.6, -1.4 - i * 0.9, { size: 12, align: "left", weight: "600" });
   });
   d.text(h.dev === 2 ? "k = B L r̄: o fio corta as linhas radiais de B" : "ε = ½ B ω a²: cada raio corta as linhas de B; não precisa de comutador", x, -7.4, { size: 11, align: "left", color: th.muted });
-  d.text("Máquina homopolar: tensão contínua sem comutador, mas muito baixa (precisa de correntes enormes).", x, -8.4, { size: 10, align: "left", color: th.muted });
+  d.text("Homopolar: tensão contínua sem comutador, porém muito baixa.", x, -8.4, { size: 10, align: "left", color: th.muted });
 }
 
 // ------------------------------------------------------------ desenho: dínamo × alternador
-const CRANK = { x: -15, y: 0, r: 1.3 };
+const CRANK = { x: -14.8, y: 2.0, r: 1.1 };
 function drawDynamo(d: Draw, p: Params, s: MGState) {
   const th = d.theme;
   const cp = coilParams(p);
@@ -456,7 +456,7 @@ function drawDynamo(d: Draw, p: Params, s: MGState) {
       commutator(d, cx, cy - 3.2, 0.55, s.vis, cp.m);
       d.text("comutador", cx + 1.4, cy - 3.2, { size: 10, align: "left", color: th.muted });
     }
-    d.text(title, -16.5, cy + 3.2, { size: 13, weight: "700", align: "left" });
+    d.text(title, -12.5, cy + 2.7, { size: 13, weight: "700", align: "left" });
   };
   machineAt(5, "Alternador (anéis)", true);
   machineAt(-3.8, `Dínamo (comutador, ${cp.m} bobina${cp.m > 1 ? "s" : ""})`, false);
@@ -500,7 +500,7 @@ function drawThree(d: Draw, p: Params, s: MGState) {
   const T = three(s, p);
   const cols = [th.series[0]!, th.series[1]!, th.series[2]!];
   const names = ["A", "B", "C"];
-  const cx = -11.5, cy = 3.2, R = 3.3;
+  const cx = -11.5, cy = 2.6, R = 3.0;
   d.circle(cx, cy, R + 0.6, { stroke: th.muted, width: 6, alpha: 0.4 });
   // bobina de cada fase no estator: a fase k atinge o pico quando o polo N passa por ela
   for (let k = 0; k < 3; k++) {
@@ -566,8 +566,8 @@ function drawThree(d: Draw, p: Params, s: MGState) {
     ["V_fase (eficaz)", `${fmt(T.tp.Vf)} V`],
     ["V_linha = √3 V_fase", `${fmt(VL)} V`],
     ["I_A, I_B, I_C", T.ph.I.map((I) => fmt(Math.hypot(I.re, I.im))).join(" / ") + " A"],
-    ["corrente no neutro", `${fmt(IN)} A`],
-    ["deslocamento do neutro", `${fmt(Math.hypot(T.ph.shift.re, T.ph.shift.im))} V`],
+    ["corrente no neutro", `${fmt(IN < 1e-9 ? 0 : IN)} A`],
+    ["deslocamento do neutro", `${fmt(Math.hypot(T.ph.shift.re, T.ph.shift.im) < 1e-9 ? 0 : Math.hypot(T.ph.shift.re, T.ph.shift.im))} V`],
     ["potência total P", `${fmt(T.ph.P)} W`],
     ["potência instantânea", `${fmt(T.p3)} W`],
   ];
@@ -608,16 +608,15 @@ function drawWalt(d: Draw, p: Params, s: MGState, trail: MGState[]) {
       for (let j = -2; j <= 2; j++) d.line(j * half * 0.38, -half, j * half * 0.38, half * 0.55, { color: th.dark ? "#12161c" : "#ffffff", width: 3 });
       d.ctx.restore();
     }
+    if (B > 0) d.rect(px - hp - 0.3, yb - hp - 0.3, 2 * hp + 0.6, 2 * hp + 0.6, { stroke: th.positive, width: 1.5, dash: [4, 3] });
     // correntes de Foucault: anéis na placa maciça enquanto está no campo
     const ov = overlapFrac(st[0]);
     if (!slotted && ov > 0.05 && Math.abs(st[1]) > 0.05 && B > 0) {
       for (const r of [0.35, 0.7]) d.circle(px + 0.4 * Math.sign(st[1]), yb, r * hp * 1.6, { stroke: th.series[3]!, width: 1.6, alpha: clamp(Math.abs(st[1]) / 3, 0.2, 1) });
     }
-    const pp = pendulum(p, slotted);
     d.text(slotted ? "B: placa com fendas" : "A: placa maciça", px, py + 0.7, { size: 12, weight: "700" });
     d.text(`θ = ${fmt((st[0] * 180) / Math.PI)}°   amplitude ${fmt((st[3] * 180) / Math.PI)}°`, px, yb - hp - 1.2, { size: 11 });
     d.text(`calor dissipado ${fmt(st[2] * 1e3)} mJ`, px, yb - hp - 2, { size: 10, color: th.muted });
-    void pp;
   }
   // θ(t) dos dois pêndulos
   const box = { x0: -16, y0: -9, x1: 16.2, y1: -6.4 };
@@ -732,8 +731,8 @@ export const motoresGeradores = defineSim<MGState>({
     { key: "P3", label: "Potência trifásica instantânea", unit: "W", value: (s, p) => (modo(p) === 3 ? three(s, p).p3 : 0) },
     { key: "thA", label: "Ângulo da placa maciça", unit: "°", value: (s) => (s.A[0] * 180) / Math.PI },
     { key: "thB", label: "Ângulo da placa com fendas", unit: "°", value: (s) => (s.B[0] * 180) / Math.PI },
-    { key: "ampA", label: "Amplitude (maciça)", unit: "°", value: (s) => (s.A[3] * 180) / Math.PI },
-    { key: "ampB", label: "Amplitude (com fendas)", unit: "°", value: (s) => (s.B[3] * 180) / Math.PI },
+    { key: "ampA", label: "Amplitude equivalente (maciça)", unit: "°", value: (s) => (s.A[3] * 180) / Math.PI },
+    { key: "ampB", label: "Amplitude equivalente (com fendas)", unit: "°", value: (s) => (s.B[3] * 180) / Math.PI },
     { key: "EtotA", label: "Energia mecânica + calor (maciça)", unit: "J", value: (s, p) => (modo(p) === 4 ? totalE(pendulum(p, false), s.A) : 0) },
   ],
   conserved: "EtotA",

@@ -146,6 +146,7 @@ export const processosPv = defineSim<PVState>({
     { key: "P", label: "Pressão final", unit: "kPa", value: (s, p) => current(s, p).B.P },
     { key: "V", label: "Volume final", unit: "L", value: (s, p) => current(s, p).B.V },
     { key: "T", label: "Temperatura final", unit: "K", value: (s, p) => temperature(current(s, p).B, num(p, "n", 1)) },
+    { key: "Tc", label: "Temperatura final (Celsius)", unit: "°C", value: (s, p) => temperature(current(s, p).B, num(p, "n", 1)) - 273.15 },
     { key: "Q", label: "Calor recebido (processo atual)", unit: "J", value: (s, p) => current(s, p).e.Q },
     { key: "W", label: "Trabalho do gás (processo atual)", unit: "J", value: (s, p) => current(s, p).e.W },
     { key: "dU", label: "ΔU (processo atual)", unit: "J", value: (s, p) => current(s, p).e.dU },

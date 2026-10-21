@@ -213,7 +213,6 @@ function renderElectrolysis(d: Draw, s: EState, p: Params, t: number) {
   d.text(`${fmt(num(p, "Vf", 6), 1)} V`, 4.6, 9.6, { size: 11 });
   if (I > 0) for (let i = 0; i < 6; i++) {
     const f = ((t * 0.4 * Math.min(I, 3) + i / 6) % 1);
-    d.text("e⁻", xa + (xc - xa) * 0 + 0, 0, { size: 1 });
     const x = f < 0.4 ? xa : f < 0.6 ? xa + ((xc - xa) * (f - 0.4)) / 0.2 : xc;
     const y = f < 0.4 ? 5.2 + (3.8 * f) / 0.4 : f < 0.6 ? 9 : 9 - (3.8 * (f - 0.6)) / 0.4;
     d.dot(x, y, 3, th.negative);

@@ -304,7 +304,7 @@ function drawEcho(d: Draw, s: QState, p: Params, t: number) {
   if (Number.isFinite(e.T2)) pn.plot((x) => Math.exp(-x / e.T2), 0, T, { color: th.muted, width: 1, dash: [2, 3] });
   for (const [x, l] of [[0, "θ₁"], [e.tau, "θ₂"]] as [number, string][]) {
     d.rect(pn.X(x) - 0.08, box.y0, 0.16, box.y1 - box.y0, { fill: th.series[1]!, alpha: 0.35 });
-    d.text(l, pn.X(x), box.y1, { size: 11, dy: -8, color: th.series[1]! });
+    d.text(l, pn.X(x), box.y0, { size: 11, dy: -10, dx: 11, color: th.series[1]! });
   }
   d.text("eco", pn.X(2 * e.tau), box.y1, { size: 11, dy: -8, color: th.series[2]! });
   d.text("verde: simulação com 400 spins   laranja: previsão gaussiana   cinza: e^(−t/T₂)", box.x0, box.y0 - 1.2, { size: 10, align: "left", color: th.muted });
@@ -355,13 +355,13 @@ function drawEIT(d: Draw, p: Params, t: number) {
   // absorção / transmissão
   const box = { x0: 0, y0: 1.2, x1: 16.4, y1: 7.8 };
   const pa = panel(d, box, { min: -4, max: 4 }, { min: 0, max: 1.05 });
-  pa.frame({ xlabel: "", ylabel: "absorção Re K  e  transmissão e^(−OD·Re K)", yticks: [0, 0.5, 1] });
+  pa.frame({ xlabel: "", ylabel: "Re K  e  T", yticks: [0, 0.5, 1] });
   const two: ThreeLevel = { ...tl, config: 2 };
   pa.plot((x) => response(x, two).re, -4, 4, { color: th.muted, width: 1, dash: [4, 3], n: 300 });
   pa.plot((x) => response(x, tl).re, -4, 4, { color: probeCol, width: 2, n: 1200 });
   pa.plot((x) => transmission(x, tl, OD), -4, 4, { color: th.series[2]!, width: 1.5, n: 1200 });
   d.line(pa.X(Dp), box.y0, pa.X(Dp), box.y1, { color: th.series[1]!, width: 1, dash: [4, 3] });
-  d.text("vermelho: absorção   verde: transmissão   tracejado: sem acoplamento", box.x1, box.y1 + 0.45, { size: 10, align: "right", color: th.muted });
+  d.text("vermelho: absorção Re K   verde: transmissão T = e^(−OD·Re K)   tracejado: sem Ωc", box.x1, box.y1 + 0.45, { size: 10, align: "right", color: th.muted });
   const pd = panel(d, { x0: 0, y0: -6.2, x1: 16.4, y1: -0.6 }, { min: -4, max: 4 }, { min: -0.6, max: 0.6 });
   pd.frame({ xlabel: "dessintonia da sonda Δp / Γ", ylabel: "dispersão: n − 1 ∝ −Im K" });
   pd.plot((x) => -response(x, two).im, -4, 4, { color: th.muted, width: 1, dash: [4, 3], n: 300 });

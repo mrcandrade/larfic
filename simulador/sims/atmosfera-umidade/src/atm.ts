@@ -76,8 +76,8 @@ export interface Layer {
 }
 export const LAYERS: Layer[] = [
   { name: "Troposfera", h0: 0, h1: 11e3 },
-  { name: "Estratosfera", h0: 11e3, h1: 47e3 },
-  { name: "Mesosfera", h0: 51e3, h1: 85e3 },
+  { name: "Estratosfera", h0: 11e3, h1: 50e3 },
+  { name: "Mesosfera", h0: 50e3, h1: 85e3 },
   { name: "Termosfera", h0: 85e3, h1: 600e3 },
 ];
 

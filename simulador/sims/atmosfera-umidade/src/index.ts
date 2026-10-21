@@ -160,7 +160,7 @@ function renderAltitude(d: Draw, s: Atm, p: Params, theme: Theme) {
 
 // ---------- Modo 1: ebulição ----------
 
-const BP = { x0: 8.8, x1: 15.5, y0: 0.9, y1: 8.3, t0: 60, t1: 140, p1: 300e3 };
+const BP = { x0: 8.8, x1: 15.5, y0: 0.9, y1: 8.3, t0: 60, t1: 140, p1: 400e3 };
 const bx = (t: number) => BP.x0 + ((t - BP.t0) / (BP.t1 - BP.t0)) * (BP.x1 - BP.x0);
 const by = (P: number) => BP.y0 + (P / BP.p1) * (BP.y1 - BP.y0);
 
@@ -175,7 +175,7 @@ function renderBoil(d: Draw, s: Atm, p: Params, theme: Theme) {
   const px0 = 1.2, px1 = 5.6, py0 = 1.4, py1 = 4.6;
   const level = py0 + (py1 - py0 - 0.4) * Math.max(0, 1 - s.mev / M_PANELA);
   const f = Math.max(0, Math.min(1, (s.Tw - 20) / 100));
-  d.rect(px0, py0, px1 - px0, level - py0, { fill: `rgba(${Math.round(70 + 170 * f)},${Math.round(140 - 40 * f)},${Math.round(230 - 150 * f)},0.55)` });
+  d.rect(px0, py0, px1 - px0, level - py0, { fill: `rgba(${Math.round(70 + 60 * f)},${Math.round(140 - 20 * f)},${Math.round(230 - 30 * f)},0.55)` });
   d.polyline([[px0, py1], [px0, py0], [px1, py0], [px1, py1]], { color: theme.text, width: 3 });
   if (boiling && s.mev < M_PANELA) {
     for (let k = 0; k < 14; k++) {
@@ -204,7 +204,7 @@ function renderBoil(d: Draw, s: Atm, p: Params, theme: Theme) {
   d.line(BP.x0, BP.y0, BP.x1, BP.y0, { color: theme.muted });
   d.line(BP.x0, BP.y0, BP.x0, BP.y1, { color: theme.muted });
   for (let t = BP.t0; t <= BP.t1; t += 20) d.text(`${t}`, bx(t), BP.y0 - 0.25, { size: 9, color: theme.muted });
-  for (let P = 0; P <= BP.p1; P += 50e3) {
+  for (let P = 0; P <= BP.p1; P += 100e3) {
     d.text(`${P / 1000}`, BP.x0 - 0.1, by(P), { size: 9, align: "right", color: theme.muted });
     d.line(BP.x0, by(P), BP.x1, by(P), { color: theme.grid, width: 1 });
   }

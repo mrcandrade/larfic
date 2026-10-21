@@ -33,7 +33,7 @@ onde $0{,}61\\,r$ é a correção de extremidade da boca.
   columns: [
     { key: "n", label: "n", unit: "", source: { param: "n" }, instrument: { id: "ordem-ressonancia", name: "Ordem da ressonância (contagem)", unit: "", kind: "digital", resolution: 1, range: [0, 20] } },
     { key: "f", label: "f_n", unit: "Hz", source: { observable: "fn" }, instrument: { id: "gerador-frequencimetro", name: "Gerador com frequencímetro (pico localizado a ±0,5 %)", unit: "Hz", kind: "digital", resolution: 1, range: [0, 20000], accuracy: (x) => 0.005 * x + 1 } },
-    { key: "k", label: "2n − 1", unit: "", from: ["n"], compute: (n) => 2 * n - 1 },
+    { key: "k", label: "2n − 1", unit: "", from: ["n"], compute: (n) => 2 * Math.round(n) - 1 },
   ],
   minRows: 5,
   analysis: {

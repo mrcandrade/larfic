@@ -23,25 +23,35 @@ export const VASOS = [
 ];
 export const X_VASOS = [0.1, 0.38, 0.62, 0.95];
 
-/** Volume (m³) no vaso i com nível h (integração pelo ponto médio). */
+const N_TAB = 1000;
+/** Volume acumulado (m³) de cada vaso em N_TAB + 1 alturas igualmente espaçadas (regra do trapézio fina). */
+const TABELAS = VASOS.map((v) => {
+  const t = [0];
+  const dy = H_VASO / N_TAB;
+  for (let k = 1; k <= N_TAB; k++) t.push(t[k - 1]! + v.w((k - 0.5) * dy) * dy * PROF);
+  return t;
+});
+
+/** Volume (m³) no vaso i com nível h. */
 export function volumeVaso(i: number, h: number): number {
-  const v = VASOS[i]!;
-  const n = 200;
-  const hh = Math.max(0, Math.min(h, H_VASO));
-  let V = 0;
-  for (let k = 0; k < n; k++) V += v.w(((k + 0.5) * hh) / n);
-  return (V * hh * PROF) / n;
+  const t = TABELAS[i]!;
+  const u = (Math.max(0, Math.min(h, H_VASO)) / H_VASO) * N_TAB;
+  const k = Math.min(N_TAB - 1, Math.floor(u));
+  return t[k]! + (t[k + 1]! - t[k]!) * (u - k);
 }
 
-/** Nível (m) a partir do volume, por bissecção. */
+/** Nível (m) a partir do volume (inversa da tabela, linear por partes). */
 export function nivelVaso(i: number, V: number): number {
-  let lo = 0, hi = H_VASO;
-  for (let k = 0; k < 50; k++) {
-    const mid = (lo + hi) / 2;
-    if (volumeVaso(i, mid) < V) lo = mid;
+  const t = TABELAS[i]!;
+  if (V <= 0) return 0;
+  if (V >= t[N_TAB]!) return H_VASO;
+  let lo = 0, hi = N_TAB;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (t[mid]! < V) lo = mid;
     else hi = mid;
   }
-  return (lo + hi) / 2;
+  return ((lo + (V - t[lo]!) / (t[hi]! - t[lo]!)) * H_VASO) / N_TAB;
 }
 
 /** Nível comum de equilíbrio para um volume total. */

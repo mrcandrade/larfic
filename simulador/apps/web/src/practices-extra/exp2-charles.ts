@@ -24,14 +24,13 @@ export const practice: Practice = {
 1. O êmbolo é livre e a pressão externa é constante: $P = 100$ kPa. Leve o banho térmico a uma temperatura e espere o gás entrar em equilíbrio; o êmbolo sobe ou desce sozinho (no aparato, arraste o estado final ao longo da isóbara ou ajuste o volume final).
 2. Clique em **Registrar medida** para ler o volume na escala do cilindro e a temperatura no termômetro.
 3. Repita para pelo menos 6 temperaturas, espalhadas entre −40 °C e 100 °C.
-4. Converta a temperatura para graus Celsius, $\\theta = T - 273{,}15$, se o termômetro indicar em kelvin.
+4. O termômetro indica em graus Celsius: nenhuma hipótese sobre o zero absoluto entra nas medidas.
 5. Pela lei de Charles, $V = V_0(1 + \\beta\\theta)$: o gráfico de $V$ contra $\\theta$ é uma reta. Extrapole até $V = 0$: o intercepto com o eixo das temperaturas, $\\theta_0 = -a/b$, é o **zero absoluto**.
 6. Da inclinação, $b = nR/P$, obtenha a quantidade de gás.
 7. Depois, troque para o processo **isocórico** e repita com $P$ contra $\\theta$ (termômetro de gás a volume constante). A extrapolação leva ao mesmo $\\theta_0$?`,
   columns: [
     { key: "V", label: "V", unit: "L", source: { observable: "V" }, instrument: { id: "cilindro-graduado", name: "Escala do cilindro (0,1 L)", unit: "L", kind: "analogico", resolution: 0.1, range: [0, 120] } },
-    { key: "T", label: "T", unit: "K", source: { observable: "T" }, instrument: { id: "termometro-imersao", name: "Termômetro digital de imersão (K)", unit: "K", kind: "digital", resolution: 0.1, range: [0, 600], accuracy: () => 0.3 } },
-    { key: "th", label: "θ", unit: "°C", from: ["T"], compute: (T) => T - 273.15 },
+    { key: "th", label: "θ", unit: "°C", source: { observable: "Tc" }, instrument: { id: "termometro-imersao", name: "Termômetro digital de imersão (°C)", unit: "°C", kind: "digital", resolution: 0.1, range: [-50, 150], accuracy: () => 0.3 } },
   ],
   minRows: 5,
   analysis: {

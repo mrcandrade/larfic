@@ -103,6 +103,7 @@ export const franckHertz = defineSim<FHState>({
     { key: "T", label: "Temperatura do forno (Hg)", unit: "°C", min: 110, max: 220, step: 1, default: 180, live: true },
     { key: "Ur", label: "Contrapotencial U_r", unit: "V", min: 0, max: 10, step: 0.1, default: 1.5, live: true },
     { key: "Uc", label: "Potencial de contato U_c", unit: "V", min: 0, max: 3, step: 0.1, default: 2, live: true },
+    { key: "ordem", label: "Pico sob o cursor (ordem k)", unit: "", min: 1, max: 6, step: 1, default: 1, live: true },
   ],
 
   observables: [
@@ -116,6 +117,16 @@ export const franckHertz = defineSim<FHState>({
       label: "Camadas de colisão no tubo",
       unit: "",
       value: (s, p) => Math.max(0, Math.floor((s.U - num(p, "Uc", 2)) / mainE(gasOf(p)))),
+    },
+    {
+      key: "Upico",
+      label: "Tensão do k-ésimo pico",
+      unit: "V",
+      value: (_s, p) => {
+        const pk = peakList(p);
+        const k = Math.max(1, Math.round(num(p, "ordem", 1)));
+        return pk[Math.min(k, pk.length) - 1] ?? 0;
+      },
     },
     { key: "lambda", label: "λ do fóton principal", unit: "nm", value: (_s, p) => gasOf(p).photon },
     { key: "pHg", label: "Pressão de vapor do Hg", unit: "Pa", value: (_s, p) => (gasOf(p) === HG ? hgPressure(num(p, "T", 180)) : 0) },

@@ -103,7 +103,7 @@ export const difracaoEletrons = defineSim<DEState>({
     "Elétrons atravessam uma folha de grafite e formam anéis de Debye–Scherrer cujo raio cai com 1/√V; medindo o raio com a régua obtém-se a distância interplanar. No experimento de Davisson–Germer, elétrons de 54 eV refletidos por níquel mostram um pico a 50°.",
   equations: [
     String.raw`\lambda = \frac{h}{\sqrt{2m_eeV\left(1 + \frac{eV}{2m_ec^2}\right)}} \approx \frac{1{,}226\ \text{nm}}{\sqrt{V/\text{V}}}`,
-    String.raw`2d\,\operatorname{sen}\theta = \lambda \qquad r = L\tan 2\theta \approx \frac{2L\lambda}{d}`,
+    String.raw`2d\,\operatorname{sen}\theta = \lambda \qquad r = L\tan 2\theta \approx \frac{L\lambda}{d}`,
     String.raw`\text{Davisson–Germer: } D\operatorname{sen}\varphi = \lambda,\quad D = 0{,}215\ \text{nm}`,
   ],
   liveEquations(s, p) {
@@ -112,7 +112,7 @@ export const difracaoEletrons = defineSim<DEState>({
       const r = rulerLen(s) / 2;
       return [
         String.raw`\lambda = ${texNum(lam * 1e12)}\ \text{pm} \quad r_{10} = ${texNum(ringRadius(lam, GRAPHITE[0]!.d) * 1e3)}\ \text{mm} \quad r_{11} = ${texNum(ringRadius(lam, GRAPHITE[1]!.d) * 1e3)}\ \text{mm}`,
-        String.raw`\text{régua: } r = ${texNum(r * 1e3)}\ \text{mm} \Rightarrow d = \frac{\lambda}{2\operatorname{sen}\left(\frac12\arctan\frac rL\right)} = ${texNum(dFromRadius(lam, r) * 1e9)}\ \text{nm}\ \ (\approx 2L\lambda/r = ${texNum(dSmallAngle(lam, r) * 1e9)})`,
+        String.raw`\text{régua: } r = ${texNum(r * 1e3)}\ \text{mm} \Rightarrow d = \frac{\lambda}{2\operatorname{sen}\left(\frac12\arctan\frac rL\right)} = ${texNum(dFromRadius(lam, r) * 1e9)}\ \text{nm}\ \ (\approx L\lambda/r = ${texNum(dSmallAngle(lam, r) * 1e9)})`,
       ];
     }
     return [
@@ -173,6 +173,7 @@ export const difracaoEletrons = defineSim<DEState>({
     { key: "invV", label: "1/√V", unit: "kV^-1/2", value: (_s, p) => 1 / Math.sqrt(num(p, "V", 4)) },
     { key: "r10", label: "Raio do anel interno (10)", unit: "mm", value: (_s, p) => (modo(p) === 0 ? ringRadius(lambdaOf(p), GRAPHITE[0]!.d) * 1e3 : 0) },
     { key: "r11", label: "Raio do anel externo (11)", unit: "mm", value: (_s, p) => (modo(p) === 0 ? ringRadius(lambdaOf(p), GRAPHITE[1]!.d) * 1e3 : 0) },
+    { key: "D10", label: "Diâmetro do anel interno (10)", unit: "mm", value: (_s, p) => (modo(p) === 0 ? 2 * ringRadius(lambdaOf(p), GRAPHITE[0]!.d) * 1e3 : 0) },
     { key: "Dregua", label: "Leitura da régua (diâmetro)", unit: "mm", value: (s) => rulerLen(s) * 1e3 },
     { key: "dregua", label: "d pela régua", unit: "nm", value: (s, p) => (modo(p) === 0 ? dFromRadius(lambdaOf(p), rulerLen(s) / 2) * 1e9 : 0) },
     { key: "N", label: "Elétrons na tela", unit: "", value: (s) => s.n },
@@ -190,14 +191,14 @@ export const difracaoEletrons = defineSim<DEState>({
       guide: `### Medindo d com a régua
 1. Os elétrons de 4 kV chegam um a um na tela e desenham **dois anéis** principais: as reflexões (10) e (11) do grafite.
 2. Arraste as pontas da **régua** sobre um diâmetro do anel interno (arrastar o meio move a régua). Use $r = D/2$.
-3. Com $\\lambda = h/p$ (equações vivas) e $L = 13{,}5\\ \\text{cm}$: $d = 2L\\lambda/r$. Compare com $d_{10} = 0{,}213\\ \\text{nm}$ e $d_{11} = 0{,}123\\ \\text{nm}$.
+3. Com $\\lambda = h/p$ (equações vivas) e $L = 13{,}5\\ \\text{cm}$: $d = L\\lambda/r$. Compare com $d_{10} = 0{,}213\\ \\text{nm}$ e $d_{11} = 0{,}123\\ \\text{nm}$.
 4. A razão $r_{11}/r_{10} \\approx \\sqrt3$ é a assinatura da rede hexagonal.`,
       predict: [
         {
           question: "Aumentando a tensão de aceleração de 4 kV para 9 kV, os anéis:",
           options: ["crescem", "diminuem para cerca de 2/3 do raio", "diminuem para 4/9 do raio", "não mudam"],
           answer: 1,
-          explanation: "$\\lambda \\propto 1/\\sqrt V$ e $r \\approx 2L\\lambda/d$, então $r$ cai por $\\sqrt{4/9} = 2/3$.",
+          explanation: "$\\lambda \\propto 1/\\sqrt V$ e $r \\approx L\\lambda/d$, então $r$ cai por $\\sqrt{4/9} = 2/3$.",
         },
       ],
     },
@@ -207,7 +208,7 @@ export const difracaoEletrons = defineSim<DEState>({
       params: { modo: 0, V: 2.5, amostra: 0, taxa: 2000 },
       guide: `### Uma reta pela origem
 1. Varie $V$ de 2,5 kV a 10 kV durante a simulação. O gráfico do painel mostra $r$ contra $1/\\sqrt V$.
-2. As duas famílias dão retas pela origem; a inclinação de cada uma vale $2L \\cdot 1{,}226\\ \\text{nm·V}^{1/2}/d$.
+2. As duas famílias dão retas pela origem; a inclinação de cada uma vale $L \\cdot 1{,}226\\ \\text{nm·V}^{1/2}/d$.
 3. Troque para **monocristal**: os anéis viram manchas hexagonais, nas mesmas distâncias do centro.`,
     },
     {
@@ -238,9 +239,9 @@ export const difracaoEletrons = defineSim<DEState>({
       answer: {
         label: "d",
         unit: "nm",
-        compute: (p) => ((2 * L_SCREEN * (6.62607015e-34 / Math.sqrt(2 * 9.1093837015e-31 * 1.602176634e-19 * num(p, "V") * 1e3))) / (num(p, "r") * 1e-3)) * 1e9,
+        compute: (p) => ((L_SCREEN * (6.62607015e-34 / Math.sqrt(2 * 9.1093837015e-31 * 1.602176634e-19 * num(p, "V") * 1e3))) / (num(p, "r") * 1e-3)) * 1e9,
       },
-      hint: "λ = h/√(2meV) e d = 2Lλ/r.",
+      hint: "λ = h/√(2meV) e d = Lλ/r.",
     },
     {
       id: "dg-angulo",

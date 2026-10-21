@@ -95,7 +95,7 @@ const LOOP_PTS: [number, number][] = [
   [-2.4, 0.0], [-1.2, 0.5], [0.0, 1.0], [1.2, 1.5], // rampa
   [1.6, 1.1], [1.65, 0.4], [1.1, -0.2], [0.0, -0.35], [-1.2, -0.35], [-2.1, -0.25],
 ];
-export const MAGNET: [number, number] = [1.75, 2.0];
+export const MAGNET: [number, number] = [1.35, 1.95];
 
 function catmull(p0: number, p1: number, p2: number, p3: number, t: number) {
   return 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
@@ -137,11 +137,11 @@ export function loopAt(s: number): [number, number] {
 /** Comprimento de arco do furo (fim da rampa). */
 export const S_HOLE = LOOP.cum[3 * 40]!;
 
-/** Potencial por unidade de massa (J/kg): gravidade + ímã (atração ∝ 1/d³ no potencial). */
+/** Potencial por unidade de massa (J/kg): gravidade + ímã (modelo suave, atração ∝ 1/d² no potencial). */
 export function magPhi(s: number, kmag: number): number {
   const [x, y] = loopAt(s);
   const d2 = (x - MAGNET[0]) ** 2 + (y - MAGNET[1]) ** 2;
-  return G * y - (kmag * 0.5 * G) / (d2 + 0.04) ** 1.5;
+  return G * y - (kmag * 1.5 * G) / (d2 + 0.04);
 }
 export const magForce = (s: number, kmag: number) => -(magPhi(s + 1e-4, kmag) - magPhi(s - 1e-4, kmag)) / 2e-4;
 

@@ -104,6 +104,19 @@ export function mwReading(s: IntState, p: Params): number {
 }
 const mwPos = (s: IntState, p: Params) => (modo(p) === FP_MO ? s.dMW : s.xB);
 
+/**
+ * Ordem de interferência do máximo mais próximo: no Michelson, Δ/λ arredondado
+ * (Δ = 2(x − L_A) + 2(n − 1)t); no Fabry–Perot, 2d/λ arredondado. É o número que
+ * o aluno obtém contando os máximos a partir da referência.
+ */
+export function mwOrder(s: IntState, p: Params): number {
+  const lam = num(p, "lamMW", 2.85);
+  const m = modo(p);
+  if (m === MICHELSON_MO) return Math.round((2 * (s.xB - LA) + 2 * (num(p, "np", 1.6) - 1) * num(p, "tp", 0)) / lam);
+  if (m === FP_MO) return Math.round((2 * s.dMW) / lam);
+  return 0;
+}
+
 // ------------------------------------------------------------------ Michelson–Morley
 /** Deslocamento observado (franjas): hipótese do éter ou resultado nulo com ruído de ~0,01 franja. */
 export function mmObserved(s: IntState, p: Params): number {
@@ -697,6 +710,7 @@ export const interferometros = defineSim<IntState>({
     { key: "x", label: "Posição do refletor/placa móvel", unit: "cm", value: (s, p) => mwPos(s, p) },
     { key: "dx", label: "Deslocamento desde a marca", unit: "cm", value: (s, p) => mwPos(s, p) - s.marca },
     { key: "leitura", label: "Leitura do receptor de micro-ondas", unit: "mA", value: (s, p) => mwReading(s, p) },
+    { key: "ordem", label: "Ordem do máximo mais próximo (contada desde braços iguais / placas encostadas)", unit: "", value: (s, p) => mwOrder(s, p) },
     { key: "alpha", label: "Orientação do aparelho α", unit: "°", value: (s) => ((s.alpha % 360) + 360) % 360 },
     { key: "Nobs", label: "Deslocamento de franjas observado", unit: "franja", value: (s, p) => mmObserved(s, p) },
     { key: "Nprev", label: "Deslocamento previsto pelo éter", unit: "franja", value: (s, p) => mmPredicted(s, p) },
@@ -735,7 +749,7 @@ export const interferometros = defineSim<IntState>({
 2. Arraste o refletor devagar e conte os máximos da leitura ($N$). Cada máximo novo surge quando o caminho muda de $\\lambda$, isto é, quando o refletor anda $\\lambda/2$.
 3. Depois de uns 10 máximos, calcule $\\lambda = 2\\Delta x/N$. Compare com 2,85 cm.
 4. Note que os máximos ficam um pouco menores com a distância: a onda se espalha e as amplitudes dos dois braços deixam de ser iguais.
-5. Ponha uma **placa dielétrica** no braço móvel: os máximos se deslocam. Medindo esse deslocamento, ache o índice: $2(n-1)t = \\delta x \\cdot 2$.`,
+5. Ponha uma **placa dielétrica** no braço móvel: os máximos se deslocam. Medindo esse deslocamento, ache o índice: o refletor precisa recuar $\\delta x = (n-1)t$ para recuperar o mesmo máximo.`,
       predict: [
         {
           question: "Com λ = 2,85 cm, de quanto o refletor móvel precisa andar entre dois máximos consecutivos?",

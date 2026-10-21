@@ -83,19 +83,32 @@ export interface MD {
 export function initMD(N: number, L: number, T: number, seed = 3): MD {
   const rand = rng(seed);
   const a = 1.1;
-  const cols = Math.max(1, Math.min(Math.ceil(Math.sqrt(N) * 1.3), Math.floor((L - 1) / a)));
+  const cols = Math.max(1, Math.min(Math.ceil(Math.sqrt(N) * 1.3), Math.floor((L - 1.1 - a) / a) + 1));
   const x: number[] = [], y: number[] = [], vx: number[] = [], vy: number[] = [];
   const x0 = (L - (cols - 1) * a) / 2;
+  let extra = 0;
   for (let i = 0; i < N; i++) {
     const row = Math.floor(i / cols), col = i % cols;
-    let px = x0 + col * a + (row % 2 ? a / 2 : 0);
-    let py = 0.6 + row * a * 0.866;
-    if (px > L - 0.55 || py > L - 0.55) {
+    const px = x0 + col * a + (row % 2 ? a / 2 : 0);
+    const py = 0.6 + row * a * 0.866;
+    if (px > L - 0.55 || py > L - 0.55) extra++;
+    else {
+      x.push(px);
+      y.push(py);
+    }
+  }
+  // Sem espaço na rede: posições aleatórias sem sobreposição (rejeição).
+  for (let k = 0; k < extra; k++) {
+    let px = 0, py = 0;
+    for (let tries = 0; tries < 5000; tries++) {
       px = 0.6 + rand() * (L - 1.2);
       py = 0.6 + rand() * (L - 1.2);
+      if (x.every((xx, j) => (xx - px) ** 2 + (y[j]! - py) ** 2 > 1)) break;
     }
     x.push(px);
     y.push(py);
+  }
+  for (let i = 0; i < N; i++) {
     vx.push(gaussian(rand));
     vy.push(gaussian(rand));
   }

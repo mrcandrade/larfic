@@ -30,8 +30,8 @@ const TAU = 2 * Math.PI;
 type S = number[];
 
 // Geometria do desenho (coordenadas do mundo)
-const CRANK = { x: 3.3, y: 1.55, a: 0.7 };
-const WHEEL = { x: 4.9, y: 3.4, a: 0.55, R: 1.35 };
+const CRANK = { x: 3.3, y: 1.6, a: 0.95 };
+const WHEEL = { x: 5.9, y: 3.3, a: 0.75, R: 1.45 };
 const WK = { x: 3.4, y: 4.6, R: 2.0, e: 0.3 };
 
 function heatColor(T: number, alpha = 0.55): string {
@@ -43,14 +43,14 @@ function heatColor(T: number, alpha = 0.55): string {
 function pointerAngle(motor: number, x: number, y: number): number | undefined {
   if (motor === VAPOR) {
     const dx = x - WHEEL.x, dy = y - WHEEL.y;
-    return Math.hypot(dx, dy) < 2 ? Math.atan2(dy, -dx) : undefined;
+    return Math.hypot(dx, dy) < 1.7 ? Math.atan2(dy, -dx) : undefined;
   }
   if (motor === WANKEL) {
     const dx = x - WK.x, dy = y - WK.y;
     return Math.hypot(dx, dy) < 2.6 ? Math.atan2(dy, dx) - Math.PI / 2 : undefined;
   }
   const dx = x - CRANK.x, dy = y - CRANK.y;
-  return Math.hypot(dx, dy) < 1.4 ? Math.atan2(dx, dy) : undefined;
+  return Math.hypot(dx, dy) < 1.6 ? Math.atan2(dx, dy) : undefined;
 }
 
 function turnTo(s: S, p: Params, pt: { x: number; y: number }): S | undefined {
@@ -84,12 +84,12 @@ function drawPistonEngine(d: Draw, e: Engine, th: number, theme: Theme) {
   const stroke = 2 * a;
   const yPin = (t: number) => cy + a * Math.cos(t) + Math.sqrt(l * l - (a * Math.sin(t)) ** 2);
   const yTDC = cy + a + l;
-  const pistonH = 0.55;
+  const pistonH = 0.7;
   const vc = Math.max(0.14, stroke / (e.r - 1));
   const head = yTDC + pistonH + vc;
   const yp = yPin(th);
   const top = yp + pistonH;
-  const bx0 = cx - 0.85, bx1 = cx + 0.85;
+  const bx0 = cx - 1.15, bx1 = cx + 1.15;
   // Gás
   d.rect(bx0, top, bx1 - bx0, head - top, { fill: heatColor(pt.T) });
   // Cilindro
@@ -97,9 +97,9 @@ function drawPistonEngine(d: Draw, e: Engine, th: number, theme: Theme) {
   if (e.motor === DOIS) {
     const portY = yTDC + pistonH - PORT * stroke; // topo do pistão quando as janelas abrem
     const pTop = portY + 0.02;
-    d.line(bx0, cy + 0.9, bx0, pTop - 0.35, wall);
+    d.line(bx0, cy + 1.25, bx0, pTop - 0.35, wall);
     d.line(bx0, pTop, bx0, head, wall);
-    d.line(bx1, cy + 0.9, bx1, pTop - 0.4, wall);
+    d.line(bx1, cy + 1.25, bx1, pTop - 0.4, wall);
     d.line(bx1, pTop, bx1, head, wall);
     const open = top < pTop;
     d.text("transferência", bx0 - 0.1, pTop - 0.2, { size: 9, color: theme.muted, align: "right" });
@@ -109,12 +109,12 @@ function drawPistonEngine(d: Draw, e: Engine, th: number, theme: Theme) {
       d.arrowPx(bx1 + 0.05, pTop - 0.2, 1, 0, 26, { color: theme.muted });
     }
     // Cárter
-    d.polyline([[bx0, cy + 0.9], [cx - 1.3, cy + 0.6], [cx - 1.3, cy - 1.1], [cx + 1.3, cy - 1.1], [cx + 1.3, cy + 0.6], [bx1, cy + 0.9]], { color: theme.muted, width: 2 });
-    if (pt.phase === 1) d.arrowPx(cx - 1.9, cy + 0.2, 1, 0, 22, { color: theme.series[0] });
-    d.text("cárter", cx + 1.0, cy - 0.85, { size: 9, color: theme.muted });
+    d.polyline([[bx0, cy + 1.25], [cx - 1.6, cy + 0.9], [cx - 1.6, cy - 1.35], [cx + 1.6, cy - 1.35], [cx + 1.6, cy + 0.9], [bx1, cy + 1.25]], { color: theme.muted, width: 2 });
+    if (pt.phase === 1) d.arrowPx(cx - 2.2, cy + 0.2, 1, 0, 22, { color: theme.series[0] });
+    d.text("cárter", cx + 1.1, cy - 1.1, { size: 9, color: theme.muted });
   } else {
-    d.line(bx0, cy + 1.0, bx0, head, wall);
-    d.line(bx1, cy + 1.0, bx1, head, wall);
+    d.line(bx0, cy + 1.3, bx0, head, wall);
+    d.line(bx1, cy + 1.3, bx1, head, wall);
   }
   d.line(bx0 - 0.2, head, bx1 + 0.2, head, { color: theme.text, width: 4 });
   // Válvulas (4 tempos)
@@ -122,8 +122,8 @@ function drawPistonEngine(d: Draw, e: Engine, th: number, theme: Theme) {
     const inOpen = pt.phase === 0, exOpen = pt.phase === 3;
     const lift = (o: boolean) => (o ? 0.12 : 0);
     for (const [vx, o, lab, col] of [
-      [cx - 0.45, inOpen, "admissão", theme.series[0]!],
-      [cx + 0.45, exOpen, "escape", theme.muted],
+      [cx - 0.6, inOpen, "admissão", theme.series[0]!],
+      [cx + 0.6, exOpen, "escape", theme.muted],
     ] as const) {
       d.line(vx, head + 0.7, vx, head - lift(o), { color: theme.muted, width: 2 });
       d.line(vx - 0.22, head - lift(o), vx + 0.22, head - lift(o), { color: theme.text, width: 3 });
@@ -199,15 +199,15 @@ function drawSteam(d: Draw, e: Engine, th: number, theme: Theme) {
   const stroke = 2 * a;
   const xc = (t: number) => wx - a * Math.cos(t) - Math.sqrt(l * l - (a * Math.sin(t)) ** 2); // cruzeta
   const xTDC = wx - a - l;
-  const pistonW = 0.22;
+  const pistonW = 0.25;
   // Cilindro: tampa em x0; pistão em x0 + folga + curso*f
-  const x0 = 0.35, gap = 0.15;
+  const x0 = 0.3, gap = 0.15;
   const pX = xc(th) - (xTDC - x0 - gap); // haste rígida: o pistão acompanha a cruzeta
   const cyl1 = x0 + gap + stroke + pistonW + gap;
-  const cyT = wy + 0.45, cyB = wy - 0.45;
+  const cyT = wy + 0.6, cyB = wy - 0.6;
   const head = pointAt(e, th), crank = pointAt(e, th + Math.PI);
-  d.rect(x0, cyB, pX - x0, cyT - cyB, { fill: heatColor(head.T + (head.P > 2e5 ? 400 : 0)) });
-  d.rect(pX + pistonW, cyB, cyl1 - pX - pistonW, cyT - cyB, { fill: heatColor(crank.T + (crank.P > 2e5 ? 400 : 0)) });
+  d.rect(x0, cyB, pX - x0, cyT - cyB, { fill: steamFill(head.P, e) });
+  d.rect(pX + pistonW, cyB, cyl1 - pX - pistonW, cyT - cyB, { fill: steamFill(crank.P, e) });
   d.rect(x0, cyB, cyl1 - x0, cyT - cyB, { stroke: theme.text, width: 2.5 });
   d.rect(pX, cyB + 0.03, pistonW, cyT - cyB - 0.06, { fill: theme.muted, stroke: theme.text, width: 1 });
   // Haste e cruzeta: a cruzeta acompanha o pistão (mesma fração do curso, desenho ampliado na haste)
@@ -227,7 +227,7 @@ function drawSteam(d: Draw, e: Engine, th: number, theme: Theme) {
   d.line(0.1, wy - Rw, 6.6, wy - Rw, { color: theme.muted, width: 3 });
   d.text("trilho", 0.6, wy - Rw - 0.25, { size: 9, color: theme.muted });
   // Caixa de vapor com distribuidor
-  const chT = cyT + 0.65;
+  const chT = cyT + 0.6;
   d.rect(x0 + 0.2, cyT, cyl1 - x0 - 0.4, chT - cyT, { stroke: theme.muted, width: 1.5 });
   const portL = x0 + 0.35, portR = cyl1 - 0.35;
   const colOf = (q: { phase: number }) => (q.phase === 0 ? theme.positive : q.phase === 2 ? theme.negative : theme.muted);
@@ -235,14 +235,20 @@ function drawSteam(d: Draw, e: Engine, th: number, theme: Theme) {
   d.rect(portR - 0.12, cyT - 0.02, 0.24, 0.12, { fill: colOf(crank) });
   d.text("distribuidor de gaveta", (x0 + cyl1) / 2, chT + 0.25, { size: 9, color: theme.muted });
   // Caldeira e chaminé
-  d.rect(0.3, chT + 0.6, 5.6, 1.4, { fill: theme.dark ? "rgba(200,80,60,0.18)" : "rgba(200,80,60,0.12)", stroke: theme.muted });
-  d.text(`caldeira: ${fmt(e.Pb / 1e5)} bar, ${fmt(tsat(e.Pb) - 273.15)} °C`, 3.1, chT + 1.3, { size: 10 });
-  d.line((x0 + cyl1) / 2, chT, (x0 + cyl1) / 2, chT + 0.6, { color: theme.positive, width: 3 });
+  d.rect(0.3, chT + 0.5, 4.6, 1.1, { fill: theme.dark ? "rgba(200,80,60,0.18)" : "rgba(200,80,60,0.12)", stroke: theme.muted });
+  d.text(`caldeira: ${fmt(e.Pb / 1e5)} bar, ${fmt(tsat(e.Pb) - 273.15)} °C`, 2.6, chT + 1.05, { size: 11, weight: "600" });
+  d.line((x0 + cyl1) / 2, chT, (x0 + cyl1) / 2, chT + 0.5, { color: theme.positive, width: 3 });
   const puff = head.phase === 2 || crank.phase === 2;
-  if (puff) d.circle(5.6, chT + 2.35, 0.18 + 0.1 * Math.sin(th * 2) ** 2, { fill: theme.muted, alpha: 0.35 });
-  d.rect(5.45, chT + 2.0, 0.3, 0.25, { fill: theme.muted });
+  if (puff) d.circle(4.45, chT + 2.35, 0.18 + 0.1 * Math.sin(th * 2) ** 2, { fill: theme.muted, alpha: 0.35 });
+  d.rect(4.3, chT + 1.6, 0.3, 0.5, { fill: theme.muted });
+  d.text("chaminé", 4.75, chT + 1.85, { size: 9, color: theme.muted, align: "left" });
   d.text("tampa", x0 + 0.1, cyB - 0.25, { size: 9, color: theme.muted, align: "left" });
   d.text("PV: lado da tampa", x0 + 0.1, cyB - 0.5, { size: 9, color: theme.series[1], align: "left" });
+}
+
+/** Vapor vivo em vermelho (mais forte com a pressão); escape em cinza. */
+function steamFill(P: number, e: Engine): string {
+  return P > e.Pe * 1.001 ? `rgba(217, 69, 59, ${(0.15 + 0.6 * (P / e.Pb)).toFixed(2)})` : "rgba(140, 150, 165, 0.35)";
 }
 
 function tsat(P: number) {
@@ -278,7 +284,7 @@ function drawPV(d: Draw, e: Engine, th: number, theme: Theme) {
   const path = pts.map((q): [number, number] => [X(q.V), Y(q.P)]);
   d.polyline(path, { color: "none", fill: theme.dark ? "rgba(91,156,240,0.16)" : "rgba(47,125,225,0.12)", close: true });
   const cols = [theme.series[0]!, theme.series[2]!, theme.positive, theme.muted];
-  for (let i = 1; i < pts.length; i++) d.line(path[i - 1]![0], path[i - 1]![1], path[i]![0], path[i]![1], { color: cols[pts[i]!.phase]!, width: 2.5 });
+  for (let i = 1; i < pts.length; i++) d.line(path[i - 1]![0], path[i - 1]![1], path[i]![0], path[i]![1], { color: cols[steam && pts[i]!.phase === 2 ? 3 : pts[i]!.phase]!, width: 2.5 });
   const q = pointAt(e, th);
   d.dot(X(q.V), Y(q.P), 7, theme.series[1]!);
   d.text(q.label, (PV.x0 + PV.x1) / 2, PV.y1 + 0.35, { size: 12, weight: "600", color: theme.series[1] });
@@ -287,7 +293,7 @@ function drawPV(d: Draw, e: Engine, th: number, theme: Theme) {
   leg.forEach((lab, k) => {
     if (!lab) return;
     const lx = PV.x1 - 1.6, ly = PV.y1 - 0.3 - k * 0.32;
-    d.line(lx, ly, lx + 0.35, ly, { color: steam && k === 2 ? cols[2]! : cols[k]!, width: 3 });
+    d.line(lx, ly, lx + 0.35, ly, { color: steam && k === 2 ? cols[3]! : cols[k]!, width: 3 });
     d.text(lab, lx + 0.45, ly, { size: 9, color: theme.muted, align: "left" });
   });
 }

@@ -45,12 +45,14 @@ const TK = (p: Params, Tr: number) => Tr * sub(p).epsK;
 const BOX = { x0: 0.5, y0: 0.6, size: 8.2 };
 const PD = { x0: 10.3, x1: 15.6, y0: 5.0, y1: 8.6 };
 // Modo de dois átomos: r em σ → x do palco
-const PR = { r0: 0, r1: 5.6, x0: 1.4, x1: 15.4 };
+const PR = { r0: 0, r1: 3.3, x0: 1.4, x1: 15.4 };
+/** Parede que limita o átomo B (σ). */
+const R_WALL = 3.1;
 const rx = (r: number) => PR.x0 + ((r - PR.r0) / (PR.r1 - PR.r0)) * (PR.x1 - PR.x0);
 const xr = (x: number) => PR.r0 + ((x - PR.x0) / (PR.x1 - PR.x0)) * (PR.r1 - PR.r0);
 const UPLOT = { y0: 0.7, y1: 5.6, u0: -1.3, u1: 1.6 };
 const uy = (u: number) => UPLOT.y0 + ((Math.max(UPLOT.u0, Math.min(UPLOT.u1, u)) - UPLOT.u0) / (UPLOT.u1 - UPLOT.u0)) * (UPLOT.y1 - UPLOT.y0);
-const ATOM_Y = 7.4;
+const ATOM_Y = 7.5;
 
 function pairEnergy(s: MD) {
   return 0.5 * s.v2 * s.v2 + ljU(s.r2);
@@ -156,7 +158,7 @@ function renderPair(d: Draw, s: MD, p: Params, theme: Theme) {
   const r = s.r2;
   const E = pairEnergy(s);
   // Átomos
-  const rad = (0.4 / (PR.r1 - PR.r0)) * (PR.x1 - PR.x0);
+  const rad = 0.55;
   const xa = rx(0), xB = rx(r);
   d.circle(xa, ATOM_Y, rad, { fill: theme.series[0]!, stroke: theme.text, width: 1 });
   d.circle(xB, ATOM_Y, rad, { fill: theme.series[1]!, stroke: theme.text, width: 1, alpha: s.drag ? 0.75 : 1 });
@@ -164,10 +166,9 @@ function renderPair(d: Draw, s: MD, p: Params, theme: Theme) {
   d.text("B: arraste", xB, ATOM_Y + rad + 0.3, { size: 10, color: theme.series[1] });
   const F = ljF(r);
   d.arrowPx(xB, ATOM_Y, Math.sign(F), 0, Math.min(150, 20 * Math.abs(F) + (Math.abs(F) > 1e-3 ? 8 : 0)), { color: F > 0 ? theme.positive : theme.negative });
-  d.text(F > 0 ? "repulsão" : "atração", xB + Math.sign(F) * 1.2, ATOM_Y - 0.55, { size: 10, color: F > 0 ? theme.positive : theme.negative });
+  d.text(F > 0 ? "repulsão" : "atração", xB, ATOM_Y - rad - 0.3, { size: 10, color: F > 0 ? theme.positive : theme.negative });
   // Curva U(r)
   d.line(PR.x0, uy(0), PR.x1, uy(0), { color: theme.muted, width: 1 });
-  d.line(rx(0.5), UPLOT.y0, rx(0.5), UPLOT.y1, { color: theme.muted, width: 1 });
   d.plot((x) => uy(ljU(xr(x))), rx(0.88), PR.x1, { color: theme.accent, width: 2.5 });
   // Energia total (linha horizontal) e regiões permitidas
   d.line(PR.x0, uy(E), PR.x1, uy(E), { color: theme.series[1], dash: [6, 4], width: 1.5 });
@@ -180,9 +181,10 @@ function renderPair(d: Draw, s: MD, p: Params, theme: Theme) {
   d.text(`ε = ${fmt(u.eps / ZJ)} zJ (energia de ligação)`, rx(R_MIN) + 0.35, uy(-0.55), { size: 10, align: "left", color: theme.muted });
   d.text(`r₀ = 2^(1/6)σ = ${fmt(R_MIN * sb.sigma * 1e12)} pm`, rx(R_MIN), uy(-1) - 0.35, { size: 10, color: theme.muted });
   d.text(`σ = ${fmt(sb.sigma * 1e12)} pm`, rx(1), uy(0), { size: 10, dy: 12, align: "right", dx: -4, color: theme.muted });
-  for (let k = 1; k <= 5; k++) d.text(`${fmt(k * sb.sigma * 1e12, 3)}`, rx(k), UPLOT.y0 - 0.25, { size: 9, color: theme.muted });
+  for (let k = 1; k <= 3; k++) d.text(`${fmt(k * sb.sigma * 1e12, 3)}`, rx(k), UPLOT.y0 - 0.25, { size: 9, color: theme.muted });
   d.text("r (pm)", PR.x1, UPLOT.y0 - 0.55, { size: 10, align: "right", color: theme.muted });
-  d.text("U(r)", rx(0.5) + 0.1, UPLOT.y1, { size: 10, align: "left", color: theme.accent });
+  d.text("U(r)", rx(0.92) + 0.15, UPLOT.y1 - 0.2, { size: 10, align: "left", color: theme.accent });
+  d.support(rx(R_WALL) + rad, ATOM_Y - 0.8, rx(R_WALL) + rad, ATOM_Y + 0.8, { color: theme.muted });
   d.text(
     `r = ${fmt(r * sb.sigma * 1e12)} pm   ·   F = ${fmt(F * u.force * 1e12)} pN   ·   U = ${fmt(ljU(r) * u.eps / ZJ)} zJ   ·   ${E < 0 ? "ligados (E < 0)" : "livres (E ≥ 0)"}`,
     PR.x0,
@@ -267,7 +269,7 @@ export const estadosMateria = defineSim<MD>({
         { value: 0.1, label: "Forte" },
       ],
     },
-    { key: "r0", label: "Separação inicial (dois átomos)", unit: "σ", min: 0.9, max: 4, step: 0.05, default: 1.6 },
+    { key: "r0", label: "Separação inicial (dois átomos)", unit: "σ", min: 0.9, max: 3, step: 0.05, default: 1.6 },
     { key: "amort", label: "Perda de energia (dois átomos)", unit: "", min: 0, max: 1, step: 0.05, default: 0, live: true },
   ],
 
@@ -376,7 +378,7 @@ export const estadosMateria = defineSim<MD>({
   step(s, p) {
     if (modo(p) === 1) {
       if (s.drag) return { ...s, tr: s.tr + DT_PAIR };
-      const [r, v] = stepPair(s.r2, s.v2, DT_PAIR, num(p, "amort"));
+      const [r, v] = stepPair(s.r2, s.v2, DT_PAIR, num(p, "amort"), R_WALL);
       return { ...s, r2: r, v2: v, tr: s.tr + DT_PAIR };
     }
     return stepMD(s, { L: Lof(p), g: gOf(p), thermostat: Math.round(num(p, "termo")) === 0, nsub: SUB, dt: DTR });
@@ -406,7 +408,7 @@ export const estadosMateria = defineSim<MD>({
     },
     move(s, p, pt, dragging) {
       if (modo(p) !== 1 || !dragging || !s.drag) return undefined;
-      return { ...s, r2: Math.max(0.88, Math.min(5.4, xr(pt.x))), v2: 0 };
+      return { ...s, r2: Math.max(0.88, Math.min(R_WALL, xr(pt.x))), v2: 0 };
     },
     up: (s, p) => (modo(p) === 1 && s.drag ? { ...s, drag: false } : undefined),
     cursor: (s, p, pt) => (modo(p) === 1 && Math.abs(pt.x - rx(s.r2)) < 0.9 && Math.abs(pt.y - ATOM_Y) < 1.2 ? "grab" : undefined),

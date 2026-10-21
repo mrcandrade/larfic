@@ -119,8 +119,8 @@ export function autoMeasure(s: MKState, p: Params, count: number): MKState {
   return { ...s, qs, seed: Math.floor(rand() * 2 ** 31) };
 }
 
-export const initState = (): MKState =>
-  spray({ drops: [], sel: -1, seed: 20240917, nextId: 1, timer: null, tq: 0, ts: 0, Vs: 0, qs: [] });
+export const initState = (semente = 0): MKState =>
+  spray({ drops: [], sel: -1, seed: 20240917 + 7919 * Math.round(semente), nextId: 1, timer: null, tq: 0, ts: 0, Vs: 0, qs: [] });
 
 const val = (s: MKState, f: (d: Drop) => number) => {
   const d = selected(s);
@@ -184,6 +184,7 @@ export const millikan = defineSim<MKState>({
       live: true,
     },
     { key: "V", label: "Tensão nas placas V", unit: "V", min: 0, max: 1500, step: 1, default: 500, live: true },
+    { key: "semente", label: "Borrifada (sorteio das gotas)", unit: "", min: 0, max: 99, step: 1, default: 0 },
     { key: "T", label: "Temperatura do ar", unit: "°C", min: 10, max: 40, step: 0.5, default: 23 },
     {
       key: "cunningham",
@@ -300,7 +301,7 @@ export const millikan = defineSim<MKState>({
     },
   ],
 
-  init: () => initState(),
+  init: (p) => initState(num(p, "semente", 0)),
   step(s, p, t, dt) {
     const rand = rng(s.seed);
     const E = Efield(p);
