@@ -3,7 +3,7 @@ import { dmmAccuracy, type Practice } from "@fisilab/analysis";
 
 const rad = (d: number) => (d * Math.PI) / 180;
 
-export const practices: Practice[] = [
+const planned: Practice[] = [
   {
     id: "exp1-pendulo",
     course: "Exp I",
@@ -1339,3 +1339,10 @@ O gráfico de $(m_a c_a + C)(T_e - T_a)$ contra $m_b(T_b - T_e)$ é uma reta pel
 ];
 
 export const findPractice = (id: string) => practices.find((p) => p.id === id);
+
+// Práticas extras, além do plano original: um arquivo por prática em practices-extra/.
+const extras = Object.values(import.meta.glob<{ practice: Practice }>("./practices-extra/*.ts", { eager: true }))
+  .map((m) => ({ ...m.practice, extra: true }))
+  .sort((a, b) => a.course.localeCompare(b.course) || a.title.localeCompare(b.title, "pt"));
+
+export const practices: Practice[] = [...planned, ...extras];
