@@ -54,8 +54,10 @@ export interface ResultSpec {
 export interface Practice {
   id: string;
   course: Course;
-  /** Título exatamente como no plano (plan.ts). */
+  /** Título exatamente como no plano (plan.ts), salvo nas práticas extras. */
   title: string;
+  /** Prática além do catálogo do plano original (o título não precisa estar em plan.ts). */
+  extra?: boolean;
   /** Simulação que faz o papel do aparato. */
   sim: string;
   scenario?: string;

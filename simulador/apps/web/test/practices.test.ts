@@ -9,7 +9,7 @@ describe("práticas", () => {
   it("ids únicos e títulos do plano", () => {
     expect(new Set(practices.map((p) => p.id)).size).toBe(practices.length);
     const titles = new Set(plan.map((p) => p.title));
-    for (const p of practices) expect(titles.has(p.title), p.title).toBe(true);
+    for (const p of practices) expect(p.extra || titles.has(p.title), p.title).toBe(true);
   });
 
   for (const p of practices) {

@@ -108,6 +108,49 @@ import { hidrogenio } from "@fisilab/sim-hidrogenio";
 import { sternGerlach } from "@fisilab/sim-stern-gerlach";
 import { semicondutores } from "@fisilab/sim-semicondutores";
 import { nuclear } from "@fisilab/sim-nuclear";
+import { maquinasSimples } from "@fisilab/sim-maquinas-simples";
+import { referenciaisNaoInerciais } from "@fisilab/sim-referenciais-nao-inerciais";
+import { braquistocrona } from "@fisilab/sim-braquistocrona";
+import { pendulosEspeciais } from "@fisilab/sim-pendulos-especiais";
+import { amortecedorPredio } from "@fisilab/sim-amortecedor-predio";
+import { formasEnergia } from "@fisilab/sim-formas-energia";
+import { medidasErros } from "@fisilab/sim-medidas-erros";
+import { vasosComunicantes } from "@fisilab/sim-vasos-comunicantes";
+import { cavendish } from "@fisilab/sim-cavendish";
+import { sistemaSolar } from "@fisilab/sim-sistema-solar";
+import { estrelasHr } from "@fisilab/sim-estrelas-hr";
+import { lissajousFourier } from "@fisilab/sim-lissajous-fourier";
+import { chladniMembranas } from "@fisilab/sim-chladni-membranas";
+import { motoresTermicos } from "@fisilab/sim-motores-termicos";
+import { estadosMateria } from "@fisilab/sim-estados-materia";
+import { atmosferaUmidade } from "@fisilab/sim-atmosfera-umidade";
+import { motoPerpetuo } from "@fisilab/sim-moto-perpetuo";
+import { boltzmannDoisGases } from "@fisilab/sim-boltzmann-dois-gases";
+import { maquinasEletrostaticas } from "@fisilab/sim-maquinas-eletrostaticas";
+import { consumoEnergia } from "@fisilab/sim-consumo-energia";
+import { eletrolisePilhas } from "@fisilab/sim-eletrolise-pilhas";
+import { descargasGases } from "@fisilab/sim-descargas-gases";
+import { transistorRetificador } from "@fisilab/sim-transistor-retificador";
+import { motoresGeradores } from "@fisilab/sim-motores-geradores";
+import { jogosFisica } from "@fisilab/sim-jogos-fisica";
+import { coresVisao } from "@fisilab/sim-cores-visao";
+import { fotometria } from "@fisilab/sim-fotometria";
+import { velocidadeLuz } from "@fisilab/sim-velocidade-luz";
+import { principioFermat } from "@fisilab/sim-principio-fermat";
+import { interferometros } from "@fisilab/sim-interferometros";
+import { atividadeOtica } from "@fisilab/sim-atividade-otica";
+import { razaoEm } from "@fisilab/sim-razao-em";
+import { millikan } from "@fisilab/sim-millikan";
+import { franckHertz } from "@fisilab/sim-franck-hertz";
+import { difracaoEletrons } from "@fisilab/sim-difracao-eletrons";
+import { raiosX } from "@fisilab/sim-raios-x";
+import { qubitDoisNiveis } from "@fisilab/sim-qubit-dois-niveis";
+import { resfriamentoLaser } from "@fisilab/sim-resfriamento-laser";
+import { radioterapia } from "@fisilab/sim-radioterapia";
+import { rmnMri } from "@fisilab/sim-rmn-mri";
+import { moleculasLuz } from "@fisilab/sim-moleculas-luz";
+import { probabilidadeMontecarlo } from "@fisilab/sim-probabilidade-montecarlo";
+import { epidemiaSir } from "@fisilab/sim-epidemia-sir";
 import { planoInclinado } from "@fisilab/sim-plano-inclinado";
 import { plan, type PlannedSim } from "./plan.ts";
 import { practices } from "./practices.ts";
@@ -230,6 +273,49 @@ export const catalog: CatalogEntry[] = [
   { sim: sternGerlach, covers: ["Spin, Stern-Gerlach"] },
   { sim: semicondutores, covers: ["Bandas de energia, semicondutores, diodo e LED"] },
   { sim: nuclear, covers: ["Fissão, fusão, reação em cadeia"] },
+  { sim: maquinasSimples, covers: [] },
+  { sim: referenciaisNaoInerciais, covers: [] },
+  { sim: braquistocrona, covers: [] },
+  { sim: pendulosEspeciais, covers: [] },
+  { sim: amortecedorPredio, covers: [] },
+  { sim: formasEnergia, covers: [] },
+  { sim: medidasErros, covers: [] },
+  { sim: vasosComunicantes, covers: [] },
+  { sim: cavendish, covers: [] },
+  { sim: sistemaSolar, covers: [] },
+  { sim: estrelasHr, covers: [] },
+  { sim: lissajousFourier, covers: [] },
+  { sim: chladniMembranas, covers: [] },
+  { sim: motoresTermicos, covers: [] },
+  { sim: estadosMateria, covers: [] },
+  { sim: atmosferaUmidade, covers: [] },
+  { sim: motoPerpetuo, covers: [] },
+  { sim: boltzmannDoisGases, covers: [] },
+  { sim: maquinasEletrostaticas, covers: [] },
+  { sim: consumoEnergia, covers: [] },
+  { sim: eletrolisePilhas, covers: [] },
+  { sim: descargasGases, covers: [] },
+  { sim: transistorRetificador, covers: [] },
+  { sim: motoresGeradores, covers: [] },
+  { sim: jogosFisica, covers: [] },
+  { sim: coresVisao, covers: [] },
+  { sim: fotometria, covers: [] },
+  { sim: velocidadeLuz, covers: [] },
+  { sim: principioFermat, covers: [] },
+  { sim: interferometros, covers: [] },
+  { sim: atividadeOtica, covers: [] },
+  { sim: razaoEm, covers: [] },
+  { sim: millikan, covers: [] },
+  { sim: franckHertz, covers: [] },
+  { sim: difracaoEletrons, covers: [] },
+  { sim: raiosX, covers: [] },
+  { sim: qubitDoisNiveis, covers: [] },
+  { sim: resfriamentoLaser, covers: [] },
+  { sim: radioterapia, covers: [] },
+  { sim: rmnMri, covers: [] },
+  { sim: moleculasLuz, covers: [] },
+  { sim: probabilidadeMontecarlo, covers: [] },
+  { sim: epidemiaSir, covers: [] },
 ];
 
 export const simulations = catalog.map((c) => c.sim);
@@ -247,5 +333,5 @@ export function pending(): PlannedSim[] {
 /** Confere, em desenvolvimento, se os títulos de `covers` existem no plano. */
 export function unknownCovers(): string[] {
   const titles = new Set(plan.map((p) => p.title));
-  return [...catalog.flatMap((c) => c.covers), ...practices.map((p) => p.title)].filter((t) => !titles.has(t));
+  return [...catalog.flatMap((c) => c.covers), ...practices.filter((p) => !p.extra).map((p) => p.title)].filter((t) => !titles.has(t));
 }
