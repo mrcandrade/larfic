@@ -153,6 +153,12 @@ export interface Simulation<S = State> {
   equations: string[];
   /** Equações vivas: LaTeX com os valores atuais substituídos. */
   liveEquations?(state: S, params: Params, t: number): string[];
+  /**
+   * Modo engenharia: derivação completa do modelo, do princípio físico às
+   * equações que a simulação integra (hipóteses e método numérico incluídos).
+   * Markdown com a mesma sintaxe dos roteiros ($tex$ inline, $$tex$$ numa linha própria).
+   */
+  derivation?: string;
 
   params: ParamSpec[];
   observables: Observable<S>[];

@@ -11,6 +11,7 @@ import {
   wavelengthRGB,
   type Slits,
 } from "./optica.ts";
+import { derivation } from "./derivation.ts";
 
 export * from "./optica.ts";
 
@@ -56,6 +57,7 @@ export const fendaDupla = defineSim({
   priority: "P1",
   summary:
     "Luz atravessa duas fendas e forma franjas na tela. Ajuste λ, d, a e L, compare com a envoltória de difração e veja as franjas coloridas da luz branca.",
+  derivation,
   equations: [
     String.raw`I(\theta) = I_0 \cos^2\!\left(\frac{\pi d \,\text{sen}\,\theta}{\lambda}\right)\left[\frac{\text{sen}\,\beta}{\beta}\right]^2,\qquad \beta = \frac{\pi a\,\text{sen}\,\theta}{\lambda}`,
     String.raw`\text{máximos: } d\,\text{sen}\,\theta = m\lambda \qquad \text{zeros da envoltória: } a\,\text{sen}\,\theta = p\lambda`,

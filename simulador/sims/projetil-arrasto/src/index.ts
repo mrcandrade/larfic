@@ -1,4 +1,5 @@
 import { defineSim, draw, texNum, type Params, type State } from "@fisilab/core";
+import { derivation } from "./derivation.ts";
 
 /**
  * Lançamento oblíquo com arrasto quadrático.
@@ -37,6 +38,7 @@ export const projetilArrasto = defineSim({
   priority: "P1",
   summary:
     "Lançamento oblíquo com resistência do ar proporcional a v². Compare com o vácuo, veja a velocidade terminal e acompanhe a energia dissipada.",
+  derivation,
   equations: [
     String.raw`m\,\ddot{\vec r} = m\vec g - \tfrac12 \rho\, C_d A\, |\vec v|\,\vec v`,
     String.raw`v_t = \sqrt{\dfrac{2mg}{\rho C_d A}}`,

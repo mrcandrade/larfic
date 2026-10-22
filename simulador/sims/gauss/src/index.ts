@@ -12,6 +12,7 @@ import {
   type Source,
   type Surface,
 } from "./physics.ts";
+import { derivation } from "./derivation.ts";
 
 export * from "./physics.ts";
 
@@ -116,6 +117,7 @@ export const gauss = defineSim<GaussState>({
   priority: "P1",
   summary:
     "Arraste uma superfície gaussiana em torno de cargas pontuais, fio, plano ou esfera carregada. O fluxo é somado elemento por elemento e comparado com q_int/ε₀.",
+  derivation,
   equations: [
     String.raw`\Phi_E = \oint_S \vec E\cdot\hat n\,dA \approx \sum_i (\vec E_i\cdot\hat n_i)\,\Delta A_i = \frac{q_\text{int}}{\varepsilon_0}`,
     String.raw`\text{carga pontual: } E = \frac{q}{4\pi\varepsilon_0 r^2} \qquad \text{fio: } E = \frac{\lambda}{2\pi\varepsilon_0 r} \qquad \text{plano: } E = \frac{\sigma}{2\varepsilon_0}`,

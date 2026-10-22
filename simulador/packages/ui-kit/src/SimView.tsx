@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Runner, samplesToCsv, withOverrides, type AnySimulation, type Params } from "@fisilab/core";
-import { Stage, type StageHandle } from "./Stage.tsx";
+import { Stage, type InkStroke, type StageHandle } from "./Stage.tsx";
 import { Controls } from "./Controls.tsx";
 import { Chart } from "./Chart.tsx";
 import { Equation } from "./Equation.tsx";
 import { Markdown } from "./Guide.tsx";
 import { Predict } from "./Predict.tsx";
 import { Exercises } from "./Exercises.tsx";
-import { useTheme } from "./theme.ts";
+import { prefersReducedMotion, useTheme } from "./theme.ts";
+import { SHORTCUTS, focusKind, shouldAnnounce, shortcutFor, stageSummary, type ShortcutAction } from "./a11y.ts";
 import { progress } from "./progress.ts";
 
 const SPEEDS = [0.1, 0.25, 0.5, 1, 2, 5];
@@ -26,9 +27,15 @@ export interface SimViewProps {
   /** Painel extra (ex.: tutor de IA) que recebe o estado atual. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sidebar?(ctx: { runner: Runner<any>; tick: number; scenarioId: string }): React.ReactNode;
+  /** Abre já no modo apresentação (projetar em sala). Ignorado no modo incorporado. */
+  present?: boolean;
+  /** Avisado quando o modo apresentação liga ou desliga (para refletir na URL). */
+  onPresentChange?(on: boolean): void;
+  /** Começa rodando, a menos que o usuário prefira menos movimento (prefers-reduced-motion). */
+  autoplay?: boolean;
 }
 
-export function SimView({ sim, initialParams, initialScenario, locked, embed, onParamsChange, sidebar }: SimViewProps) {
+export function SimView({ sim, initialParams, initialScenario, locked, embed, onParamsChange, sidebar, present, onPresentChange, autoplay }: SimViewProps) {
   const theme = useTheme();
   const firstScenario = sim.scenarios.find((s) => s.id === initialScenario) ?? sim.scenarios[0];
   const [scenarioId, setScenarioId] = useState(firstScenario?.id ?? "");
@@ -45,6 +52,15 @@ export function SimView({ sim, initialParams, initialScenario, locked, embed, on
   const scenario = sim.scenarios.find((s) => s.id === scenarioId);
   const liveKeys = useMemo(() => new Set(sim.params.filter((p) => p.live).map((p) => p.key)), [sim]);
   const lastParams = useRef(params);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const canPresent = !embed;
+  const [presenting, setPresenting] = useState(Boolean(present) && canPresent);
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [penOn, setPenOn] = useState(false);
+  const [strokes, setStrokes] = useState<InkStroke[]>([]);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [showDerivation, setShowDerivation] = useState(false);
+  const [viewportH, setViewportH] = useState(() => (typeof window === "undefined" ? 800 : window.innerHeight));
 
   useEffect(() => progress.visit(sim.id), [sim.id]);
 
@@ -62,6 +78,58 @@ export function SimView({ sim, initialParams, initialScenario, locked, embed, on
   useEffect(() => {
     runner.speed = speed;
   }, [runner, speed]);
+
+  // Autoinício só quando pedido e se o usuário não preferir menos movimento.
+  useEffect(() => {
+    if (autoplay && !sim.static && !prefersReducedMotion()) setPlaying(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Modo apresentação: tela cheia quando o navegador permite; sem ela, o CSS cobre a janela.
+  const enteredFullscreen = useRef(false);
+  const enterPresent = useCallback(() => {
+    if (!canPresent) return;
+    setPresenting(true);
+    const el = rootRef.current;
+    if (el && typeof el.requestFullscreen === "function" && !document.fullscreenElement) {
+      el.requestFullscreen().catch(() => {
+        /* sem gesto do usuário ou sem suporte: segue em tela da janela */
+      });
+    }
+  }, [canPresent]);
+  const exitPresent = useCallback(() => {
+    setPresenting(false);
+    setPenOn(false);
+    setHelpOpen(false);
+    if (typeof document !== "undefined" && document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    const on = () => {
+      if (document.fullscreenElement) enteredFullscreen.current = true;
+      else if (enteredFullscreen.current) {
+        // Saiu da tela cheia (Esc do navegador): sai também da apresentação.
+        enteredFullscreen.current = false;
+        setPresenting(false);
+        setPenOn(false);
+      }
+    };
+    document.addEventListener("fullscreenchange", on);
+    return () => document.removeEventListener("fullscreenchange", on);
+  }, []);
+  const firstPresent = useRef(true);
+  useEffect(() => {
+    if (firstPresent.current) {
+      firstPresent.current = false;
+      if (!presenting) return;
+    }
+    onPresentChange?.(presenting);
+  }, [presenting]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!presenting) return;
+    const on = () => setViewportH(window.innerHeight);
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, [presenting]);
 
   useEffect(() => {
     if (!playing) return;
@@ -104,10 +172,92 @@ export function SimView({ sim, initialParams, initialScenario, locked, embed, on
   };
 
   const togglePlay = () => {
+    if (sim.static) return;
     if (runner.finished) runner.reset(params);
     if (!playing && predicted) setObserved(true);
     setPlaying((p) => !p);
   };
+  const forceAnnounce = useRef(false);
+  const stepForward = () => {
+    if (sim.static || runner.finished) return;
+    setPlaying(false);
+    for (let i = 0; i < 10; i++) runner.stepOnce();
+    forceAnnounce.current = true;
+    refresh();
+  };
+  const stepBack = () => {
+    if (sim.static || runner.t === 0) return;
+    setPlaying(false);
+    runner.rewindTo(runner.t - Math.max(0.25, 50 * runner.dt));
+    forceAnnounce.current = true;
+    refresh();
+  };
+  const resetRun = () => {
+    setPlaying(false);
+    runner.reset(params);
+    forceAnnounce.current = true;
+    refresh();
+  };
+
+  const runShortcut = (a: ShortcutAction) => {
+    switch (a.kind) {
+      case "toggle-play":
+        return togglePlay();
+      case "step":
+        return stepForward();
+      case "back":
+        return stepBack();
+      case "reset":
+        return resetRun();
+      case "scenario": {
+        const sc = sim.scenarios[a.index];
+        if (sc) {
+          forceAnnounce.current = true;
+          applyScenario(sc.id);
+        }
+        return;
+      }
+      case "help":
+        return setHelpOpen((h) => !h);
+      case "exit":
+        if (helpOpen) setHelpOpen(false);
+        else if (penOn) setPenOn(false);
+        else if (presenting) exitPresent();
+        return;
+      case "clear-ink":
+        return setStrokes([]);
+      case "pen":
+        return setPenOn((p) => !p);
+      case "panel":
+        return setPanelOpen((p) => !p);
+    }
+  };
+  /** Trata uma tecla; devolve true quando ela virou atalho. */
+  const onShortcutKey = (e: { key: string; ctrlKey: boolean; metaKey: boolean; altKey: boolean; target: EventTarget | null; preventDefault(): void }) => {
+    const a = shortcutFor(e, focusKind(e.target as HTMLElement | null), {
+      presenting,
+      scenarios: sim.scenarios.length,
+      isStatic: sim.static,
+    });
+    if (!a) return false;
+    // Esc fora da apresentação só fecha a ajuda.
+    if (a.kind === "exit" && !presenting && !helpOpen) return false;
+    e.preventDefault();
+    runShortcut(a);
+    return true;
+  };
+  const keyRef = useRef(onShortcutKey);
+  keyRef.current = onShortcutKey;
+  // Na apresentação os atalhos valem na página toda; fora dela, com o foco no palco (ou com a ajuda aberta).
+  useEffect(() => {
+    if (!presenting && !helpOpen) return;
+    const on = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+      keyRef.current(e);
+    };
+    window.addEventListener("keydown", on);
+    return () => window.removeEventListener("keydown", on);
+  }, [presenting, helpOpen]);
 
   const values = runner.observe();
   const first = runner.samples[0];
@@ -115,53 +265,120 @@ export function SimView({ sim, initialParams, initialScenario, locked, embed, on
   const live = sim.liveEquations?.(runner.state, runner.params, runner.t) ?? [];
   const hasPredict = Boolean(scenario?.predict?.length) && !embed;
 
+  // Descrição textual para leitores de tela, atualizada com moderação.
+  const summary = stageSummary({
+    title: sim.title,
+    observables: sim.observables,
+    values,
+    t: runner.t,
+    playing,
+    finished: runner.finished,
+    isStatic: sim.static,
+    scenario: scenario?.label,
+  });
+  const [announcement, setAnnouncement] = useState(summary);
+  const annRef = useRef({ at: 0, playing: false });
+  useEffect(() => {
+    const now = performance.now();
+    const prev = annRef.current;
+    if (shouldAnnounce(prev, now, playing, forceAnnounce.current)) {
+      forceAnnounce.current = false;
+      annRef.current = { at: now, playing };
+      setAnnouncement(summary);
+      return;
+    }
+    if (prev.playing !== playing) annRef.current = { at: now, playing };
+    if (playing) return;
+    // Parada: mudanças (parâmetros, arrastes) são anunciadas depois de um respiro.
+    const id = setTimeout(() => {
+      annRef.current = { at: performance.now(), playing: false };
+      setAnnouncement(summary);
+    }, 1500);
+    return () => clearTimeout(id);
+  }, [tick, playing, summary]);
+
+  const stageMax = presenting ? Math.max(260, viewportH - (sim.static ? 120 : 190)) : undefined;
+
   return (
-    <div className={`fl-simview ${embed ? "fl-embed" : ""}`}>
-      {!embed && (
+    <div
+      ref={rootRef}
+      className={`fl-simview ${embed ? "fl-embed" : ""} ${presenting ? "fl-presenting" : ""} ${presenting && !panelOpen ? "fl-panel-closed" : ""}`}
+    >
+      {!embed && !presenting && (
         <section className="fl-sim-header">
-          <p className="fl-eyebrow">
-            {sim.course} · {sim.topic}
-          </p>
-          <h1>{sim.title}</h1>
+          <div className="fl-sim-title">
+            <div>
+              <p className="fl-eyebrow">
+                {sim.course} · {sim.topic}
+              </p>
+              <h1>{sim.title}</h1>
+            </div>
+            <div className="fl-sim-tools">
+              <button onClick={() => setHelpOpen(true)} aria-haspopup="dialog">
+                Atalhos
+              </button>
+              <button className="fl-primary" onClick={enterPresent} title="Tela cheia para projetar em sala">
+                Apresentar
+              </button>
+            </div>
+          </div>
           <p>{sim.summary}</p>
         </section>
       )}
 
-      <section className="fl-stage-panel">
-        <Stage ref={stageRef} sim={sim} runner={runner} theme={theme} onInteract={refresh} />
+      {presenting && (
+        <div className="fl-present-bar" role="toolbar" aria-label="Modo apresentação">
+          <strong className="fl-present-title">{sim.title}</strong>
+          {sim.scenarios.length > 1 && scenario && <span className="fl-present-scenario">{scenario.label}</span>}
+          <span className="fl-present-tools">
+            <button aria-pressed={panelOpen} onClick={() => setPanelOpen((o) => !o)} title="Tecla L">
+              Painel
+            </button>
+            <button aria-pressed={penOn} className={penOn ? "fl-active" : ""} onClick={() => setPenOn((o) => !o)} title="Tecla P">
+              Caneta
+            </button>
+            <button onClick={() => setStrokes([])} disabled={strokes.length === 0} title="Tecla C">
+              Limpar
+            </button>
+            <button onClick={() => setHelpOpen(true)} aria-haspopup="dialog" title="Tecla ?">
+              Atalhos
+            </button>
+            <button onClick={exitPresent} title="Tecla Esc">
+              Sair
+            </button>
+          </span>
+        </div>
+      )}
+
+      <section className="fl-stage-panel" aria-label="Palco da simulação">
+        <Stage
+          ref={stageRef}
+          sim={sim}
+          runner={runner}
+          theme={theme}
+          onInteract={refresh}
+          maxHeight={stageMax}
+          description={announcement}
+          onKeyDown={(e) => {
+            if (!presenting && !helpOpen) onShortcutKey(e);
+          }}
+          ink={presenting ? { active: penOn, strokes, onChange: setStrokes } : undefined}
+        />
+        <p className="fl-sr-only" aria-live="polite" aria-atomic="true">
+          {announcement}
+        </p>
         {!sim.static && (
           <div className="fl-playback" role="toolbar" aria-label="Controle de tempo">
-            <button className="fl-primary" onClick={togglePlay}>
+            <button className="fl-primary" onClick={togglePlay} aria-keyshortcuts="Space">
               {playing ? "Pausar" : runner.finished ? "Repetir" : runner.t > 0 ? "Continuar" : "Iniciar"}
             </button>
-            <button
-              onClick={() => {
-                setPlaying(false);
-                for (let i = 0; i < 10; i++) runner.stepOnce();
-                refresh();
-              }}
-              disabled={runner.finished}
-              title="Avança 10 passos de integração"
-            >
+            <button onClick={stepForward} disabled={runner.finished} title="Avança 10 passos de integração" aria-keyshortcuts="ArrowRight">
               Passo
             </button>
-            <button
-              onClick={() => {
-                setPlaying(false);
-                runner.rewindTo(runner.t - Math.max(0.25, 50 * runner.dt));
-                refresh();
-              }}
-              disabled={runner.t === 0}
-            >
+            <button onClick={stepBack} disabled={runner.t === 0} aria-keyshortcuts="ArrowLeft">
               Voltar
             </button>
-            <button
-              onClick={() => {
-                setPlaying(false);
-                runner.reset(params);
-                refresh();
-              }}
-            >
+            <button onClick={resetRun} aria-keyshortcuts="R">
               Reiniciar
             </button>
             <label className="fl-speed">
@@ -251,6 +468,22 @@ export function SimView({ sim, initialParams, initialScenario, locked, embed, on
           {sim.equations.map((eq) => (
             <Equation key={eq} tex={eq} />
           ))}
+          {sim.derivation && (
+            <div className="fl-derivation">
+              <button
+                aria-expanded={showDerivation}
+                aria-controls={`derivacao-${sim.id}`}
+                onClick={() => setShowDerivation((v) => !v)}
+              >
+                {showDerivation ? "Esconder a derivação" : "Modo engenharia: ver a derivação completa"}
+              </button>
+              {showDerivation && (
+                <div id={`derivacao-${sim.id}`} className="fl-derivation-body" role="region" aria-label="Derivação completa do modelo">
+                  <Markdown text={sim.derivation} />
+                </div>
+              )}
+            </div>
+          )}
           {live.length > 0 && (
             <div className="fl-live">
               <h3>Com os valores atuais</h3>
@@ -276,12 +509,46 @@ export function SimView({ sim, initialParams, initialScenario, locked, embed, on
             onOpen={(p) => {
               setPlaying(false);
               setParams(withOverrides(sim, p));
-              window.scrollTo({ top: 0, behavior: "smooth" });
+              window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
             }}
           />
         </section>
       )}
       {sidebar && <section className="fl-extra">{sidebar({ runner, tick, scenarioId })}</section>}
+      {helpOpen && <ShortcutHelp presenting={presenting} onClose={() => setHelpOpen(false)} />}
+    </div>
+  );
+}
+
+/** Caixa com a lista de atalhos de teclado (tecla ?). */
+function ShortcutHelp({ presenting, onClose }: { presenting: boolean; onClose(): void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    return () => prev?.focus?.();
+  }, []);
+  return (
+    <div className="fl-help-backdrop" onClick={onClose}>
+      <div className="fl-help" role="dialog" aria-modal="true" aria-labelledby="fl-help-title" onClick={(e) => e.stopPropagation()}>
+        <h2 id="fl-help-title">Atalhos do teclado</h2>
+        <p className="fl-hint">
+          {presenting ? "Valem em toda a tela durante a apresentação." : "Valem com o foco no palco (clique nele ou chegue com Tab)."}
+        </p>
+        <dl>
+          {SHORTCUTS.filter((s) => presenting || !s.presentingOnly).map((s) => (
+            <div key={s.keys}>
+              <dt>
+                <kbd>{s.keys}</kbd>
+              </dt>
+              <dd>{s.label}</dd>
+            </div>
+          ))}
+        </dl>
+        <button ref={closeRef} onClick={onClose}>
+          Fechar
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import { Fragment, type ReactNode } from "react";
-import { InlineMath } from "./Equation.tsx";
+import { Equation, InlineMath } from "./Equation.tsx";
+import { displayMath } from "./markdown.ts";
 
 /**
  * Renderizador mínimo de Markdown para roteiros: títulos ###, listas numeradas
- * e com marcadores, **negrito**, *itálico* e $LaTeX$ inline.
+ * e com marcadores, **negrito**, *itálico*, $LaTeX$ inline e equações em
+ * destaque numa linha própria entre $$ ... $$.
  */
 export function Markdown({ text }: { text: string }) {
   const blocks: ReactNode[] = [];
@@ -25,7 +27,9 @@ export function Markdown({ text }: { text: string }) {
       continue;
     }
     flush();
-    if (line.startsWith("### ")) blocks.push(<h3 key={blocks.length}>{inline(line.slice(4))}</h3>);
+    const display = displayMath(line);
+    if (display !== null) blocks.push(<Equation key={blocks.length} tex={display} />);
+    else if (line.startsWith("### ")) blocks.push(<h3 key={blocks.length}>{inline(line.slice(4))}</h3>);
     else if (line.startsWith("## ")) blocks.push(<h3 key={blocks.length}>{inline(line.slice(3))}</h3>);
     else if (line.trim()) blocks.push(<p key={blocks.length}>{inline(line)}</p>);
   }

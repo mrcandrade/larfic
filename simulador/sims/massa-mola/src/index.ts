@@ -1,4 +1,5 @@
 import { defineSim, draw, num, rk4, texNum, type Draw, type Params, type State, type Theme } from "@fisilab/core";
+import { derivation } from "./derivation.ts";
 
 // Estado: [x, v, W_atrito (energia dissipada, ≥ 0), W_externa (trabalho da força F)]
 const X = 0, V = 1, WD = 2, WF = 3;
@@ -34,6 +35,7 @@ export const massaMola = defineSim({
   priority: "P1",
   summary:
     "Um bloco preso a uma mola sobre uma mesa com atrito e uma força externa ajustável. Acompanhe o trabalho de cada força, a potência instantânea e para onde vai a energia.",
+  derivation,
   equations: [
     String.raw`m\ddot x = -kx + F - \mu m g\,\text{sgn}(\dot x)`,
     String.raw`W = \int \vec F\cdot d\vec r \qquad P = \vec F\cdot\vec v \qquad U_{el} = \tfrac12 k x^2`,

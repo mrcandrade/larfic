@@ -1,4 +1,5 @@
 import { defineSim, draw, num, texNum, type Params } from "@fisilab/core";
+import { derivation } from "./derivation.ts";
 
 /** Integral elíptica completa de 1ª espécie K(k) pela média aritmético-geométrica. */
 export function ellipticK(k: number): number {
@@ -49,6 +50,7 @@ export const pendulos = defineSim({
   priority: "P1",
   summary:
     "Compare o pêndulo real (equação não linear) com a aproximação de pequenos ângulos, troque massa pontual por corpo extenso e veja o período crescer com a amplitude.",
+  derivation,
   equations: [
     String.raw`I\,\ddot\theta = -m g d \sin\theta - b\,\dot\theta`,
     String.raw`T_0 = 2\pi\sqrt{\frac{I}{m g d}} \qquad T = \frac{4}{\omega_0} K\!\left(\sin\frac{\theta_0}{2}\right)`,

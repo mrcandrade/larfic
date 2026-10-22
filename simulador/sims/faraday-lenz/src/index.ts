@@ -1,5 +1,6 @@
 import { defineSim, draw, num, texNum, type Draw, type Params, type Theme } from "@fisilab/core";
 import { MU0, dipoleB2, fluxNumeric } from "./physics.ts";
+import { derivation } from "./derivation.ts";
 
 export * from "./physics.ts";
 
@@ -79,6 +80,7 @@ export const faradayLenz = defineSim<FaradayState>({
   priority: "P1",
   summary:
     "Um ímã passa por uma espira (oscilando, com velocidade constante ou arrastado com o mouse) e o fluxo Φ(t) e a fem ε(t) aparecem juntos. No modo gerador, a espira gira num campo uniforme.",
+  derivation,
   equations: [
     String.raw`\varepsilon = -N\,\frac{d\Phi_B}{dt} \qquad \Phi_B = \int_A \vec B\cdot d\vec A`,
     String.raw`\text{dipolo no eixo: } \Phi = \frac{\mu_0 m a^2}{2\,(a^2 + d^2)^{3/2}} \qquad \varepsilon = -N\,\frac{d\Phi}{dd}\,v`,

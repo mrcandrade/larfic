@@ -32,6 +32,7 @@ import {
   type Cx,
 } from "./model.ts";
 import { capacitor, currentArrow, generator, inductor, resistor, si } from "./symbols.ts";
+import { derivation } from "./derivation.ts";
 
 export * from "./model.ts";
 
@@ -48,6 +49,7 @@ export const rlcCa = defineSim({
   priority: "P1",
   summary:
     "Um gerador senoidal de frequência ajustável alimenta um RLC em série ou em paralelo. Veja os fasores girando, a impedância complexa, a curva de ressonância com o fator Q e o diagrama de Bode dos filtros, enquanto o transiente é integrado passo a passo.",
+  derivation,
   equations: [
     String.raw`Z = R + j\left(\omega L - \frac{1}{\omega C}\right) \qquad |Z| = \sqrt{R^2 + (X_L - X_C)^2} \qquad \tan\varphi = \frac{X_L - X_C}{R}`,
     String.raw`\hat I = \frac{\hat V}{Z} \qquad \hat V_R = R\hat I \qquad \hat V_L = j\omega L\,\hat I \qquad \hat V_C = \frac{\hat I}{j\omega C}`,

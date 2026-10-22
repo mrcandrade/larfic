@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Course } from "@fisilab/core";
 import { Bench, SimView, Tutor, getProgress, onProgressChange, useTheme } from "@fisilab/ui-kit";
 import { tutorClient } from "./account.ts";
@@ -6,6 +6,8 @@ import { AssignmentPage } from "./pages/AssignmentPage.tsx";
 import { TeacherPage } from "./pages/TeacherPage.tsx";
 import { VideoPage } from "./pages/VideoPage.tsx";
 import { SensorPage } from "./pages/SensorPage.tsx";
+import { ConceptsPage } from "./pages/ConceptsPage.tsx";
+import { ChallengesPage } from "./pages/ChallengesPage.tsx";
 import { NotebookPage } from "./pages/NotebookPage.tsx";
 import { catalog, findSim, pending } from "./catalog.ts";
 import { plan } from "./plan.ts";
@@ -42,6 +44,12 @@ export function App() {
         </a>
         <span className="subtitle">Laboratório virtual de física para engenharia</span>
         <nav className="nav-links" aria-label="Seções">
+          <a className="nav-link" href="#/concepcoes">
+            Concepções
+          </a>
+          <a className="nav-link" href="#/desafios">
+            Desafios
+          </a>
           <a className="nav-link" href="#/video">
             Vídeo
           </a>
@@ -70,6 +78,10 @@ export function App() {
           <SensorPage />
         ) : route.page === "notebook" ? (
           <NotebookPage />
+        ) : route.page === "concepts" ? (
+          <ConceptsPage id={route.conceptId} />
+        ) : route.page === "challenges" ? (
+          <ChallengesPage id={route.challengeId} />
         ) : route.page === "assignment" && route.code ? (
           <AssignmentPage code={route.code} query={route.query} />
         ) : (
@@ -104,6 +116,7 @@ function ThemeToggle() {
         <option value="auto">Automático</option>
         <option value="light">Claro</option>
         <option value="dark">Escuro</option>
+        <option value="contrast">Alto contraste</option>
       </select>
     </label>
   );
@@ -225,6 +238,8 @@ function CatalogPage() {
 function SimPage({ simId, query, embed }: { simId: string; query: URLSearchParams; embed?: boolean }) {
   const sim = findSim(simId);
   const [copied, setCopied] = useState("");
+  // Modo apresentação (?apresentar=1): guardado num ref para entrar na URL junto com os parâmetros.
+  const presenting = useRef(!embed && query.get("apresentar") === "1");
   if (!sim) {
     return (
       <div className="notfound">
@@ -253,6 +268,14 @@ function SimPage({ simId, query, embed }: { simId: string; query: URLSearchParam
       {!embed && (
         <nav className="crumbs">
           <a href="#/">Catálogo</a> <span aria-hidden>›</span> {sim.course} <span aria-hidden>›</span> {sim.title}
+          {query.get("concepcao") && (
+            <>
+              {" "}
+              <a className="back-concept" href={`#/concepcoes/${encodeURIComponent(query.get("concepcao")!)}`}>
+                ← Voltar à concepção
+              </a>
+            </>
+          )}
           <span className="share">
             <button onClick={() => copy(base + location.hash, "link")}>{copied === "link" ? "Link copiado" : "Copiar link"}</button>
             <button
@@ -275,6 +298,15 @@ function SimPage({ simId, query, embed }: { simId: string; query: URLSearchParam
         initialScenario={query.get("cenario") ?? undefined}
         initialParams={paramsFromQuery(query)}
         locked={locked}
+        present={presenting.current}
+        autoplay={query.get("rodar") === "1"}
+        onPresentChange={(on) => {
+          presenting.current = on;
+          const q = new URLSearchParams(location.hash.split("?")[1] ?? "");
+          if (on) q.set("apresentar", "1");
+          else q.delete("apresentar");
+          history.replaceState(null, "", simHref(sim.id, q));
+        }}
         sidebar={embed ? undefined : ({ runner, scenarioId }) => <Tutor runner={runner} scenarioId={scenarioId} client={tutorClient()} />}
         onParamsChange={(params, scenario) => {
           if (embed) return;
@@ -282,6 +314,9 @@ function SimPage({ simId, query, embed }: { simId: string; query: URLSearchParam
           if (scenario) q.set("cenario", scenario);
           for (const [k, v] of Object.entries(params)) q.set(`p.${k}`, String(v));
           if (locked?.length) q.set("travar", locked.join(","));
+          if (presenting.current) q.set("apresentar", "1");
+          const concept = query.get("concepcao");
+          if (concept) q.set("concepcao", concept);
           history.replaceState(null, "", simHref(sim.id, q));
         }}
       />
@@ -316,7 +351,7 @@ function PracticePage({ id }: { id: string }) {
         locked={practice.locked}
         sidebar={({ runner, scenarioId }) => (
           <>
-            <Bench practice={practice} runner={runner} theme={theme} />
+            <Bench practice={practice} runner={runner} theme={theme} tutor={tutorClient()} />
             <Tutor runner={runner} scenarioId={scenarioId} client={tutorClient()} />
           </>
         )}
