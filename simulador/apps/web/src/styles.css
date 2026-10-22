@@ -1,0 +1,122 @@
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --text: #1c2430;
+  --muted: #5d6b7e;
+  --border: #dde2e9;
+  --grid: rgba(93, 107, 126, 0.18);
+  --accent: #2f7de1;
+  --accent-text: #ffffff;
+  color-scheme: light;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12161c;
+    --panel: #1a2029;
+    --text: #e6ebf2;
+    --muted: #97a3b4;
+    --border: #2b3441;
+    --grid: rgba(151, 163, 180, 0.15);
+    --accent: #5b9cf0;
+    --accent-text: #0b1220;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); }
+h1, h2, h3 { margin: 0 0 0.5rem; line-height: 1.2; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+h3 { font-size: 1rem; }
+
+button, select, input { font: inherit; color: inherit; }
+button {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.4rem 0.8rem; cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); min-width: 6rem; }
+select, input[type="number"] {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.25rem 0.4rem;
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app {
+  display: grid; min-height: 100vh;
+  grid-template-columns: 240px 1fr; grid-template-rows: auto 1fr;
+  grid-template-areas: "top top" "nav main";
+}
+.topbar {
+  grid-area: top; display: flex; align-items: baseline; gap: 1rem;
+  padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--panel);
+}
+.brand { font-weight: 700; font-size: 1.15rem; color: var(--accent); }
+.subtitle { color: var(--muted); font-size: 0.9rem; }
+
+.catalog { grid-area: nav; padding: 1rem; border-right: 1px solid var(--border); }
+.catalog ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.catalog button { width: 100%; text-align: left; display: grid; gap: 0.1rem; }
+.catalog button.active { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.catalog .course { font-size: 0.75rem; color: var(--muted); }
+.catalog em { color: var(--muted); font-style: normal; font-size: 0.8rem; }
+
+.content { grid-area: main; padding: 1.25rem; min-width: 0; }
+
+.simview {
+  display: grid; gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-areas:
+    "head head"
+    "stage side"
+    "chart readouts"
+    "theory theory";
+}
+.simview > section, .simview > aside {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; min-width: 0;
+}
+.sim-header { grid-area: head; }
+.sim-header p { margin: 0; color: var(--muted); max-width: 70ch; }
+.stage-panel { grid-area: stage; align-self: start; }
+.side-panel { grid-area: side; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-content: start; }
+.side-panel select { width: 100%; min-width: 0; }
+.readouts { grid-area: readouts; }
+.chart-panel { grid-area: chart; }
+.theory { grid-area: theory; }
+
+.stage canvas { width: 100%; display: block; }
+.playback { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+.playback .speed { display: flex; gap: 0.4rem; align-items: center; color: var(--muted); font-size: 0.9rem; }
+.playback .clock { margin-left: auto; font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; }
+
+.scenario { display: grid; gap: 0.3rem; font-size: 0.9rem; color: var(--muted); }
+.controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+.control { min-width: 0; }
+.control label { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+.control .value { display: flex; align-items: center; gap: 0.3rem; }
+.control input[type="number"] { width: 5.5rem; text-align: right; }
+.control input[type="range"] { width: 100%; margin: 0.25rem 0 0; accent-color: var(--accent); }
+.unit { color: var(--muted); font-size: 0.85rem; min-width: 2.5rem; }
+
+.readouts table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 0.75rem; }
+.readouts th { text-align: left; font-weight: 400; color: var(--muted); padding: 0.2rem 0; }
+.readouts td { text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; padding: 0.2rem 0.3rem; }
+.readouts .check { font-size: 0.85rem; color: var(--muted); }
+
+.chart-controls { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem; }
+.chart-controls label { display: flex; gap: 0.4rem; align-items: center; font-size: 0.9rem; color: var(--muted); }
+.chart-canvas { width: 100%; }
+.chart-canvas .u-axis { color: var(--muted); }
+
+.theory .equation { overflow-x: auto; }
+.guide { border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 1rem; max-width: 75ch; }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; grid-template-areas: "top" "nav" "main"; }
+  .catalog { border-right: 0; border-bottom: 1px solid var(--border); }
+  .simview { grid-template-columns: 1fr; grid-template-areas: "head" "stage" "side" "chart" "readouts" "theory"; }
+  .content { padding: 1rem; }
+}
