@@ -1,5 +1,6 @@
 import { defineSim, draw, rng, texNum, type Params } from "@fisilab/core";
 import { along, buildCycle, cycleTotals, energy, progressTotals, type CycleParams, type Gas } from "./thermo.ts";
+import { derivation } from "./derivation.ts";
 
 export * from "./thermo.ts";
 
@@ -40,6 +41,7 @@ export const ciclosTermicos = defineSim({
   priority: "P1",
   summary:
     "Carnot, Otto, Diesel, Stirling e Brayton com gás ideal: acompanhe o pistão, o calor trocado com os reservatórios e o trabalho como área no diagrama PV.",
+  derivation,
   equations: [
     String.raw`PV = nRT \qquad \Delta U = Q - W \qquad \Delta U = n C_V \Delta T`,
     String.raw`W = \int P\,dV \qquad \eta = \frac{W_{\text{líq}}}{Q_{\text{in}}}`,

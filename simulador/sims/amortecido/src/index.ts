@@ -1,4 +1,5 @@
 import { defineSim, draw, num, texNum, type Draw, type Params, type State } from "@fisilab/core";
+import { derivation } from "./derivation.ts";
 
 // Estado: [x, v, energia dissipada, x e v de três osciladores de comparação (ζ = 0,2; 1; 2,5)]
 const X = 0, V = 1, ED = 2;
@@ -95,6 +96,7 @@ export const amortecido = defineSim({
   priority: "P1",
   summary:
     "Massa, mola e amortecedor viscoso. Mude b e veja as raízes da equação característica andarem no plano complexo enquanto o movimento passa de oscilação que decai a retorno sem oscilar.",
+  derivation,
   equations: [
     String.raw`m\ddot x + b\dot x + kx = 0 \qquad \gamma = \frac{b}{2m} \qquad \omega_0 = \sqrt{k/m}`,
     String.raw`x = e^{st} \;\Rightarrow\; s^2 + 2\gamma s + \omega_0^2 = 0 \;\Rightarrow\; s = -\gamma \pm \sqrt{\gamma^2 - \omega_0^2}`,

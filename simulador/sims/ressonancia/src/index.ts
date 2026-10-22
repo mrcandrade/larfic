@@ -1,4 +1,5 @@
 import { defineSim, draw, num, texNum, type Draw, type Params, type State } from "@fisilab/core";
+import { derivation } from "./derivation.ts";
 
 // Estado: [x, v, trabalho da força externa, energia dissipada, fase da força ψ (dψ/dt = ω)]
 const X = 0, V = 1, WIN = 2, WD = 3, PSI = 4;
@@ -94,6 +95,7 @@ export const ressonancia = defineSim({
   priority: "P1",
   summary:
     "Um oscilador amortecido empurrado por uma força senoidal. Varra a frequência e veja a curva de ressonância, o atraso de fase, o fator Q, o transiente com batimentos e uma ponte de amortecimento baixo.",
+  derivation,
   equations: [
     String.raw`m\ddot x + b\dot x + kx = F_0\cos\omega t`,
     String.raw`x_p = A(\omega)\cos(\omega t - \delta) \qquad A(\omega) = \frac{F_0/m}{\sqrt{(\omega_0^2-\omega^2)^2 + (2\gamma\omega)^2}} \qquad \tan\delta = \frac{2\gamma\omega}{\omega_0^2-\omega^2}`,

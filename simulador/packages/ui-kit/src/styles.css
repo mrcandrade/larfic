@@ -11,6 +11,8 @@
   --ok: #18794e;
   --bad: #c2382f;
   --scheme: light;
+  --contrast: none;
+  --focus: #2f7de1;
   color-scheme: light;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -27,6 +29,7 @@
     --accent-text: #0b1220;
     --ok: #4cc38a;
     --bad: #f0645a;
+    --focus: #5b9cf0;
     --scheme: dark;
     color-scheme: dark;
   }
@@ -42,8 +45,30 @@
   --accent-text: #0b1220;
   --ok: #4cc38a;
   --bad: #f0645a;
+  --focus: #5b9cf0;
   --scheme: dark;
   color-scheme: dark;
+}
+
+/* Alto contraste: tema escolhido no seletor ou preferência do sistema (prefers-contrast: more) no automático. */
+@media (prefers-contrast: more) {
+  :root:not([data-theme]) {
+    --bg: #ffffff; --panel: #ffffff; --text: #000000; --muted: #1a1a1a; --border: #000000;
+    --grid: rgba(0, 0, 0, 0.45); --accent: #0033cc; --accent-text: #ffffff; --ok: #006b1f; --bad: #c40000;
+    --focus: #c40000; --contrast: more;
+  }
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: #000000; --panel: #000000; --text: #ffffff; --muted: #e6e6e6; --border: #ffffff;
+    --grid: rgba(255, 255, 255, 0.45); --accent: #ffd400; --accent-text: #000000; --ok: #7cff4f; --bad: #ff5c5c;
+    --focus: #00e5ff; --scheme: dark; --contrast: more; color-scheme: dark;
+  }
+}
+:root[data-theme="contrast"] {
+  --bg: #000000; --panel: #000000; --text: #ffffff; --muted: #e6e6e6; --border: #ffffff;
+  --grid: rgba(255, 255, 255, 0.45); --accent: #ffd400; --accent-text: #000000; --ok: #7cff4f; --bad: #ff5c5c;
+  --focus: #00e5ff; --scheme: dark; --contrast: more; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -66,7 +91,17 @@ button.fl-active { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(-
 select, input[type="number"], input[type="text"], input:not([type]), textarea {
   background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.3rem 0.45rem;
 }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+:root[data-theme="contrast"] :focus-visible { outline-width: 4px; }
+:root[data-theme="contrast"] a, :root[data-theme="contrast"] button { text-decoration-thickness: 2px; }
+:root[data-theme="contrast"] button { border-width: 2px; }
+.fl-sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
 
 .fl-simview {
   display: grid; gap: 1rem;
@@ -153,7 +188,7 @@ select, input[type="number"], input[type="text"], input:not([type]), textarea {
 }
 
 /* Bancada de práticas experimentais */
-.fl-bench { display: grid; gap: 12px; }
+.fl-bench { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
 .fl-bench h2 { margin: 0; font-size: 1.15rem; }
 .fl-bench h3 { margin: 8px 0 4px; font-size: 1rem; }
 .fl-bench details summary { cursor: pointer; font-weight: 600; }
@@ -185,9 +220,85 @@ select, input[type="number"], input[type="text"], input:not([type]), textarea {
 
 /* Equações longas rolam dentro do próprio bloco em telas estreitas. */
 .katex-display {
+  position: relative; /* mantém o MathML oculto dentro do bloco que rola */
   overflow-x: auto;
   overflow-y: hidden;
   max-width: 100%;
   padding-bottom: 2px;
 }
 .fl-simview > *, .fl-theory > * { min-width: 0; }
+
+/* Cabeçalho da sim com as ferramentas (Atalhos, Apresentar) */
+.fl-sim-title { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: flex-start; justify-content: space-between; }
+.fl-sim-title > div:first-child { min-width: 0; }
+.fl-sim-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* Palco: focável para atalhos; camada da caneta por cima do canvas */
+.fl-stage { position: relative; border-radius: 6px; }
+.fl-stage:focus-visible { outline-offset: 4px; }
+.fl-ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; touch-action: none; }
+.fl-ink-active { pointer-events: auto; cursor: crosshair; }
+
+/* Modo engenharia */
+.fl-derivation { border-top: 1px solid var(--border); padding-top: 0.75rem; display: grid; gap: 0.75rem; justify-items: start; }
+.fl-derivation > button { white-space: normal; text-align: left; }
+.fl-derivation-body { justify-self: stretch; border-left: 3px solid var(--accent); padding: 0.25rem 0 0.25rem 1rem; min-width: 0; }
+.fl-derivation-body .fl-markdown { max-width: 80ch; }
+.fl-derivation-body h3 { margin-top: 1rem; }
+
+/* Ajuda dos atalhos */
+.fl-help-backdrop {
+  position: fixed; inset: 0; z-index: 1100; background: rgba(0, 0, 0, 0.45);
+  display: grid; place-items: center; padding: 16px;
+}
+.fl-help {
+  background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1.25rem; width: min(440px, 100%); max-height: calc(100vh - 32px); overflow: auto; display: grid; gap: 0.75rem;
+}
+.fl-help h2 { margin: 0; }
+.fl-help dl { margin: 0; display: grid; gap: 0.35rem; }
+.fl-help dl > div { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 0.5rem; align-items: baseline; }
+.fl-help dd { margin: 0; }
+.fl-help button { justify-self: end; }
+kbd {
+  font-family: ui-monospace, monospace; font-size: 0.85em; border: 1px solid var(--border); border-bottom-width: 2px;
+  border-radius: 4px; padding: 0.05rem 0.35rem; background: var(--bg);
+}
+
+/* Modo apresentação: cobre a janela (ou a tela cheia), palco grande, controles maiores */
+.fl-simview.fl-presenting {
+  position: fixed; inset: 0; z-index: 1000; overflow: auto; background: var(--bg);
+  padding: 0.75rem; gap: 0.75rem; font-size: 1.2rem;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-areas: "bar bar" "stage side" "chart readouts";
+  align-content: start;
+}
+.fl-presenting > .fl-theory, .fl-presenting > .fl-extra { display: none; }
+.fl-simview.fl-presenting:fullscreen { background: var(--bg); }
+.fl-presenting.fl-panel-closed { grid-template-columns: minmax(0, 1fr); grid-template-areas: "bar" "stage" "chart" "readouts"; }
+.fl-presenting.fl-panel-closed > .fl-side-panel { display: none; }
+.fl-present-bar {
+  grid-area: bar; display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 0.75rem;
+}
+.fl-present-title { font-size: 1.3rem; }
+.fl-present-scenario { color: var(--muted); }
+.fl-present-tools { margin-left: auto; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.fl-presenting button { padding: 0.55rem 1rem; }
+.fl-presenting .fl-control, .fl-presenting .fl-scenario, .fl-presenting .fl-speed,
+.fl-presenting .fl-readouts table, .fl-presenting .fl-chart-controls label { font-size: 1.1rem; }
+.fl-presenting .fl-control input[type="number"] { width: 6.5rem; }
+.fl-presenting .fl-control input[type="range"] { height: 1.6rem; }
+.fl-presenting .fl-clock { font-size: 1.3rem; }
+.fl-presenting h2 { font-size: 1rem; }
+@media (max-width: 900px) {
+  .fl-simview.fl-presenting, .fl-presenting.fl-panel-closed {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "bar" "stage" "side" "chart" "readouts";
+    font-size: 1rem;
+  }
+  .fl-present-tools { margin-left: 0; }
+}
+@media print {
+  .fl-sim-tools, .fl-present-bar, .fl-ink { display: none !important; }
+}

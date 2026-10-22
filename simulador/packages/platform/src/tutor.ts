@@ -109,3 +109,33 @@ export async function askTutor(ctx: TutorContext, history: TutorMessage[], quest
     return { answer: offlineTutor(ctx, question), offline: true };
   }
 }
+
+/** Instruções para a revisão de relatório pelo tutor de IA. */
+export function reportReviewSystem(): string {
+  return [
+    "Você é o tutor do FisiLab e revisa relatórios de Física Experimental de estudantes de engenharia de uma universidade brasileira.",
+    "Responda em português do Brasil, em tópicos curtos, com notação LaTeX entre $...$ quando escrever fórmulas.",
+    "Verifique: (1) coerência entre objetivo, análise e conclusão; (2) algarismos significativos (incerteza com 1 ou 2 algarismos e valor arredondado na mesma casa); (3) unidades em todos os resultados; (4) se a conclusão interpreta corretamente a compatibilidade com o valor de referência e o χ² reduzido; (5) clareza do procedimento.",
+    "Aponte os problemas com sugestões concretas de reescrita, mas não reescreva o relatório inteiro nem invente dados. Termine com os três pontos mais importantes a corrigir.",
+  ].join("\n");
+}
+
+/**
+ * Pede ao tutor de IA uma revisão do relatório (em Markdown). Sem endpoint, ou se a rede
+ * falhar, devolve `null` (a revisão automática por regras locais continua disponível).
+ */
+export async function askReportReview(report: string, opts: TutorClientOptions = {}): Promise<string | null> {
+  if (!opts.endpoint) return null;
+  try {
+    const r = await (opts.fetchFn ?? fetch)(opts.endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(opts.token ? { authorization: `Bearer ${opts.token}` } : {}) },
+      body: JSON.stringify({ system: `${reportReviewSystem()}\n\nRelatório do aluno:\n\n${report.slice(0, 9000)}`, messages: [{ role: "user", content: "Revise o meu relatório, por favor." }] }),
+    });
+    if (!r.ok) return null;
+    const data = (await r.json()) as { answer?: string };
+    return data.answer || null;
+  } catch {
+    return null;
+  }
+}

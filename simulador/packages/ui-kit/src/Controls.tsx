@@ -61,6 +61,7 @@ export function Controls({ specs, values, onChange, locked = [] }: Props) {
               step={p.log ? 0.01 : p.step}
               value={toSlider(v)}
               disabled={disabled}
+              aria-valuetext={`${String(v).replace(".", ",")}${p.unit ? ` ${p.unit}` : ""}`}
               onChange={(e) => onChange(p.key, fromSlider(Number(e.target.value)))}
             />
           </div>

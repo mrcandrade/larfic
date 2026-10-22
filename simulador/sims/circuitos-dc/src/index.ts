@@ -1,6 +1,7 @@
 import { defineSim, draw, type Draw, type SimAction, type Theme } from "@fisilab/core";
 import { distToComp, makeComp, sameSegment, si, solveStep, stepValue, type CircuitState, type Comp, type Kind, type Pt, type Tool } from "./model.ts";
 import { PRESETS } from "./presets.ts";
+import { derivation } from "./derivation.ts";
 
 export * from "./model.ts";
 export { PRESETS } from "./presets.ts";
@@ -49,6 +50,7 @@ export const circuitosDc = defineSim<CircuitState>({
   priority: "P1",
   summary:
     "Monte circuitos na bancada com baterias, resistores, lâmpadas, chaves, capacitores, indutores, diodos e instrumentos. Correntes e tensões vêm de um solver nodal (MNA) a cada passo.",
+  derivation,
   equations: [
     String.raw`\sum_k I_k = 0 \quad \text{(nós)} \qquad \sum_k \Delta V_k = 0 \quad \text{(malhas)}`,
     String.raw`V = R\,I \qquad P = V I = R I^2`,

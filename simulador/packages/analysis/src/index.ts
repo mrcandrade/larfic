@@ -3,3 +3,7 @@ export * from "./fit.ts";
 export * from "./uncertainty.ts";
 export * from "./instruments.ts";
 export * from "./practice.ts";
+export * from "./latex.ts";
+export * from "./sigfig.ts";
+export * from "./plotdata.ts";
+export * from "./report.ts";

@@ -25,6 +25,7 @@ import {
   trace,
 } from "./model.ts";
 import { battery, capacitor, currentArrow, generator, resistor, si } from "./symbols.ts";
+import { derivation } from "./derivation.ts";
 
 export * from "./model.ts";
 
@@ -54,6 +55,7 @@ export const circuitoRc = defineSim({
   priority: "P1",
   summary:
     "Carregue e descarregue um capacitor por um resistor e meça a constante de tempo τ = RC num osciloscópio virtual, arrastando dois cursores sobre o traço. Com a fonte em onda quadrada, o RC vira um filtro passa-baixas.",
+  derivation,
   equations: [
     String.raw`RC\,\frac{dV_C}{dt} + V_C = V_{\text{fonte}}(t) \qquad \tau = RC`,
     String.raw`\text{carga: } V_C = V_0\left(1 - e^{-t/\tau}\right) \qquad \text{descarga: } V_C = V_0\,e^{-t/\tau}`,

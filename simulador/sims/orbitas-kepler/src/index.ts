@@ -1,4 +1,5 @@
 import { clamp, defineSim, draw, makeRk45, num, texNum, type Params, type State } from "@fisilab/core";
+import { derivation } from "./derivation.ts";
 
 /** G em UA³/(M☉·ano²): com essas unidades, T² = a³ para uma órbita em torno de 1 M☉. */
 export const GU = 4 * Math.PI * Math.PI;
@@ -227,6 +228,7 @@ export const orbitasKepler = defineSim<OrbState>({
   priority: "P1",
   summary:
     "Dois e três corpos sob gravitação em unidades de UA, ano e massa solar: áreas iguais em tempos iguais, T² ∝ a³, velocidade de escape, transferência de Hohmann e o campo gravitacional desenhado ao fundo.",
+  derivation,
   equations: [
     String.raw`\vec F_{12} = -\frac{G m_1 m_2}{r^2}\,\hat r \qquad \vec g = -\frac{GM}{r^2}\hat r \qquad G = 4\pi^2\ \tfrac{\text{UA}^3}{M_\odot\,\text{ano}^2}`,
     String.raw`\frac{dA}{dt} = \frac{|\vec r \times \vec v|}{2} = \text{const.} \qquad T^2 = \frac{4\pi^2}{G(M+m)}\,a^3`,

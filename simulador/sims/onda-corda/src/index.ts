@@ -1,4 +1,5 @@
 import { defineSim, draw, num, texNum, type Params } from "@fisilab/core";
+import { derivation } from "./derivation.ts";
 
 /** Comprimentos (m) das duas cordas emendadas e número de segmentos da corda 1. */
 export const L1 = 5;
@@ -207,6 +208,7 @@ export const ondaCorda = defineSim<Corda>({
   priority: "P1",
   summary:
     "Envie pulsos ou ondas senoidais por uma corda emendada a outra de densidade diferente e compare as amplitudes refletida e transmitida com R = (Z₁ − Z₂)/(Z₁ + Z₂). A ponta final pode ser fixa, livre ou absorvente.",
+  derivation,
   equations: [
     String.raw`\frac{\partial^2 y}{\partial t^2} = v^2\,\frac{\partial^2 y}{\partial x^2} \qquad v = \sqrt{\frac{T}{\mu}}`,
     String.raw`Z = \sqrt{T\mu} = \mu v \qquad R = \frac{Z_1 - Z_2}{Z_1 + Z_2} \qquad \tau = \frac{2Z_1}{Z_1 + Z_2}`,

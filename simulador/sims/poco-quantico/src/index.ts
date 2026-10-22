@@ -1,6 +1,7 @@
 import { defineSim, draw, num, texNum, type Params, type WorldPoint } from "@fisilab/core";
 import { fmt, panel, type Panel } from "./panel.ts";
 import { X_MAX, grid, infiniteWellE, meanX, oscillatorE, solvePotential, type PotentialParams, type Solution } from "./physics.ts";
+import { derivation } from "./derivation.ts";
 
 export * from "./physics.ts";
 
@@ -118,6 +119,7 @@ export const pocoQuantico = defineSim<WellState>({
   priority: "P1",
   summary:
     "Resolva a equação de Schrödinger 1D numericamente para o poço infinito, o poço finito, o oscilador harmônico, o poço duplo ou um potencial desenhado com o mouse, e veja níveis e autofunções sobre V(x).",
+  derivation,
   equations: [
     String.raw`-\frac{\hbar^2}{2m}\psi'' + V(x)\,\psi = E\,\psi \qquad (\hbar = m = 1)`,
     String.raw`\text{poço infinito: } E_n = \frac{n^2\pi^2}{2L^2} \qquad \text{oscilador: } E_n = \left(n + \tfrac12\right)\omega`,

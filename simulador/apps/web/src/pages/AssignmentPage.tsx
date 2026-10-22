@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { analyze, reportMarkdown, type Row } from "@fisilab/analysis";
+import { analyze, draftReport, mergeSections, reportKey, reportToMarkdown, type Row, type SavedReport } from "@fisilab/analysis";
 import { decodeAssignment, grade, sealSubmission, studentSeed, type Assignment, type ExerciseAttempt, type Submission } from "@fisilab/platform";
 import { Bench, GradedExercises, Markdown, SimView, Tutor, useTheme } from "@fisilab/ui-kit";
 import { backend, freshSession, tutorClient, useProfile } from "../account.ts";
@@ -79,6 +79,20 @@ export function AssignmentPage({ code, query }: { code: string; query: URLSearch
   const items = exIds.flatMap((ex) => Array.from({ length: a.perExercise ?? 1 }, (_, k) => ({ exercise: ex, seed: studentSeed(profile.matricula, code, ex, k) })));
   const late = a.due ? Date.now() > Date.parse(a.due) : false;
 
+  // Relatório do gerador da bancada (seções editadas pelo aluno sobre o rascunho automático).
+  const practiceReport = (rows: Row[], answers: string[], res: ReturnType<typeof analyze>) => {
+    if (!practice) return "";
+    let rep: Partial<SavedReport> = {};
+    try {
+      rep = (JSON.parse(localStorage.getItem(reportKey(practice.id)) ?? "null") as SavedReport | null) ?? {};
+    } catch {
+      /* sem relatório salvo */
+    }
+    const data = { practice, rows, res, answers };
+    const sections = mergeSections(draftReport(data, { summary: sim.summary, equations: sim.equations }), rep.sections);
+    return reportToMarkdown({ title: practice.title, authors: rep.meta?.authors || `${profile.name} (${profile.matricula})`, course: rep.meta?.course || undefined, date: new Date().toLocaleDateString("pt-BR") }, sections, data);
+  };
+
   const submit = async () => {
     let practicePart: Submission["practice"];
     if (practice) {
@@ -92,13 +106,13 @@ export function AssignmentPage({ code, query }: { code: string; query: URLSearch
       practicePart = {
         rows: saved.rows.length,
         results: res?.results.map((r) => ({ label: r.label, value: r.value, u: r.u, compatible: r.compatible })) ?? [],
-        report: reportMarkdown(practice, saved.rows, res, saved.answers),
+        report: practiceReport(saved.rows, saved.answers, res),
       };
     }
     const sub = await sealSubmission({
       v: 1,
       assignment: code,
-      student: { id: profile.matricula, name: profile.name },
+      student: { id: profile.matricula, name: profile.name, email: profile.email ?? backend?.session?.user.email },
       startedAt: local.startedAt,
       submittedAt: new Date().toISOString(),
       exercises: items.map((it) => local.attempts.find((x) => x.exercise === it.exercise && x.seed === it.seed) ?? { ...it, answer: null, correct: false, tries: 0 }),
@@ -148,7 +162,7 @@ export function AssignmentPage({ code, query }: { code: string; query: URLSearch
         locked={[...(practice?.locked ?? []), ...(a.locked ?? [])]}
         sidebar={({ runner, scenarioId }) => (
           <>
-            {practice && <Bench practice={practice} runner={runner} theme={theme} studentId={profile.matricula} />}
+            {practice && <Bench practice={practice} runner={runner} theme={theme} studentId={profile.matricula} tutor={tutorClient()} />}
             <Tutor runner={runner} scenarioId={scenarioId} client={tutorClient()} />
           </>
         )}
