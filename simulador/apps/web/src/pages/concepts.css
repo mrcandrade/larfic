@@ -1,0 +1,76 @@
+/* Concepções alternativas (Concept Builders). Usa os tokens do ui-kit (--bg, --panel, --text, --muted, --border, --accent, --ok, --bad). */
+.cb-counters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 0.5rem 1rem; }
+.cb-counters div { display: grid; }
+.cb-counters strong { font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.cb-counters span { color: var(--muted); font-size: 0.85rem; }
+.cb-bar { height: 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); overflow: hidden; }
+.cb-bar span { display: block; height: 100%; background: var(--ok); transition: width 0.3s; }
+
+.cb-filters { display: grid; gap: 0.6rem; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); }
+.cb-filters label { display: grid; gap: 0.2rem; font-size: 0.9rem; color: var(--muted); min-width: 0; }
+.cb-filters input, .cb-filters select { width: 100%; min-width: 0; color: var(--text); }
+@media (max-width: 640px) { .cb-filters { grid-template-columns: minmax(0, 1fr); } }
+
+.cb-area h2 { margin: 0.5rem 0 0.6rem; font-size: 1.1rem; }
+.cb-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.cb-card {
+  display: grid; gap: 0.35rem; height: 100%; box-sizing: border-box; padding: 0.85rem 1rem;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px; color: var(--text); text-decoration: none;
+}
+.cb-card:hover { border-color: var(--accent); }
+.cb-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.cb-card-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.35rem; align-items: center; }
+.cb-topic { color: var(--muted); font-size: 0.8rem; }
+.cb-card-title { font-size: 1rem; }
+.cb-quote { color: var(--muted); font-style: italic; font-size: 0.9rem; overflow-wrap: anywhere; }
+
+.cb-badge { display: inline-block; font-size: 0.75rem; padding: 0.05rem 0.5rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap; font-style: normal; }
+.cb-badge-previu, .cb-badge-observou { border-color: var(--accent); color: var(--accent); }
+.cb-badge-revisar { border-color: var(--bad); color: var(--bad); }
+.cb-badge-superada { border-color: var(--ok); color: var(--ok); font-weight: 600; }
+
+.cb-back { margin: 0; }
+.cb-meta { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; color: var(--muted); font-size: 0.85rem; margin: 0 0 0.25rem !important; }
+.cb-statement { margin: 0.5rem 0 0; padding: 0.6rem 0.9rem; border-left: 4px solid var(--accent); background: var(--panel); border-radius: 0 8px 8px 0; }
+.cb-statement p { margin: 0; font-size: 1.05rem; font-style: italic; color: var(--text); }
+
+.cb-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.cb-step h2 { display: flex; gap: 0.5rem; align-items: center; }
+.cb-num {
+  display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  background: var(--accent); color: var(--panel); font-size: 0.9rem; font-weight: 700; flex: none;
+}
+.cb-locked { opacity: 0.65; }
+.cb-locked .cb-num { background: var(--muted); }
+.cb-step p { margin: 0; }
+.cb-text { overflow-wrap: anywhere; }
+.cb-text p { margin: 0 0 0.5rem; }
+.cb-text > :last-child { margin-bottom: 0; }
+
+.cb-question { display: grid; gap: 0.6rem; }
+.cb-question fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 0.4rem; min-width: 0; }
+.cb-question legend { padding: 0; margin-bottom: 0.4rem; font-weight: 600; }
+.cb-option {
+  display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer; background: var(--bg);
+}
+.cb-option:hover { border-color: var(--accent); }
+.cb-option:has(input:checked) { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.cb-option input { margin-top: 0.2rem; flex: none; }
+.cb-option span { min-width: 0; overflow-wrap: anywhere; }
+
+.cb-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.cb-button {
+  display: inline-block; padding: 0.45rem 0.9rem; border-radius: 8px; background: var(--accent); color: var(--panel);
+  text-decoration: none; font-weight: 600; max-width: 100%; overflow-wrap: anywhere;
+}
+.cb-button:hover { filter: brightness(1.08); }
+.cb-button:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+
+.cb-appeal summary { cursor: pointer; color: var(--accent); }
+.cb-appeal p { margin-top: 0.4rem; color: var(--muted); }
+.cb-result { display: grid; gap: 0.5rem; }
+.cb-win { font-weight: 700; }
+
+.cb-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem; }
+.cb-nav a { max-width: 100%; overflow-wrap: anywhere; }
