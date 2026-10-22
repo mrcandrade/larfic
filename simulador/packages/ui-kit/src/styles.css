@@ -114,7 +114,8 @@ select, input[type="number"], input[type="text"], input:not([type]), textarea {
 .fl-check { font-size: 0.85rem; color: var(--muted); }
 
 .fl-chart-controls { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; margin-bottom: 0.5rem; }
-.fl-chart-controls label { display: flex; gap: 0.4rem; align-items: center; font-size: 0.9rem; color: var(--muted); }
+.fl-chart-controls label { display: flex; gap: 0.4rem; align-items: center; font-size: 0.9rem; color: var(--muted); max-width: 100%; min-width: 0; }
+.fl-chart-controls select { min-width: 0; max-width: 100%; flex: 1 1 auto; }
 .fl-plot { position: relative; width: 100%; }
 .fl-plot canvas { width: 100%; display: block; }
 .fl-plot-tip {
@@ -150,3 +151,43 @@ select, input[type="number"], input[type="text"], input:not([type]), textarea {
     grid-template-areas: "head" "stage" "side" "chart" "readouts" "theory" "extra";
   }
 }
+
+/* Bancada de práticas experimentais */
+.fl-bench { display: grid; gap: 12px; }
+.fl-bench h2 { margin: 0; font-size: 1.15rem; }
+.fl-bench h3 { margin: 8px 0 4px; font-size: 1rem; }
+.fl-bench details summary { cursor: pointer; font-weight: 600; }
+.fl-bench-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fl-table-wrap { overflow-x: auto; }
+.fl-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+.fl-table th, .fl-table td { border-bottom: 1px solid var(--border); padding: 4px 8px; text-align: right; white-space: nowrap; }
+.fl-table th:first-child, .fl-table td:first-child { text-align: left; }
+.fl-results { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; }
+.fl-ok { color: var(--ok); }
+.fl-bad { color: var(--bad); }
+.fl-question { display: grid; gap: 4px; }
+.fl-question textarea { width: 100%; font: inherit; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); }
+.fl-small { padding: 0 8px; min-height: 0; }
+.fl-muted { color: var(--muted); }
+
+/* Tutor */
+.fl-tutor-open { width: 100%; }
+.fl-tutor { display: grid; gap: 8px; border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--panel); }
+.fl-tutor header { display: flex; justify-content: space-between; align-items: center; }
+.fl-tutor header h3 { margin: 0; font-size: 1rem; }
+.fl-tutor-log { max-height: 360px; overflow-y: auto; display: grid; gap: 6px; }
+.fl-msg { padding: 6px 10px; border-radius: 8px; max-width: 92%; }
+.fl-msg p { margin: 0.2rem 0; }
+.fl-msg-user { justify-self: end; background: var(--accent); color: var(--accent-text); }
+.fl-msg-assistant { justify-self: start; background: var(--bg); border: 1px solid var(--border); }
+.fl-small-text { font-size: 0.8rem; margin: 0; }
+.fl-graded { display: grid; gap: 12px; padding-left: 1.2rem; }
+
+/* Equações longas rolam dentro do próprio bloco em telas estreitas. */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding-bottom: 2px;
+}
+.fl-simview > *, .fl-theory > * { min-width: 0; }
