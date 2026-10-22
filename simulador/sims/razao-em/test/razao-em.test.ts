@@ -6,6 +6,7 @@ import {
   TELTRON,
   THOMSON,
   axialB,
+  beamYAt,
   circleY,
   emFromRadius,
   helmholtzB,
@@ -53,6 +54,13 @@ describe("Razão carga/massa do elétron", () => {
     expect(beam.yEnd / circleY(r, 0.1)).toBeCloseTo(1, 5);
     const rr = radiusThrough(0.1, beam.yEnd);
     expect(emFromRadius(V, B, rr) / EM).toBeCloseTo(1, 4);
+  });
+
+  it("só campo elétrico (Teltron, I = 0): parábola y = E x²/(4V)", () => {
+    const p = withOverrides(sim, sim.scenarios.find((s) => s.id === "parabola-e")!.params);
+    const E = 2000 / TELTRON.d;
+    expect(beamYAt(p, 10) / ((E * 0.01) / (4 * 3000)) / 100).toBeCloseTo(1, 4);
+    expect(beamYAt(p, 10) / beamYAt(p, 5)).toBeCloseTo(4, 2);
   });
 
   it("observáveis finitos em todos os modos", () => {

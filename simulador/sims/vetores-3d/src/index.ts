@@ -163,6 +163,29 @@ function poly3(d: Draw, b: Basis, pts: V3[], color: string, width = 1.5, arrowEn
 
 const ease = (x: number) => x * x * (3 - 2 * x);
 
+/** Rotação ativa de um vetor em torno do eixo x, pelo ângulo a (rad). */
+export const rotX = (v: V3, a: number): V3 => [v[0], v[1] * Math.cos(a) - v[2] * Math.sin(a), v[1] * Math.sin(a) + v[2] * Math.cos(a)];
+/** Rotação ativa de um vetor em torno do eixo y, pelo ângulo b (rad). */
+export const rotY = (v: V3, b: number): V3 => [v[0] * Math.cos(b) + v[2] * Math.sin(b), v[1], -v[0] * Math.sin(b) + v[2] * Math.cos(b)];
+
+/**
+ * Componentes de V nos eixos x'y' girados de φ em torno de z (o vetor fica parado):
+ * V_x' = V_x cos φ + V_y sen φ, V_y' = −V_x sen φ + V_y cos φ, V_z' = V_z.
+ */
+export function primedComponents(V: V3, phi: number): V3 {
+  const c = Math.cos(phi), s = Math.sin(phi);
+  return [V[0] * c + V[1] * s, -V[0] * s + V[1] * c, V[2]];
+}
+
+/** Ordem 1: primeiro α em torno de x, depois β em torno de y. Ordem 2: o inverso. */
+export function finiteRotations(V: V3, alfa: number, beta: number): { xy: V3; yx: V3 } {
+  return { xy: rotY(rotX(V, alfa), beta), yx: rotX(rotY(V, beta), alfa) };
+}
+
+const phiOf = (p: Params) => rad(num(p, "phi", 30));
+const alfaOf = (p: Params) => rad(num(p, "alfa", 90));
+const betaOf = (p: Params) => rad(num(p, "beta", 90));
+
 export const vetores3d = defineSim<Vec3State>({
   id: "vetores-3d",
   title: "Vetores em 3D",
@@ -193,6 +216,21 @@ export const vetores3d = defineSim<Vec3State>({
         String.raw`\vec A \cdot \vec B = ${texNum(dot3(A, B))} = ${texNum(norm3(A))} \cdot ${texNum(norm3(B))} \cdot \cos(${texNum(th)}^\circ)`,
         String.raw`A_{\parallel B} = |\vec A|\cos\theta = ${texNum(norm3(B) > 0 ? dot3(A, B) / norm3(B) : 0)}`,
       ];
+    if (m === 4) {
+      const q = primedComponents(A, phiOf(p));
+      const qb = primedComponents(B, phiOf(p));
+      return [
+        String.raw`A_{x'} = A_x\cos\varphi + A_y\,\mathrm{sen}\,\varphi = ${texNum(round2(q[0]))} \qquad A_{y'} = -A_x\,\mathrm{sen}\,\varphi + A_y\cos\varphi = ${texNum(round2(q[1]))}`,
+        String.raw`|\vec A| = \sqrt{A_{x'}^2 + A_{y'}^2 + A_{z'}^2} = ${texNum(norm3(q))} \qquad \vec A\cdot\vec B = ${texNum(dot3(q, qb))}\ \text{(nos dois sistemas)}`,
+      ];
+    }
+    if (m === 5) {
+      const r = finiteRotations(A, alfaOf(p), betaOf(p));
+      return [
+        String.raw`R_y(\beta)\,R_x(\alpha)\,\vec A = ${texV(r.xy)} \qquad R_x(\alpha)\,R_y(\beta)\,\vec A = ${texV(r.yx)}`,
+        String.raw`\frac{|\Delta\vec A|}{|\vec A|} = ${texNum(norm3(A) > 0 ? norm3(sub3(r.xy, r.yx)) / norm3(A) : 0)}`,
+      ];
+    }
     const n = cross3(A, B);
     return [
       String.raw`\vec A \times \vec B = ${texV(n)} \qquad |\vec A \times \vec B| = ${texNum(norm3(n))} = ${texNum(norm3(A))} \cdot ${texNum(norm3(B))} \cdot \sin(${texNum(th)}^\circ)`,
@@ -214,6 +252,8 @@ export const vetores3d = defineSim<Vec3State>({
         { value: 1, label: "Decomposição em componentes" },
         { value: 2, label: "Produto escalar (projeção)" },
         { value: 3, label: "Produto vetorial (mão direita)" },
+        { value: 4, label: "Rotação dos eixos coordenados" },
+        { value: 5, label: "Rotações finitas em sequência" },
       ],
     },
     { key: "Ax", label: "A_x", unit: "", min: -COMP_MAX, max: COMP_MAX, step: 0.5, default: 4 },
@@ -236,6 +276,9 @@ export const vetores3d = defineSim<Vec3State>({
         { value: 1, label: "Girando sozinha" },
       ],
     },
+    { key: "phi", label: "Rotação dos eixos: ângulo φ de x' em relação a x", unit: "°", min: -180, max: 180, step: 1, default: 30, live: true },
+    { key: "alfa", label: "Rotações finitas: ângulo α em torno de x", unit: "°", min: 0, max: 180, step: 1, default: 90 },
+    { key: "beta", label: "Rotações finitas: ângulo β em torno de y", unit: "°", min: 0, max: 180, step: 1, default: 90 },
   ],
 
   observables: [
@@ -249,6 +292,17 @@ export const vetores3d = defineSim<Vec3State>({
     { key: "Cy", label: "(A × B)_y", unit: "", value: (s) => cross3(s.A, s.B)[1] },
     { key: "Cz", label: "(A × B)_z", unit: "", value: (s) => cross3(s.A, s.B)[2] },
     { key: "vetorial", label: "|A × B| (área do paralelogramo)", unit: "", value: (s) => norm3(cross3(s.A, s.B)) },
+    { key: "Axl", label: "A_x' (eixos girados)", unit: "", value: (s, p) => primedComponents(s.A, phiOf(p))[0] },
+    { key: "Ayl", label: "A_y' (eixos girados)", unit: "", value: (s, p) => primedComponents(s.A, phiOf(p))[1] },
+    {
+      key: "difRot",
+      label: "|Δ| entre as duas ordens / |A|",
+      unit: "",
+      value: (s, p) => {
+        const r = finiteRotations(s.A, alfaOf(p), betaOf(p));
+        return norm3(s.A) > 0 ? norm3(sub3(r.xy, r.yx)) / norm3(s.A) : 0;
+      },
+    },
   ],
   chart: { x: "t", y: "theta" },
 
@@ -318,6 +372,46 @@ export const vetores3d = defineSim<Vec3State>({
         },
       ],
     },
+    {
+      id: "rotacao-eixos",
+      label: "Rotação dos eixos: o vetor não muda",
+      params: { modo: 4, Ax: 4, Ay: 3, Az: 0, Bx: -1, By: 2, Bz: 0, phi: 30 },
+      guide: `### Mesmos vetores, outros eixos
+1. A cena começa vista de cima: os eixos $x$ e $y$ em cinza e os eixos girados $x'$ e $y'$ em destaque, formando o ângulo $\\varphi$ com os originais.
+2. Mova o controle **φ**. As setas $\\vec A$ e $\\vec B$ **não se mexem**; o que muda são as projeções de $\\vec A$ sobre $x'$ e $y'$.
+3. Confira na tela e nas equações vivas que $A_{x'} = A_x\\cos\\varphi + A_y\\,\\mathrm{sen}\\,\\varphi$ e $A_{y'} = -A_x\\,\\mathrm{sen}\\,\\varphi + A_y\\cos\\varphi$.
+4. Acompanhe $|\\vec A|$ e $\\vec A\\cdot\\vec B$: calculados com as componentes novas, dão sempre o mesmo valor. Essas grandezas são **invariantes** pela rotação dos eixos.
+5. Ache o ângulo $\\varphi$ que deixa $A_{y'} = 0$: ali o eixo $x'$ aponta ao longo de $\\vec A$ e $A_{x'} = |\\vec A|$.`,
+      predict: [
+        {
+          question: "A = (4; 3; 0). Girando os eixos de φ = 90° em torno de z, quais são as novas componentes de A?",
+          options: ["(4; 3; 0), não mudam", "(3; −4; 0)", "(−3; 4; 0)", "(5; 0; 0)"],
+          answer: 1,
+          explanation:
+            "Com $\\varphi = 90°$, o eixo $x'$ aponta onde estava $y$ e $y'$ aponta para $-x$. Logo $A_{x'} = A_y = 3$ e $A_{y'} = -A_x = -4$. O vetor é o mesmo; só a descrição mudou, e o módulo continua 5.",
+        },
+      ],
+    },
+    {
+      id: "rotacoes-finitas",
+      label: "Rotações finitas não comutam",
+      params: { modo: 5, Ax: 4, Ay: 0, Az: 0, Bx: 0, By: 3, Bz: 0, alfa: 90, beta: 90 },
+      guide: `### A ordem das rotações importa
+$\\vec A$ e $\\vec B$ marcam a orientação de um corpo rígido (pense num livro: $\\vec A$ ao longo da lombada, $\\vec B$ ao longo da capa).
+1. Rode a animação. Em vermelho, o corpo gira primeiro $\\alpha$ em torno de $x$ e depois $\\beta$ em torno de $y$; em roxo, as mesmas rotações na ordem inversa.
+2. Com $\\alpha = \\beta = 90°$ as orientações finais são **diferentes**: rotações finitas não se somam como vetores, porque a soma vetorial teria de dar o mesmo resultado nas duas ordens.
+3. Reduza os ângulos para $\\alpha = \\beta = 5°$ e depois $1°$. A diferença $|\\Delta\\vec A|/|\\vec A|$ cai aproximadamente com o **produto** $\\alpha\\beta$ (em radianos): é de segunda ordem.
+4. Por isso as rotações **infinitesimais** comutam, e a velocidade angular $\\vec\\omega = d\\vec\\theta/dt$ pode ser tratada como vetor.`,
+      predict: [
+        {
+          question: "Gire o corpo 90° em torno de x e depois 90° em torno de y; em seguida repita na ordem inversa. As orientações finais:",
+          options: ["são iguais, porque as rotações se somam", "são diferentes", "são iguais só se o corpo for simétrico"],
+          answer: 1,
+          explanation:
+            "Partindo de $\\vec A$ ao longo de $x$: na ordem $x$ e depois $y$, $\\vec A$ termina em $-z$; na ordem inversa, termina em $+y$. Rotações finitas não comutam; só no limite de ângulos pequenos a diferença (proporcional a $\\alpha\\beta$) se anula.",
+        },
+      ],
+    },
   ],
 
   exercises: [
@@ -350,8 +444,8 @@ export const vetores3d = defineSim<Vec3State>({
   init: (p) => ({
     A: [num(p, "Ax", 4), num(p, "Ay", 1), num(p, "Az")],
     B: [num(p, "Bx", 1), num(p, "By", 3), num(p, "Bz", 1)],
-    yaw: rad(35),
-    pitch: rad(22),
+    yaw: Math.round(num(p, "modo")) === 4 ? 0 : rad(35),
+    pitch: Math.round(num(p, "modo")) === 4 ? rad(89.9) : rad(22),
     drag: null,
   }),
   // O tempo só anima a regra da mão direita e o giro automático da câmera.
@@ -553,9 +647,57 @@ export const vetores3d = defineSim<Vec3State>({
       }
     }
 
+    if (m === 4) {
+      const phi = phiOf(p);
+      const ex: V3 = [Math.cos(phi), Math.sin(phi), 0];
+      const ey: V3 = [-Math.sin(phi), Math.cos(phi), 0];
+      const colP = theme.series[3]!;
+      arrow3(d, b, scale3(ex, -AXIS), scale3(ex, AXIS), colP, 1.8);
+      arrow3(d, b, scale3(ey, -AXIS), scale3(ey, AXIS), colP, 1.8);
+      label3(d, b, scale3(ex, AXIS + 0.6), "x'", colP, 14, 0, 0);
+      label3(d, b, scale3(ey, AXIS + 0.6), "y'", colP, 14, 0, 0);
+      const q = primedComponents(s.A, phi);
+      const px = scale3(ex, q[0] * k), py = scale3(ey, q[1] * k);
+      line3(d, b, A, px, colA, 1.3, [5, 4], 0.8);
+      line3(d, b, A, py, colA, 1.3, [5, 4], 0.8);
+      if (Math.abs(q[0]) > 1e-9) arrow3(d, b, O, px, colP, 3.5, undefined, 0.85);
+      if (Math.abs(q[1]) > 1e-9) arrow3(d, b, O, py, colP, 3.5, undefined, 0.85);
+      label3(d, b, px, `Ax' = ${fmt(q[0])}`, colP, 12, 0, 14);
+      label3(d, b, py, `Ay' = ${fmt(q[1])}`, colP, 12, 0, 14);
+      // componentes antigas, discretas
+      line3(d, b, A, [A[0], 0, 0], theme.muted, 1, [2, 3], 0.6);
+      line3(d, b, A, [0, A[1], 0], theme.muted, 1, [2, 3], 0.6);
+      poly3(d, b, arc3([1, 0, 0], [0, 1, 0], O, 1.6, phi), colP, 1.4);
+      label3(d, b, [2.1 * Math.cos(phi / 2), 2.1 * Math.sin(phi / 2), 0], "φ", colP, 13, 0, 0);
+    }
+
+    if (m === 5) {
+      const al = alfaOf(p), be = betaOf(p);
+      const ph = t > 0 ? Math.min(1, ((t % (2 * PERIOD)) / (2 * PERIOD)) * 1.2) : 1;
+      const s1 = ease(Math.min(1, ph * 2)), s2 = ease(Math.max(0, ph * 2 - 1));
+      const ordXY = (v: V3) => rotY(rotX(v, al * s1), be * s2);
+      const ordYX = (v: V3) => rotX(rotY(v, be * s1), al * s2);
+      const colX = theme.series[2]!;
+      const colY = theme.series[4]!;
+      for (const [f, col, tag] of [[ordXY, colX, "1"], [ordYX, colY, "2"]] as const) {
+        const a = f(A), bb = f(B);
+        const sum = add3(a, bb);
+        const quad = [project(O, b), project(a, b), project(sum, b), project(bb, b)];
+        d.polyline(quad, { color: "none", alpha: 0.12, fill: col, close: true });
+        d.polyline(quad, { color: col, width: 1, alpha: 0.6, close: true });
+        arrow3(d, b, O, a, col, 3);
+        arrow3(d, b, O, bb, col, 2, [5, 3]);
+        tipLabel(a, `A${tag}`, col);
+      }
+      d.text(`1: α em x, depois β em y`, 11.6, 8.3, { align: "right", size: 12, color: colX, weight: "600" });
+      d.text(`2: β em y, depois α em x`, 11.6, 7.6, { align: "right", size: 12, color: colY, weight: "600" });
+      const r = finiteRotations(s.A, al, be);
+      d.text(`|A1 − A2| / |A| = ${fmt(norm3(s.A) > 0 ? norm3(sub3(r.xy, r.yx)) / norm3(s.A) : 0)}`, 11.6, 6.9, { align: "right", size: 12, color: theme.text, weight: "600" });
+    }
+
     // A e B por cima de tudo
-    arrow3(d, b, O, A, colA, 3);
-    arrow3(d, b, O, B, colB, 3);
+    arrow3(d, b, O, A, colA, m === 5 ? 1.5 : 3, m === 5 ? [3, 3] : undefined);
+    arrow3(d, b, O, B, colB, m === 5 ? 1.5 : 3, m === 5 ? [3, 3] : undefined);
     tipLabel(A, "A", colA);
     tipLabel(B, "B", colB);
     const [pax, pay] = project(A, b);
@@ -565,7 +707,7 @@ export const vetores3d = defineSim<Vec3State>({
     d.dot(0, 0, 3, theme.text);
 
     // Legenda
-    const names = ["Soma", "Componentes", "Produto escalar", "Produto vetorial"];
+    const names = ["Soma", "Componentes", "Produto escalar", "Produto vetorial", "Rotação dos eixos", "Rotações finitas"];
     d.text(names[m] ?? "", -11.6, 8.3, { align: "left", size: 14, weight: "700", color: theme.text });
     d.text(`A = ${fmtV(s.A)}`, -11.6, 7.5, { align: "left", size: 12, color: colA, weight: "600" });
     d.text(`B = ${fmtV(s.B)}`, -11.6, 6.8, { align: "left", size: 12, color: colB, weight: "600" });
@@ -576,7 +718,11 @@ export const vetores3d = defineSim<Vec3State>({
           ? `|A| = ${fmt(norm3(s.A))}`
           : m === 2
             ? `A · B = ${fmt(dot3(s.A, s.B))}   θ = ${fmt(deg(th))}°`
-            : `A × B = ${fmtV(cross3(s.A, s.B))}`;
+            : m === 4
+              ? `A' = ${fmtV(primedComponents(s.A, phiOf(p)))}   |A| = ${fmt(norm3(s.A))}`
+              : m === 5
+                ? `α = ${fmt(num(p, "alfa", 90))}°   β = ${fmt(num(p, "beta", 90))}°`
+                : `A × B = ${fmtV(cross3(s.A, s.B))}`;
     d.text(extra, -11.6, 6.1, { align: "left", size: 12, color: m === 3 ? colC : m === 0 ? colR : theme.text, weight: "600" });
     if (k < 0.999) d.text(`escala do desenho ×${fmt(k)}`, -11.6, 5.4, { align: "left", size: 11, color: theme.muted });
     d.text("Arraste as pontas de A e B; arraste o fundo para girar a cena.", 0, -8.6, { size: 11, color: theme.muted });

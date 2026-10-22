@@ -17,7 +17,7 @@ import { BookIndexPage } from "./pages/BookIndexPage.tsx";
 import { chapters, findChapter } from "./livro/sumario.ts";
 import { chapterContents } from "./livro/conteudo.ts";
 import { findApendice } from "./livro/apendices/index.ts";
-import { BOOK_HREF, CATALOG_HREF, bookRefs } from "./livro/livro.ts";
+import { BOOK_HREF, CATALOG_HREF, bookRefs, chapterHref, groupRefsByChapter } from "./livro/livro.ts";
 import { catalog, findSim, pending } from "./catalog.ts";
 import { plan } from "./plan.ts";
 import { paramsFromQuery, practiceHref, simHref, useRoute } from "./router.ts";
@@ -402,15 +402,25 @@ function PracticePage({ id }: { id: string }) {
 function InTheBook({ simId }: { simId: string }) {
   const refs = useMemo(() => bookRefs(chapters, chapterContents, simId), [simId]);
   if (!refs.length) return null;
+  const groups = groupRefsByChapter(refs);
   return (
     <p className="in-the-book">
       <span className="in-the-book-label">No livro:</span>{" "}
-      {refs.map((r, i) => (
-        <span key={r.href}>
+      {groups.map((g, i) => (
+        <span key={g.chapter}>
           {i > 0 && "; "}
-          <a href={r.href}>
-            Cap. {r.chapter}, seção {r.sectionId} {r.sectionTitle}
+          <a href={chapterHref(g.chapter)}>
+            Cap. {g.chapter} ({g.chapterTitle})
           </a>
+          {g.refs.length === 1 ? ", seção " : ", seções "}
+          {g.refs.map((r, j) => (
+            <span key={r.href}>
+              {j > 0 && ", "}
+              <a href={r.href} title={r.sectionTitle}>
+                {g.refs.length === 1 ? `${r.sectionId} ${r.sectionTitle}` : r.sectionId}
+              </a>
+            </span>
+          ))}
         </span>
       ))}
     </p>

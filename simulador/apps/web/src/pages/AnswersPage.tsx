@@ -76,7 +76,7 @@ export function AnswersPage({ chapter }: { chapter?: number }) {
             <section key={sim.id} className="book-block answers-sim">
               <h2>{sim.title}</h2>
               <p className="muted">
-                Usada nas seções{" "}
+                {sections.length === 1 ? "Usada na seção " : "Usada nas seções "}
                 {sections.map((s, i) => (
                   <span key={s}>
                     {i > 0 && ", "}

@@ -11,6 +11,7 @@ import {
   buildSearchIndex,
   chapterHref,
   chapterStats,
+  groupRefsByChapter,
   experimentHref,
   indexTerm,
   normalize,
@@ -125,6 +126,10 @@ describe("No livro (referências de uma sim)", () => {
     expect(refs[1]!.sectionTitle).toBe(chapters[1]!.sections.find((s) => s.id === "2-7")!.title);
     expect(refs[0]!.href).toBe("#/capitulo/2/2-2");
     expect(bookRefs(chapters, fixture, "nao-existe")).toEqual([]);
+    expect(groupRefsByChapter(refs).map((g) => [g.chapter, g.refs.map((r) => r.sectionId)])).toEqual([
+      [2, ["2-2", "2-7"]],
+      [4, ["4-6"]],
+    ]);
     expect(bookRefs(chapters, fixture, "forca-movimento", "concepcao").map((r) => r.sectionId)).toEqual(["2-7"]);
   });
 });
@@ -147,9 +152,10 @@ describe("índice remissivo", () => {
     const allSections = chapters.reduce((n, c) => n + c.sections.length, 0);
     const refs = new Set(entries.flatMap((e) => e.refs.map((r) => r.href)));
     expect(refs.size).toBe(allSections);
-    const keys = entries.map((e) => normalize(e.term));
+    const keys = entries.map((e) => normalize(e.term).replace(/^[^a-z0-9]+/, ""));
     expect([...keys].sort((a, b) => a.localeCompare(b, "pt-BR"))).toEqual(keys);
     expect(groups.map((g) => g.letter)).toEqual([...new Set(groups.map((g) => g.letter))]);
+    expect(groups.every((g) => /^[A-Z]$/.test(g.letter))).toBe(true);
   });
   it("aponta a seção 2-7 e inclui sims e concepções ligadas", () => {
     const sec = entries.find((e) => e.refs.some((r) => r.href === chapterHref(2, "2-7")) && !e.note)!;

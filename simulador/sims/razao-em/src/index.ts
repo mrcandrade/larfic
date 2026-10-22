@@ -234,6 +234,26 @@ export const razaoEm = defineSim<EMState>({
 3. O raio sai da geometria: $r = (x^2 + y^2)/(2|y|)$. Então $e/m = 2V/(B^2r^2)$, com $N = 320$ e $R = 6{,}8\\ \\text{cm}$.
 4. Ligue $V_p$: com $V_p = 3000\\ \\text{V}$ ache a corrente que deixa o feixe reto e compare os dois métodos.`,
     },
+    {
+      id: "parabola-e",
+      label: "Só campo elétrico: a parábola do feixe",
+      params: { modo: 2, V: 3000, I: 0, Vp: 2000 },
+      guide: `### Carga lançada num campo elétrico uniforme
+1. Bobinas desligadas ($I = 0$): entre as placas ($d = 8\\ \\text{cm}$) só há o campo uniforme $E = V_p/d = 25\\ \\text{kV/m}$, apontando para baixo. O elétron sente $F = eE$ **para cima**, constante.
+2. Na horizontal nada o acelera: $x = vt$. Na vertical, aceleração constante $a = eE/m$: $y = \\tfrac12 a t^2$. Eliminando $t$ e usando $\\tfrac12 mv^2 = eV$:
+$$y = \\frac{eE}{2mv^2}x^2 = \\frac{E}{4V}x^2$$
+3. Arraste o **cursor** até o feixe em $x = 5\\ \\text{cm}$ e em $x = 10\\ \\text{cm}$. A segunda leitura é quatro vezes a primeira (parábola, como na queda de um projétil).
+4. Confira a fórmula: $y(10\\ \\text{cm}) = 25\\,000 \\times 0{,}01/(4 \\times 3000) \\approx 2{,}1\\ \\text{cm}$. A razão $e/m$ sumiu: qualquer partícula acelerada pela mesma $V$ faz a mesma parábola.
+5. Mude $V$ e $V_p$ ao vivo. É assim que o osciloscópio de tubo e a impressora a jato de tinta (gotas carregadas) escolhem onde cada ponto cai.`,
+      predict: [
+        {
+          question: "Dobrando a tensão de aceleração V (placas iguais), a deflexão na saída das placas:",
+          options: ["dobra", "cai pela metade", "cai a um quarto", "não muda"],
+          answer: 1,
+          explanation: "$y = Ex^2/(4V)$: com o dobro de energia cinética o elétron passa mais depressa e fica menos tempo sob a força, então $y$ cai pela metade.",
+        },
+      ],
+    },
   ],
 
   exercises: [

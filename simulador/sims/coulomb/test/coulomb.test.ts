@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EPS0, K_COULOMB, Runner, withOverrides } from "@fisilab/core";
-import { coulomb as sim, elements, exactField, netForce, pairForce, partialSum } from "../src/index.ts";
+import { coulomb as sim, elements, exactField, exactPotential, netForce, pairEnergy, pairForce, partialSum, partialV, systemEnergy } from "../src/index.ts";
 
 const params = (over: Record<string, number>) => withOverrides(sim, over);
 
@@ -73,5 +73,39 @@ describe("Lei de Coulomb e superposição", () => {
     r.runToEnd();
     expect(r.value("k")).toBe(12);
     expect(r.value("Esoma")).toBeCloseTo(r.value("Eexato"), 8);
+  });
+
+  it("potencial: anel exato com N = 1; disco e fio convergem para as fórmulas fechadas", () => {
+    const P = { x: 0.3, y: 0 };
+    const pa = params({ modo: 1, Q: 10, R: 0.4, N: 1 });
+    expect(partialV(elements(pa, P))).toBeCloseTo((K_COULOMB * 10e-9) / 0.5, 8);
+    expect(exactPotential(pa, P)).toBeCloseTo((K_COULOMB * 10e-9) / 0.5, 8);
+    const pd = params({ modo: 2, Q: 10, R: 0.4, N: 400 });
+    const sigma = 10e-9 / (Math.PI * 0.16);
+    expect(exactPotential(pd, P)).toBeCloseTo((sigma / (2 * EPS0)) * (0.5 - 0.3), 8);
+    expect(partialV(elements(pd, P)) / exactPotential(pd, P)).toBeCloseTo(1, 5);
+    const pf = params({ modo: 3, Q: 10, L: 1.2, N: 4000 });
+    for (const Q of [{ x: 0.3, y: 0 }, { x: 0.2, y: 0.5 }, { x: -0.4, y: -0.9 }, { x: 0, y: 0.7 }]) {
+      expect(partialV(elements(pf, Q)) / exactPotential(pf, Q)).toBeCloseTo(1, 4);
+    }
+    // longe, o fio parece uma carga pontual
+    expect(exactPotential(pf, { x: 0, y: 60 }) / ((K_COULOMB * 10e-9) / 60)).toBeCloseTo(1, 3);
+  });
+
+  it("energia do sistema: soma sobre pares, U ∝ 1/r e cenários válidos", () => {
+    const p = withOverrides(sim, sim.scenarios.find((c) => c.id === "energia-sistema")!.params);
+    const r = new Runner(sim, p);
+    const s = r.state;
+    const manual = pairEnergy(s, 0, 1) + pairEnergy(s, 0, 2) + pairEnergy(s, 1, 2);
+    expect(systemEnergy(s)).toBeCloseTo(manual, 14);
+    const r12 = Math.hypot(s.charges[0]!.x - s.charges[1]!.x, s.charges[0]!.y - s.charges[1]!.y);
+    expect(pairEnergy(s, 0, 1)).toBeCloseTo((K_COULOMB * 3e-6 * -2e-6) / r12, 12);
+    const big = { ...s, charges: s.charges.map((c) => ({ ...c, x: 2 * c.x, y: 2 * c.y })) };
+    expect(systemEnergy(big)).toBeCloseTo(systemEnergy(s) / 2, 12);
+    expect(r.value("U")).toBeCloseTo(manual, 12);
+    const pc = withOverrides(sim, sim.scenarios.find((c) => c.id === "potencial-continuo")!.params);
+    const rc = new Runner(sim, pc);
+    for (let i = 0; i < 400; i++) rc.stepOnce();
+    expect(rc.value("Vsoma") / rc.value("Vexato")).toBeCloseTo(1, 2);
   });
 });

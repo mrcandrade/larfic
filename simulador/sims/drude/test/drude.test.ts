@@ -64,4 +64,18 @@ describe("Modelo de Drude e resistividade", () => {
     expect(rel).toBeLessThan(1.12);
     expect(vth).toBeGreaterThan(9e4);
   });
+
+  it("supercondutor: ρ(300 K) ≈ 2 µΩ·m, cai com T e zera abaixo de T_c; sem colisões nesse estado", () => {
+    const y = material(3);
+    expect(resistivity(y, 300) / 2e-6).toBeCloseTo(1, 6);
+    expect(resistivity(y, 100)).toBeGreaterThan(0);
+    expect(resistivity(y, 100)).toBeLessThan(resistivity(y, 300) / 2);
+    expect(resistivity(y, 90)).toBe(0);
+    expect(conductivity(y, 90)).toBe(Infinity);
+    const r = run({ material: 3, T: 80, E: 1 }, 300);
+    expect(measuredTau(r.state)).toBe(0);
+    expect(r.state.gas.coll).toBe(0);
+    const normal = run({ material: 3, T: 150, E: 1 }, 300);
+    expect(normal.state.gas.coll).toBeGreaterThan(0);
+  });
 });

@@ -349,7 +349,8 @@ export const tabelaPeriodica = defineSim<AtomState>({
 
   render(ctx, frame) {
     const d = draw(ctx, frame);
-    const k = clamp((frame.scale * 20) / 760, 0.72, 1);
+    const k = clamp((frame.scale * 20) / 760, 0.62, 1);
+    K = k;
     const fs = (n: number) => Math.round(n * k * 10) / 10;
     const m = mode(frame.params);
     if (m === 0) renderAufbau(d, frame.state, frame.params, fs);
@@ -358,6 +359,15 @@ export const tabelaPeriodica = defineSim<AtomState>({
     else renderMoseley(d, frame.state, fs);
   },
 });
+
+const SUB = "₀₁₂₃₄₅₆₇₈₉";
+/** Termo espectroscópico com sobrescrito e subscrito (⁵D₄, ²P₃/₂). */
+export function prettyTerm(S: number, L: number, J: number): string {
+  const up = String(2 * S + 1).split("").map((c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[Number(c)]).join("");
+  const dn = (n: number) => String(n).split("").map((c) => SUB[Number(c)]).join("");
+  const j = Number.isInteger(J) ? dn(J) : `${dn(Math.round(2 * J))}/₂`;
+  return `${up}${"SPDFGHIKLMNOQ"[L] ?? "?"}${j}`;
+}
 
 function toDigits(s: string) {
   return s.split("").map((c) => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c)).join("");
@@ -409,6 +419,11 @@ function pickZ(p: Params, pt: WorldPoint): number | undefined {
 }
 
 type Fs = (n: number) => number;
+
+/** Escala de fonte do quadro atual (menor em telas estreitas) e opções dos gráficos. */
+let K = 1;
+const narrow = () => K < 0.85;
+const PO = () => ({ font: Math.max(K, 0.75), ticks: narrow() ? 3 : 5 });
 
 const blockColor = (d: Draw, l: number) => d.theme.series[[0, 1, 2, 4][l] ?? 0]!;
 
@@ -469,10 +484,10 @@ function renderAufbau(d: Draw, s: AtomState, p: Params, fs: Fs) {
     const col = blockColor(d, q.l);
     const full = k === capacity(q.l);
     d.text(`${label(q)}${k ? ` ${k}/${capacity(q.l)}` : ""}`, x0, y1, { size: fs(10), color: k ? col : theme.muted, align: "left", dy: -8, weight: full ? "400" : "600" });
-    d.text(String(i + 1), x0 + (2 * q.l + 1) * BOXW, y1, { size: fs(8), color: theme.muted, align: "right", dy: -8 });
+    d.text(String(i + 1), x0 - 0.1, y1 - BOXH / 2 - 0.08, { size: fs(8), color: theme.muted, align: "right" });
     boxes.forEach(([u, dn], b) => {
       const bx = x0 + b * BOXW;
-      d.rect(bx, y1 - BOXH - 0.08, BOXW, BOXH, { fill: k ? col : "transparent", alpha: k ? 0.12 : 0, stroke: k ? col : theme.grid, width: 1 });
+      d.rect(bx, y1 - BOXH - 0.08, BOXW, BOXH, { fill: k ? col : undefined, alpha: k ? 0.12 : 0.45, stroke: k ? col : theme.muted, width: 1 });
       const isLast = (j: number) => i === lastIdx && j === lastJ;
       const jUp = b, jDn = b + 2 * q.l + 1;
       if (u) d.arrow(bx + BOXW * 0.32, y1 - BOXH + 0.02, 0, BOXH * 0.8, { color: isLast(jUp) ? theme.positive : theme.text, width: 1.6, head: 5 });
@@ -497,7 +512,7 @@ function renderAufbau(d: Draw, s: AtomState, p: Params, fs: Fs) {
   d.text("**", ac.x - 0.2, ac.y - TABLE.h / 2, { size: fs(10), color: theme.muted });
   LUM.forEach((b, l) => {
     d.rect(10.45 + l * 1.35, 6.35, 0.3, 0.25, { fill: blockColor(d, l), alpha: 0.6 });
-    d.text(`bloco ${b}`, 10.85 + l * 1.35, 6.47, { size: fs(9), color: theme.muted, align: "left" });
+    d.text(narrow() ? b : `bloco ${b}`, 10.85 + l * 1.35, 6.47, { size: fs(9), color: theme.muted, align: "left" });
   });
 
   // Informações
@@ -511,10 +526,11 @@ function renderAufbau(d: Draw, s: AtomState, p: Params, fs: Fs) {
   }
   const u = animating ? occ.reduce((a, k, i) => a + (k <= 2 * MADELUNG[i]!.l + 1 ? k : capacity(MADELUNG[i]!.l) - k), 0) : unpaired(s.Z, real);
   const term = hundTerm(Z, animating ? false : real);
-  line(`desemparelhados: ${u}  →  S = ${fmt(u / 2, 2)}${animating ? "" : `,  termo ${term.text}`}`);
+  line(`desemparelhados: ${u}  →  S = ${fmt(u / 2, 2)}${animating ? "" : `,  termo ${prettyTerm(term.S, term.L, term.J)}`}`);
   if (lastIdx >= 0) {
     const qn = electronQN(MADELUNG[lastIdx]!, lastJ);
-    line(`último elétron: n = ${qn.n}, l = ${qn.l} (${L_LETTERS[qn.l]}), mₗ = ${qn.ml > 0 ? "+" : ""}${qn.ml}, mₛ = ${qn.ms > 0 ? "+½" : "−½"}`, theme.positive);
+    const ml = `${qn.ml > 0 ? "+" : ""}${qn.ml}`, ms = qn.ms > 0 ? "+½" : "−½";
+    line(narrow() ? `último e⁻: n=${qn.n}, l=${qn.l}, mₗ=${ml}, mₛ=${ms}` : `último elétron: n = ${qn.n}, l = ${qn.l} (${L_LETTERS[qn.l]}), mₗ = ${ml}, mₛ = ${ms}`, theme.positive);
   }
   const pos = position(s.Z);
   line(`bloco ${LUM[block(s.Z)]}, período ${pos.period}${pos.f ? ", série f" : `, grupo ${pos.group}`}`, theme.muted);
@@ -534,7 +550,7 @@ function renderWell(d: Draw, p: Params, fs: Fs) {
   const eMax = Math.max(nextE, w.EF) * 1.12 + 0.5;
   // Níveis (agrupados por energia)
   const B = { x0: 1.2, y0: 1.0, x1: 7.6, y1: 11.0 };
-  const P = panel(d, B, { min: 0, max: 1 }, { min: 0, max: eMax });
+  const P = panel(d, B, { min: 0, max: 1 }, { min: 0, max: eMax }, PO());
   P.frame({ ylabel: "E / E₁", xticks: [], fy: (v) => fmt(v, 3) });
   const levels = new Map<number, typeof w.orbs>();
   for (const o of w.orbs) if (o.e <= eMax) levels.set(o.e, [...(levels.get(o.e) ?? []), o]);
@@ -572,7 +588,7 @@ function renderWell(d: Draw, p: Params, fs: Fs) {
   // Densidade eletrônica
   const D = { x0: 8.9, y0: 6.6, x1: 13.5, y1: 11.0 };
   if (dim === 1) {
-    const Q = panel(d, D, { min: 0, max: 1 }, { min: 0, max: Math.max(2, ...Array.from({ length: 101 }, (_, i) => wellDensity(w.orbs, 1, i / 100))) * 1.1 });
+    const Q = panel(d, D, { min: 0, max: 1 }, { min: 0, max: Math.max(2, ...Array.from({ length: 101 }, (_, i) => wellDensity(w.orbs, 1, i / 100))) * 1.1 }, PO());
     Q.frame({ xlabel: "x / L", ylabel: "densidade n(x)·L", fx: (v) => fmt(v, 2), fy: (v) => fmt(v, 2) });
     Q.plot((x) => wellDensity(w.orbs, 1, x), 0, 1, { color: theme.accent, width: 2, n: 300 });
   } else {
@@ -595,20 +611,21 @@ function renderWell(d: Draw, p: Params, fs: Fs) {
 
   // Legenda
   const line = legend(d, 14.1, 10.9, fs);
-  line(`${N} elétron${N > 1 ? "s" : ""}, poço ${dim}D, L = ${fmt(Lnm, 3)} nm`, theme.text, "700");
-  line(`E₁ = h²/8mL² = ${fmt(E1, 3)} eV`);
-  line(`E_tot = ${fmt(w.Etot, 4)} E₁ = ${fmt(w.Etot * E1, 4)} eV`, theme.accent, "600");
-  line(`nível mais alto: ${fmt(w.EF, 3)} E₁`);
-  if (w.dE > 0) line(`fóton mín.: λ = ${fmt((H * C) / (w.dE * E1 * QE) * 1e9, 4)} nm`, theme.series[2]);
-  line(pauli ? "máx. 2 elétrons por estado (↑↓)" : "sem exclusão: todos no nível 1", pauli ? theme.muted : theme.positive, "400", 10);
+  line(`N = ${N}, ${dim}D, L = ${fmt(Lnm, 3)} nm`, theme.text, "700");
+  line(`E₁ = ${fmt(E1, 3)} eV`);
+  line(`E_tot = ${fmt(w.Etot, 4)} E₁`, theme.accent, "600");
+  line(`   = ${fmt(w.Etot * E1, 4)} eV`, theme.accent, "600");
+  line(`topo: ${fmt(w.EF, 3)} E₁`);
+  if (w.dE > 0) line(`λ mín. = ${fmt((H * C) / (w.dE * E1 * QE) * 1e9, 4)} nm`, theme.series[2]);
+  line(pauli ? "máx. 2 e⁻ por estado" : "sem exclusão", pauli ? theme.muted : theme.positive, "400", 10);
 
   // E_tot × N
   const NN = 40;
   const curve = (dd: number, pl: boolean) => Array.from({ length: NN }, (_, i) => [i + 1, wellSummary(i + 1, dd, pl).Etot] as [number, number]);
   const c1 = curve(dim, true);
   const yMax = c1[NN - 1]![1] * 1.05;
-  const R = panel(d, { x0: 8.9, y0: 1.0, x1: 19.6, y1: 5.2 }, { min: 0, max: NN }, { min: 0, max: yMax });
-  R.frame({ xlabel: "N", ylabel: "E_tot / E₁ no estado fundamental", fy: (v) => fmt(v, 4), fx: (v) => fmt(v, 2) });
+  const R = panel(d, { x0: 8.9, y0: 1.0, x1: 19.6, y1: 5.2 }, { min: 0, max: NN }, { min: 0, max: yMax }, PO());
+  R.frame({ xlabel: "N", ylabel: "E_tot / E₁ (estado fundamental)", fy: (v) => fmt(v, 4), fx: (v) => fmt(v, 2) });
   R.line(c1, { color: theme.accent, width: 2 });
   R.line(curve(dim, false), { color: theme.positive, width: 1.5, dash: [5, 3] });
   d.dot(R.X(N), R.Y(w.Etot), 5, pauli ? theme.accent : theme.positive);
@@ -620,9 +637,9 @@ function renderWell(d: Draw, p: Params, fs: Fs) {
 function renderProperties(d: Draw, s: AtomState, fs: Fs) {
   const { theme } = d;
   const Z = Math.min(s.Z, ZDATA);
-  const A = panel(d, BOX_IE, { min: PROP_X[0], max: PROP_X[1] }, { min: 0, max: 26 });
+  const A = panel(d, BOX_IE, { min: PROP_X[0], max: PROP_X[1] }, { min: 0, max: 26 }, PO());
   A.frame({ ylabel: "1ª energia de ionização (eV)", fx: (v) => fmt(v, 2) });
-  const B = panel(d, BOX_R, { min: PROP_X[0], max: PROP_X[1] }, { min: 0, max: 260 });
+  const B = panel(d, BOX_R, { min: PROP_X[0], max: PROP_X[1] }, { min: 0, max: 260 }, PO());
   B.frame({ xlabel: "Z", ylabel: "raio covalente (pm)", fx: (v) => fmt(v, 2) });
   // Faixas dos períodos
   for (const ng of NOBLE.slice(0, 6)) {
@@ -658,10 +675,10 @@ function renderProperties(d: Draw, s: AtomState, fs: Fs) {
   line(`I = ${fmt(ionization(Z), 4)} eV    r = ${radius(Z)} pm`, theme.text, "600", 11);
   line(`Z_ef (Slater, ${label(sl.q)}) = ${fmt(sl.zeff, 3)}    Z_ef (de I) = ${fmt(zeffFromIE(ionization(Z), sl.q.n), 3)}`, theme.muted, "400", 10);
   LUM.forEach((b, l) => {
-    d.dot(BOX_R.x1 - 4.4 + l * 1.1, BOX_R.y1 - 0.3, 3.5, blockColor(d, l));
-    d.text(b, BOX_R.x1 - 4.25 + l * 1.1, BOX_R.y1 - 0.3, { size: fs(10), color: theme.muted, align: "left" });
+    d.dot(BOX_R.x1 - 4.4 + l * 1.1, BOX_R.y0 + 0.35, 3.5, blockColor(d, l));
+    d.text(narrow() ? b : `bloco ${b}`, BOX_R.x1 - 4.25 + l * 1.1, BOX_R.y0 + 0.35, { size: fs(9), color: theme.muted, align: "left" });
   });
-  d.text("clique para escolher", BOX_R.x1 - 4.6, BOX_R.y1 - 0.3, { size: fs(9), color: theme.muted, align: "right" });
+  if (!narrow()) d.text("clique num ponto para escolher o elemento", BOX_R.x1 - 4.6, BOX_R.y0 + 0.35, { size: fs(9), color: theme.muted, align: "right" });
 }
 
 // ---------- Modo 3: Moseley ----------
@@ -670,7 +687,7 @@ function renderMoseley(d: Draw, s: AtomState, fs: Fs) {
   const { theme } = d;
   const Z = clamp(s.Z, MOS_RANGE[0], MOS_RANGE[1]);
   const yMax = 45;
-  const A = panel(d, BOX_MOS, { min: MOS_RANGE[0], max: MOS_RANGE[1] }, { min: 0, max: yMax });
+  const A = panel(d, BOX_MOS, { min: MOS_RANGE[0], max: MOS_RANGE[1] }, { min: 0, max: yMax }, PO());
   A.frame({ xlabel: "Z", ylabel: "√f  (10⁸ Hz^½)", fx: (v) => fmt(v, 2), fy: (v) => fmt(v, 2) });
   const fit = moseleyFit();
   A.plot((z) => kTheory * (z - 1), MOS_RANGE[0], MOS_RANGE[1], { color: theme.muted, width: 1.5 });

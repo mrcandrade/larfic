@@ -10,7 +10,7 @@ export const EV = 1.602176634e-19;
 
 export interface Material {
   name: string;
-  kind: "metal" | "semicondutor";
+  kind: "metal" | "semicondutor" | "supercondutor";
   /** Densidade de portadores a 300 K (m⁻³). */
   n300: number;
   /** Tempo de relaxação a 300 K (s). */
@@ -21,6 +21,8 @@ export interface Material {
   residual?: number;
   /** Gap (eV), para semicondutores. */
   gap?: number;
+  /** Temperatura crítica (K), para supercondutores: abaixo dela ρ = 0. */
+  Tc?: number;
 }
 
 export const MATERIALS: Material[] = [
@@ -29,13 +31,15 @@ export const MATERIALS: Material[] = [
   { name: "Alumínio", kind: "metal", n300: 18.1e28, tau300: 7.4e-15, mEff: 1, residual: 0.01 },
   // Si intrínseco: n_i ≈ 1e16 m⁻³, μ_n ≈ 0,14 m²/(V·s) ⇒ τ = μ m*/e.
   { name: "Silício intrínseco", kind: "semicondutor", n300: 1.0e16, tau300: (0.14 * 0.26 * M_E) / E_CHARGE, mEff: 0.26, gap: 1.12 },
+  // YBa₂Cu₃O₇ (planos ab), valores típicos: n ≈ 5e27 m⁻³, ρ(300 K) ≈ 2e-6 Ω·m quase ∝ T no estado normal, T_c = 92 K.
+  { name: "YBCO (supercondutor)", kind: "supercondutor", n300: 5e27, tau300: M_E / (5e27 * E_CHARGE ** 2 * 2e-6), mEff: 1, residual: 0.02, Tc: 92 },
 ];
 
 export const material = (i: number) => MATERIALS[Math.max(0, Math.min(MATERIALS.length - 1, Math.round(i)))]!;
 
 /** Densidade de portadores n(T): constante em metais; ativada termicamente no semicondutor. */
 export function carrierDensity(m: Material, T: number): number {
-  if (m.kind === "metal") return m.n300;
+  if (m.kind !== "semicondutor") return m.n300;
   const Eg = (m.gap ?? 1.1) * EV;
   return m.n300 * (T / 300) ** 1.5 * Math.exp((-Eg / (2 * K_B)) * (1 / T - 1 / 300));
 }
@@ -45,7 +49,7 @@ export function carrierDensity(m: Material, T: number): number {
  * com 1/τ_fônons ∝ T. Semicondutor: espalhamento por fônons μ ∝ T^(−3/2).
  */
 export function relaxationTime(m: Material, T: number): number {
-  if (m.kind === "metal") {
+  if (m.kind !== "semicondutor") {
     const r = m.residual ?? 0;
     const rate300 = 1 / m.tau300;
     return 1 / (r * rate300 + (1 - r) * rate300 * (T / 300));
@@ -55,7 +59,11 @@ export function relaxationTime(m: Material, T: number): number {
 
 export const massOf = (m: Material) => m.mEff * M_E;
 export const mobility = (m: Material, T: number) => (E_CHARGE * relaxationTime(m, T)) / massOf(m);
-export const conductivity = (m: Material, T: number) => (carrierDensity(m, T) * E_CHARGE ** 2 * relaxationTime(m, T)) / massOf(m);
+/** Abaixo de T_c o material está no estado supercondutor (resistência nula). */
+export const isSuperconducting = (m: Material, T: number) => m.Tc !== undefined && T < m.Tc;
+/** σ (S/m): Drude no estado normal; infinita no estado supercondutor. */
+export const conductivity = (m: Material, T: number) =>
+  isSuperconducting(m, T) ? Infinity : (carrierDensity(m, T) * E_CHARGE ** 2 * relaxationTime(m, T)) / massOf(m);
 export const resistivity = (m: Material, T: number) => 1 / conductivity(m, T);
 /** Velocidade de deriva (m/s), em módulo: v_d = eEτ/m. */
 export const driftSpeed = (m: Material, T: number, E: number) => (E_CHARGE * E * relaxationTime(m, T)) / massOf(m);

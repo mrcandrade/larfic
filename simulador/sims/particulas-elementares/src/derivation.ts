@@ -1,6 +1,6 @@
 /** Modo engenharia: de onde vêm as regras e as contas da sim de partículas elementares. */
-export const derivation = String.raw`### 1. Dados e unidades
-- Massas em MeV/$c^2$, energias em MeV e momentos em MeV/$c$ (na prática, $c = 1$ nas contas). Valores de massa, vida média, largura e modos de decaimento do *Review of Particle Physics* (PDG, 2024). Para ressonâncias, a vida média vem da largura: $\tau = \hbar/\Gamma$, com $\hbar = 6{,}582\times10^{-22}$ MeV·s.
+export const derivation = String.raw`### 1. Hipóteses, dados e unidades
+- Massas em MeV/$c^2$, energias em MeV e momentos em MeV/$c$ (na prática, $c = 1$ nas contas). Valores de massa, vida média, largura e modos de decaimento do Review of Particle Physics (PDG, 2024). Para ressonâncias, a vida média vem da largura: $\tau = \hbar/\Gamma$, com $\hbar = 6{,}582\times10^{-22}$ MeV·s.
 - Massas dos quarks: massas "de corrente" do PDG ($u \approx 2{,}2$, $d \approx 4{,}7$, $s \approx 94$, $c \approx 1273$ MeV/$c^2$). Elas não somam a massa dos hádrons; a diferença é energia de interação.
 - Neutrinos são tratados como sem massa (os limites atuais são menores que 1 eV, irrelevantes nestas contas).
 
@@ -32,16 +32,16 @@ Uma partícula com energia cinética $K$ tem $\gamma = 1 + K/mc^2$ e $\beta = \s
 
 ### 7. Caminho óctuplo
 Para cada hádron, $I_3 = Q - (B + S)/2$ (relação de Gell-Mann–Nishijima). No plano $(I_3, S)$ os bárions de spin ½ formam um octeto (hexágono com dois estados no centro), os de spin 3/2 um decupleto (triângulo) e os mésons de spin 0 um noneto. As retas de carga constante são $I_3 = Q - B/2 - S/2$: inclinadas, porque cada unidade de estranheza desloca $I_3$ de ½.
-- **Decupleto:** a massa cresce quase linearmente com $-S$ (cada quark $s$ no lugar de um $u$ ou $d$). Com as médias das três primeiras linhas, $m_\Omega \approx m_{\Xi^*} + (m_{\Xi^*} - m_\Delta)/2 \approx 1683$ MeV; o medido é $1672{,}45$ MeV.
+- **Decupleto:** a massa cresce quase linearmente com $-S$ (cada quark $s$ no lugar de um $u$ ou $d$). Com as médias das três primeiras linhas, $m_\Omega \approx m_{\Xi^{\ast}} + (m_{\Xi^{\ast}} - m_\Delta)/2 \approx 1683$ MeV; o medido é $1672{,}45$ MeV.
 - **Octeto:** a relação de Gell-Mann–Okubo $\tfrac12(m_N + m_\Xi) = \tfrac14(3m_\Lambda + m_\Sigma)$ vale com erro de ~0,6%.
 
 ### 8. Quarks, cor e identificação dos hádrons
 A sacola soma $Q = \sum q_i$, $B = \sum B_i$, $S$ e charme. Só são aceitos singletos de cor com até três peças: $qqq$, $\bar q\bar q\bar q$ e $q\bar q$. O hádron é procurado numa tabela pelo conteúdo de sabores e pelo spin (½ ou 3/2 para bárions; 0 ou 1 para mésons). Três quarks iguais no estado fundamental (onda espacial simétrica, cor antissimétrica) precisam de spin simétrico, logo spin 3/2: não existe $uuu$ de spin ½. Estados neutros $u\bar u$, $d\bar d$, $s\bar s$ são misturas na natureza ($\pi^0$, $\eta$, $\eta'$, $\rho^0$, $\omega$, $\phi$); a sim indica o estado principal e avisa da mistura.
 
 ### 9. Aniquilação $e^+e^- \to \gamma\gamma$
-Com o elétron parado e o pósitron com energia $E_+ = K + m$: $\sqrt s = \sqrt{2m^2 + 2mE_+}$ e o centro de massa se move com $\beta = p_+/(E_+ + m)$, $\gamma = (E_+ + m)/\sqrt s$. No CM os fótons têm $E^* = \sqrt s/2$ e saem opostos, em $\theta^*$ e $\theta^* + \pi$. A transformação de Lorentz dá
-$$E_{1,2} = \gamma E^*(1 \pm \beta\cos\theta^*), \qquad \tan\theta_\text{lab} = \frac{\sin\theta^*}{\gamma(\cos\theta^* + \beta)}.$$
-Soma: $E_1 + E_2 = 2\gamma E^* = E_+ + m$; momento: $E_1\cos\theta_1 + E_2\cos\theta_2 = 2\gamma\beta E^* = p_+$. As duas leis fecham exatamente. Um único fóton não basta, pois teria massa invariante nula, enquanto $\sqrt s \ge 2m$.
+Com o elétron parado e o pósitron com energia $E_+ = K + m$: $\sqrt s = \sqrt{2m^2 + 2mE_+}$ e o centro de massa se move com $\beta = p_+/(E_+ + m)$, $\gamma = (E_+ + m)/\sqrt s$. No CM os fótons têm $E^{\ast} = \sqrt s/2$ e saem opostos, em $\theta^{\ast}$ e $\theta^{\ast} + \pi$. A transformação de Lorentz dá
+$$E_{1,2} = \gamma E^{\ast}(1 \pm \beta\cos\theta^{\ast}), \qquad \tan\theta_\text{lab} = \frac{\sin\theta^{\ast}}{\gamma(\cos\theta^{\ast} + \beta)}.$$
+Soma: $E_1 + E_2 = 2\gamma E^{\ast} = E_+ + m$; momento: $E_1\cos\theta_1 + E_2\cos\theta_2 = 2\gamma\beta E^{\ast} = p_+$. As duas leis fecham exatamente. Um único fóton não basta, pois teria massa invariante nula, enquanto $\sqrt s \ge 2m$.
 
 ### 10. Produção de pares
 No vácuo, $\gamma \to e^+e^-$ é impossível: a massa invariante do fóton é zero e a do par é no mínimo $2m$. Junto a um núcleo de massa $M$, o limiar sai de $s = M^2 + 2ME_\gamma \ge (M + 2m)^2$:

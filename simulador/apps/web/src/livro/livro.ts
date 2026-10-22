@@ -187,6 +187,17 @@ export function bookRefs(
   return out;
 }
 
+/** Agrupa as referências por capítulo, para a linha "No livro" ficar curta. */
+export function groupRefsByChapter(refs: BookRef[]): { chapter: number; chapterTitle: string; refs: BookRef[] }[] {
+  const out: { chapter: number; chapterTitle: string; refs: BookRef[] }[] = [];
+  for (const r of refs) {
+    const g = out.at(-1);
+    if (g?.chapter === r.chapter) g.refs.push(r);
+    else out.push({ chapter: r.chapter, chapterTitle: r.chapterTitle, refs: [r] });
+  }
+  return out;
+}
+
 // ------------------------------------------------------------------ índice remissivo
 
 export interface IndexRef {
@@ -246,10 +257,12 @@ export function remissiveIndex(opts: {
   }
   const entries = [...map.values()];
   for (const e of entries) e.refs.sort((a, b) => a.order - b.order);
-  entries.sort((a, b) => normalize(a.term).localeCompare(normalize(b.term), "pt-BR") || (a.note ?? "").localeCompare(b.note ?? ""));
+  // Ordena ignorando aspas e outros sinais iniciais ("Bombeamento" vai para o B).
+  const sortKey = (t: string) => normalize(t).replace(/^[^a-z0-9]+/, "");
+  entries.sort((a, b) => sortKey(a.term).localeCompare(sortKey(b.term), "pt-BR") || (a.note ?? "").localeCompare(b.note ?? ""));
   const groups: IndexGroup[] = [];
   for (const e of entries) {
-    const first = normalize(e.term).charAt(0).toUpperCase();
+    const first = sortKey(e.term).charAt(0).toUpperCase();
     const letter = /[A-Z]/.test(first) ? first : "#";
     const g = groups.at(-1);
     if (g?.letter === letter) g.entries.push(e);

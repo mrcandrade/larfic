@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Runner, cross3, dot3, generateExercise, norm3, withOverrides, type V3 } from "@fisilab/core";
-import { cameraBasis, lookAlong, project, vetores3d as sim, type Vec3State } from "../src/index.ts";
+import { Runner, cross3, dot3, generateExercise, norm3, sub3, withOverrides, type V3 } from "@fisilab/core";
+import { cameraBasis, finiteRotations, lookAlong, primedComponents, project, vetores3d as sim, type Vec3State } from "../src/index.ts";
 
 const run = (p: Record<string, number>) => new Runner(sim, withOverrides(sim, p));
 
@@ -72,5 +72,43 @@ describe("Vetores em 3D", () => {
     const P = inst.params;
     const C = cross3([P.Ax!, P.Ay!, P.Az!], [P.Bx!, P.By!, P.Bz!]);
     expect(inst.answer).toBeCloseTo(Math.hypot(...C), 10);
+  });
+});
+
+describe("Vetores em 3D: rotação dos eixos e rotações finitas", () => {
+  it("girar os eixos muda as componentes, mas não o módulo nem o produto escalar", () => {
+    const A: V3 = [4, 3, 0], B: V3 = [-1, 2, 0];
+    const q90 = primedComponents(A, Math.PI / 2);
+    expect(q90[0]).toBeCloseTo(3, 12);
+    expect(q90[1]).toBeCloseTo(-4, 12);
+    for (const phi of [0.3, 1.1, -2.4]) {
+      const qa = primedComponents(A, phi), qb = primedComponents(B, phi);
+      expect(norm3(qa)).toBeCloseTo(5, 12);
+      expect(dot3(qa, qb)).toBeCloseTo(dot3(A, B), 12);
+    }
+    // φ = atan2(Ay, Ax) alinha x' com A
+    const qa = primedComponents(A, Math.atan2(3, 4));
+    expect(qa[0]).toBeCloseTo(5, 12);
+    expect(qa[1]).toBeCloseTo(0, 12);
+    const r = run({ modo: 4, Ax: 4, Ay: 3, Az: 0, phi: 90 });
+    expect(r.value("Axl")).toBeCloseTo(3, 10);
+    expect(r.value("Ayl")).toBeCloseTo(-4, 10);
+    expect(r.value("modA")).toBeCloseTo(5, 12);
+  });
+
+  it("rotações de 90° em x e em y não comutam; as pequenas quase comutam (diferença ~ αβ)", () => {
+    const { xy, yx } = finiteRotations([4, 0, 0], Math.PI / 2, Math.PI / 2);
+    expect(xy[0]).toBeCloseTo(0, 12);
+    expect(xy[2]).toBeCloseTo(-4, 12);
+    expect(yx[1]).toBeCloseTo(4, 12);
+    const r90 = run({ modo: 5, Ax: 4, Ay: 0, Az: 0, alfa: 90, beta: 90 });
+    expect(r90.value("difRot")).toBeCloseTo(Math.SQRT2, 10);
+    const small = (g: number) => run({ modo: 5, Ax: 4, Ay: 1, Az: 2, alfa: g, beta: g }).value("difRot");
+    const d2 = small(2), d1 = small(1);
+    expect(d2).toBeLessThan(0.002);
+    expect(d2 / d1).toBeCloseTo(4, 1); // segunda ordem: dobrar os ângulos quadruplica
+    // rotações em torno do mesmo eixo comutam sempre
+    const same = finiteRotations([1, 2, 3], 0, 1.3);
+    expect(norm3(sub3(same.xy, same.yx))).toBeCloseTo(0, 12);
   });
 });

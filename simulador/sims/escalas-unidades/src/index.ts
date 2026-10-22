@@ -51,7 +51,7 @@ export function rapidezPadrao(p: Params): number {
 /** Fatores aplicados (inteiro) para k contínuo. */
 export const aplicados = (k: number, p: Params) => clamp(Math.floor(k + 1e-9), 0, cadeia(p).fatores.length);
 
-const fmt = (v: number, d = 4) => formatBR(v, d);
+const fmt = (v: number, d = 4) => sci(v, d);
 const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const sup = (n: number) => String(n).replace(/-/g, "⁻").replace(/\d/g, (c) => SUP[Number(c)]!);
 /** Notação científica com expoente sobrescrito: "3,34 × 10⁻⁹". */
@@ -382,7 +382,7 @@ Desde 2019 o SI fixa valores **exatos** para constantes da natureza e define as 
     return 1;
   },
 
-  viewport: () => ({ xMin: 0, xMax: 12, yMin: 0, yMax: 12 }),
+  viewport: (p) => ({ xMin: 0, xMax: 12, yMin: modo(p) === 2 ? 2 : 0, yMax: 12 }),
 
   pointer: {
     down(s, p, pt) {
@@ -414,39 +414,36 @@ Desde 2019 o SI fixa valores **exatos** para constantes da natureza e define as 
 /** Faixa horizontal das réguas logarítmicas. */
 const LX0 = 1.0, LX1 = 11.4;
 /** Alturas das réguas: comprimento, tempo, massa. */
-const REGUA_Y = [4.05, 2.55, 1.05] as const;
+const REGUA_Y = [4.55, 2.8, 1.05] as const;
 const FAIXAS: readonly [[number, number], [number, number], [number, number]] = [[E_MIN, E_MAX + 1], [-24, 18], [-31, 54]];
 const xDoLog = (lg: number, f: [number, number]) => LX0 + ((lg - f[0]) / (f[1] - f[0])) * (LX1 - LX0);
 const eDoX = (x: number) => clamp(FAIXAS[0][0] + ((x - LX0) / (LX1 - LX0)) * (FAIXAS[0][1] - FAIXAS[0][0]), E_MIN, E_MAX);
 
-function regua(d: Draw, y: number, f: [number, number], titulo: string, valor: number, refs: Ref[], cor: string, rotulo: string) {
+function regua(d: Draw, y: number, f: [number, number], titulo: string, valor: number, refs: Ref[], cor: string) {
   const th = d.theme;
-  d.text(titulo, LX0 - 0.8, y + 0.62, { size: 11, align: "left", color: th.muted, weight: "600" });
+  const lv = Math.log10(valor);
+  let ref = refs[0]!;
+  for (const r of refs) if (Math.abs(Math.log10(r.v) - lv) < Math.abs(Math.log10(ref.v) - lv)) ref = r;
+  const perto = Math.abs(Math.log10(ref.v) - lv) < 1.5 ? `  ≈ ${ref.nome}` : "";
+  d.text(`${titulo}: ${sci(valor)}${perto}`, LX0 - 0.8, y + 0.6, { size: 11, align: "left", color: cor, weight: "600" });
   d.line(LX0, y, LX1, y, { color: th.muted, width: 1.5 });
-  const passo = (f[1] - f[0]) > 60 ? 20 : 10;
+  const passo = f[1] - f[0] > 60 ? 20 : 10;
   for (let k = Math.ceil(f[0] / 5) * 5; k <= f[1]; k += 5) {
     const x = xDoLog(k, f);
     const grande = k % passo === 0;
     d.line(x, y - (grande ? 0.16 : 0.09), x, y + (grande ? 0.16 : 0.09), { color: th.muted, width: 1 });
-    if (grande) d.text(`10${sup(k)}`, x, y - 0.38, { size: 10, color: th.muted });
+    if (grande) d.text(`10${sup(k)}`, x, y - 0.42, { size: 10, color: th.muted });
   }
   for (const r of refs) d.dot(xDoLog(Math.log10(r.v), f), y, 2.2, th.muted, 0.7);
-  const lv = Math.log10(valor);
   const xv = xDoLog(clamp(lv, f[0], f[1]), f);
-  d.polyline([[xv, y + 0.05], [xv - 0.14, y + 0.3], [xv + 0.14, y + 0.3]], { close: true, fill: cor, color: cor });
-  // rótulo do marcador e da referência mais próxima, sem sair da régua
-  let ref = refs[0]!;
-  for (const r of refs) if (Math.abs(Math.log10(r.v) - lv) < Math.abs(Math.log10(ref.v) - lv)) ref = r;
-  const alinhar = xv < 4 ? "left" : xv > 8.4 ? "right" : "center";
-  d.text(`${rotulo} ${sci(valor)}`, xv, y + 0.55, { size: 11, color: cor, weight: "700", align: alinhar });
-  if (Math.abs(Math.log10(ref.v) - lv) < 1.5) d.text(`≈ ${ref.nome}`, xv, y - 0.66, { size: 10, color: th.text, align: alinhar });
+  d.polyline([[xv, y + 0.04], [xv - 0.15, y + 0.32], [xv + 0.15, y + 0.32]], { close: true, fill: cor, color: cor });
 }
 
 function renderZoom(d: Draw, frame: RenderFrame) {
   const { state: s, theme: th } = frame;
   const e = s[E]!;
   const L = 10 ** e;
-  const W = { x0: 0.15, x1: 11.85, y0: 5.1, y1: 11.85 };
+  const W = { x0: 0.15, x1: 11.85, y0: 5.65, y1: 11.85 };
   const w = W.x1 - W.x0, h = W.y1 - W.y0;
   const cx = (W.x0 + W.x1) / 2, cy = (W.y0 + W.y1) / 2 - 0.2;
   d.rect(W.x0, W.y0, w, h, { fill: th.dark ? "#0b1220" : "#f3f6fb", stroke: th.muted, width: 1 });
@@ -482,9 +479,9 @@ function renderZoom(d: Draw, frame: RenderFrame) {
   const o = OBJETOS[iMais]!;
   d.text(`${o.nome}: ${sci(o.v)} m · ${sci(o.m)} kg`, W.x0 + 0.25, W.y1 - 0.85, { size: 11, align: "left", color: th.accent });
 
-  regua(d, REGUA_Y[0], FAIXAS[0], "Comprimento do quadro (arraste)", L, OBJETOS, th.accent, "L =");
-  regua(d, REGUA_Y[1], FAIXAS[1], "Tempo para a luz cruzar o quadro", tempoLuz(L), TEMPOS, th.series[1]!, "L/c =");
-  regua(d, REGUA_Y[2], FAIXAS[2], "Massa do objeto em destaque", o.m, MASSAS, th.series[2]!, "m =");
+  regua(d, REGUA_Y[0], FAIXAS[0], "L (m, arraste)", L, OBJETOS, th.accent);
+  regua(d, REGUA_Y[1], FAIXAS[1], "L/c (s)", tempoLuz(L), TEMPOS, th.series[1]!);
+  regua(d, REGUA_Y[2], FAIXAS[2], "massa do objeto (kg)", o.m, MASSAS, th.series[2]!);
 }
 
 // ------------------------------------------------------------------ desenho: conversão
@@ -616,7 +613,7 @@ function renderConversao(d: Draw, frame: RenderFrame) {
     d.text(t, 0.2, yMundo(yp), { size: 12, align: "left", color: cor, weight: peso });
     yp += 19;
   };
-  linhaTxt("Depois de cada fator (o valor muda, a grandeza não):", th.muted, "600");
+  linhaTxt("Valor depois de cada fator:", th.muted, "600");
   for (let i = 0; i <= fs.length; i++) {
     const v = valorApos(c, v0, i, erro);
     const u = textoUnidades(unidadesApos(c, i, erro));
@@ -641,7 +638,9 @@ function renderPadroes(d: Draw, frame: RenderFrame) {
   const k = padrao(p);
   const tau = s[TAU]!;
   const linhas = (y0: number, ls: [string, string?, string?][]) =>
-    ls.forEach(([txt, cor, peso], i) => d.text(txt, 0.4, y0 - 0.62 * i, { size: 12, align: "left", color: cor ?? th.text, weight: peso ?? "400" }));
+    ls
+      .filter(([, cor]) => !(d.px > 1 / 34 && cor === th.muted))
+      .forEach(([txt, cor, peso], i) => d.text(txt, 0.2, y0 - 0.62 * i, { size: d.px > 1 / 34 ? 9 : 12, align: "left", color: cor ?? th.text, weight: peso ?? "400" }));
 
   if (k === 0) {
     const L = num(p, "Lalvo", 1);
@@ -667,11 +666,11 @@ function renderPadroes(d: Draw, frame: RenderFrame) {
       d.line(x, 7.9, x, 7.9 - (g ? 0.35 : 0.2), { color: th.text, width: 1 });
       if (g) d.text(`${cm}`, x, 7.4, { size: 9, color: th.muted });
     }
-    d.text("cm", x1 + 0.1, 7.5, { size: 9, align: "left", color: th.muted });
+    d.text("cm", x1 + 0.25, 7.2, { size: 9, align: "left", color: th.muted });
     linhas(6.3, [
       [`τ = ${fmt(tau * 1e9, 7)} ns   (câmera lenta: 1 ns por segundo)`, th.text, "700"],
       [`distância cτ = ${fmt(C * tau, 7)} m`],
-      [`comprimentos de onda do He-Ne em cτ: ${fmt(ondasHeNe(C * tau), 8)}`],
+      [`comprimentos de onda do He-Ne em cτ: ${sci(ondasHeNe(C * tau), 8)}`],
       [`chegada prevista: ${fmt(L, 4)} m ÷ 299 792 458 m/s = ${fmt((L / C) * 1e9, 8)} ns`, th.accent],
       ["c é exata por definição: medir tempo é medir comprimento.", th.muted],
     ]);

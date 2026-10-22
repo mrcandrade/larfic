@@ -503,7 +503,8 @@ export const gravitacaoTerra = defineSim<GravState>({
     const m = mode(frame.params);
     // Fonte proporcional à largura disponível (telas estreitas).
     const vp = gravitacaoTerra.viewport(frame.params, frame.state);
-    const k = clamp((frame.scale * (vp.xMax - vp.xMin)) / 760, 0.72, 1);
+    const k = clamp((frame.scale * (vp.xMax - vp.xMin)) / 760, 0.62, 1);
+    K = k;
     const fs = (n: number) => Math.round(n * k * 10) / 10;
     if (m === 0) renderSuperposition(d, frame.state, frame.params, fs);
     else if (m === 1) renderAltitude(d, frame.params, frame.state, fs);
@@ -514,6 +515,20 @@ export const gravitacaoTerra = defineSim<GravState>({
 });
 
 type Fs = (n: number) => number;
+
+/** Escala de fonte do quadro atual (menor em telas estreitas) e opções dos gráficos. */
+let K = 1;
+const narrow = () => K < 0.85;
+const PO = () => ({ font: Math.max(K, 0.75), ticks: narrow() ? 3 : 5 });
+
+const SUPD = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+/** Número em notação científica legível (1,23 × 10⁻⁸). */
+function sci(v: number, digits = 3): string {
+  if (v === 0 || (Math.abs(v) >= 1e-3 && Math.abs(v) < 1e5)) return fmt(v, digits);
+  const [m, e] = v.toExponential(digits - 1).split("e");
+  const ee = Number(e);
+  return `${m!.replace(".", ",")} × 10${ee < 0 ? "⁻" : ""}${String(Math.abs(ee)).split("").map((c) => SUPD[Number(c)]).join("")}`;
+}
 
 function pick(s: GravState, p: Params, pt: WorldPoint): number {
   const n = clamp(Math.round(num(p, "n", 3)), 1, 3);
@@ -586,7 +601,7 @@ function renderSuperposition(d: Draw, s: GravState, p: Params, fs: Fs) {
   f.parts.forEach((q, i) => line(`F_${NAMES[i]} = ${fmt(q.F * 1e9, 3)} nN`, theme.series[i + 1]));
   line(`|F| = ${fmt(f.F * 1e9, 3)} nN`, theme.text, "700");
   line(`Σ|Fᵢ| = ${fmt(f.parts.reduce((a, q) => a + q.F, 0) * 1e9, 3)} nN`, theme.muted);
-  line(`g = F/m₀ = ${fmt(f.F / m0, 3)} m/s²`, theme.muted);
+  if (!narrow()) line(`g = F/m₀ = ${sci(f.F / m0)} m/s²`, theme.muted);
   line("");
   line("Arraste as esferas", theme.accent);
   line("e a partícula m₀.", theme.accent);
@@ -632,7 +647,7 @@ function renderAltitude(d: Draw, p: Params, s: GravState, fs: Fs) {
   const P = { x: C.x + rd * Math.cos(phi), y: C.y + rd * Math.sin(phi) };
   if (h > 0) d.circle(C.x, C.y, rd, { stroke: theme.muted, width: 0.8, dash: [2, 4] });
   d.line(C.x, P.y, P.x, P.y, { color: theme.series[1], width: 1, dash: [4, 3] });
-  d.text("ρ = r cos φ", (C.x + P.x) / 2, P.y, { size: fs(10), color: theme.series[1], dy: 9 });
+  d.text("ρ = r cos φ", (C.x + P.x) / 2, P.y, { size: fs(10), color: theme.series[1], dy: -9 });
   d.line(C.x, C.y, P.x, P.y, { color: theme.muted, width: 1 });
   if (lat > 3) d.text(`φ = ${fmt(lat, 3)}°`, C.x + 0.9 * Math.cos(phi / 2), C.y + 0.9 * Math.sin(phi / 2), { size: fs(10), color: theme.muted, align: "left", dx: 4 });
 
@@ -644,13 +659,13 @@ function renderAltitude(d: Draw, p: Params, s: GravState, fs: Fs) {
   const cx = e.ac, cy = 0; // centrífuga: para fora do eixo (horizontal no desenho)
   const ex = e.up * up.x + e.north * north.x, ey = e.up * up.y + e.north * north.y;
   d.arrow(P.x, P.y, gx * sc, gy * sc, { color: theme.series[3], width: 2.5 });
-  d.text("g", P.x + gx * sc, P.y + gy * sc, { size: fs(12), weight: "700", color: theme.series[3], dx: -10 });
+  d.text("g", P.x + gx * sc, P.y + gy * sc, { size: fs(12), weight: "700", color: theme.series[3], dx: -8, dy: 12 });
   if (e.ac * sc > 0.03) {
     d.arrow(P.x, P.y, cx * sc, cy * sc, { color: theme.series[1], width: 2 });
     d.text("ω²ρ", P.x + cx * sc, P.y, { size: fs(11), color: theme.series[1], dx: 14, dy: -8 });
   }
   d.arrow(P.x, P.y, ex * sc, ey * sc, { color: theme.accent, width: 2, dash: [5, 3] });
-  d.text("g_ef", P.x + ex * sc, P.y + ey * sc, { size: fs(11), weight: "600", color: theme.accent, dx: 14, dy: 6 });
+  d.text("g_ef", P.x + 0.55 * ex * sc, P.y + 0.55 * ey * sc, { size: fs(11), weight: "600", color: theme.accent, dy: 22 });
   d.dot(P.x, P.y, 5, theme.text);
 
   const line = legend(d, 0.4, 2.55, fs);
@@ -661,7 +676,7 @@ function renderAltitude(d: Draw, p: Params, s: GravState, fs: Fs) {
 
   // Gráfico 1: g × h
   const hMax = 40000;
-  const A = panel(d, { x0: 11.9, y0: 6.6, x1: 19.6, y1: 11.1 }, { min: 0, max: hMax }, { min: 0, max: 10.5 });
+  const A = panel(d, { x0: 11.9, y0: 6.6, x1: 19.6, y1: 11.1 }, { min: 0, max: hMax }, { min: 0, max: 10.5 }, PO());
   A.frame({ xlabel: "h (km)", ylabel: "g (m/s²)", fx: (v) => fmt(v / 1000, 3) + (v ? " mil" : "") });
   A.plot((x) => gAt(x * 1000), 0, hMax, { color: theme.series[3], width: 2 });
   A.plot((x) => gEffective(x * 1000, lat, dia).up * -1, 0, hMax, { color: theme.accent, width: 1.5, dash: [5, 3] });
@@ -670,16 +685,16 @@ function renderAltitude(d: Draw, p: Params, s: GravState, fs: Fs) {
     d.text(name, A.X(hh), A.Y(gAt(hh * 1000)), { size: fs(9), color: theme.muted, dy: -8, dx: name === "ISS" ? 10 : 0 });
   }
   if (h / 1000 <= hMax) d.dot(A.X(h / 1000), A.Y(e.g), 5, theme.series[3]!);
-  d.text("— g   - - g_ef girando junto (radial)", A.box.x1, A.box.y1, { size: fs(9), color: theme.muted, align: "right", dy: -9 });
+  if (!narrow()) d.text("— g   - - g_ef girando junto (radial)", A.box.x1, A.box.y1, { size: fs(9), color: theme.muted, align: "right", dy: -9 });
 
   // Gráfico 2: g na superfície × latitude
   const lo = Math.min(9.74, gEffective(0, 0, dia).mag - 0.01);
-  const B = panel(d, { x0: 11.9, y0: 0.9, x1: 19.6, y1: 4.9 }, { min: 0, max: 90 }, { min: Math.max(0, lo), max: 9.86 });
-  B.frame({ xlabel: "φ (°)", ylabel: "g_ef ao nível do mar (m/s²)", fx: (v) => fmt(v, 2), fy: (v) => fmt(v, 4) });
+  const B = panel(d, { x0: 11.9, y0: 0.9, x1: 19.6, y1: 4.9 }, { min: 0, max: 90 }, { min: Math.max(0, lo), max: 9.86 }, PO());
+  B.frame({ xlabel: "φ (°)", ylabel: narrow() ? "g_ef, h = 0" : "g_ef ao nível do mar (m/s²)", fx: (v) => fmt(v, 2), fy: (v) => fmt(v, 4) });
   B.plot((x) => gEffective(0, x, dia).mag, 0, 90, { color: theme.accent, width: 2 });
   B.plot((x) => somigliana(x), 0, 90, { color: theme.series[2], width: 2, dash: [5, 3] });
   d.dot(B.X(lat), B.Y(gEffective(0, lat, dia).mag), 5, theme.accent);
-  d.text("— esfera girando   - - Terra real (WGS 84)", B.box.x1, B.box.y0, { size: fs(9), color: theme.muted, align: "right", dy: 22 });
+  d.text(narrow() ? "— modelo  - - WGS 84" : "— esfera girando   - - Terra real (WGS 84)", B.box.x1 - 0.15, B.box.y0 + 0.3, { size: fs(9), color: theme.muted, align: "right" });
 }
 
 function renderInterior(d: Draw, p: Params, fs: Fs) {
@@ -730,8 +745,8 @@ function renderInterior(d: Draw, p: Params, fs: Fs) {
   if (em.kind === 2) line("toda a massa numa casca fina na superfície", theme.series[1], "400", 10);
 
   // Gráfico g(r)
-  const A = panel(d, { x0: 11.6, y0: 1.2, x1: 19.6, y1: 10.6 }, { min: 0, max: 2 * RE }, { min: 0, max: 12 });
-  A.frame({ xlabel: "r (km)", ylabel: "g (m/s²)", fx: (v) => fmt(v / 1000, 4), xticks: [0, 2e6, 4e6, 6e6, 8e6, 10e6, 12e6] });
+  const A = panel(d, { x0: 11.6, y0: 1.2, x1: 19.6, y1: 10.6 }, { min: 0, max: 2 * RE }, { min: 0, max: 12 }, PO());
+  A.frame({ xlabel: "r (km)", ylabel: "g (m/s²)", fx: (v) => fmt(v / 1000, 4), xticks: narrow() ? [0, 4e6, 8e6, 12e6] : [0, 2e6, 4e6, 6e6, 8e6, 10e6, 12e6] });
   A.line([[RE, 0], [RE, 12]], { color: theme.muted, width: 1, dash: [3, 3] });
   d.text("superfície", A.X(RE), A.box.y1, { size: fs(9), color: theme.muted, dy: 8, align: "left", dx: 3 });
   if (em.kind === 1) {
@@ -750,7 +765,7 @@ function renderTunnel(d: Draw, s: GravState, p: Params, trail: GravState[], fs: 
   const { theme } = d;
   const em = earthModel(p);
   const b = num(p, "b") * 1000;
-  const C = { x: 5.2, y: 6 }, Rd = 4.6;
+  const C = { x: 5.0, y: 5.5 }, Rd = 4.3;
   const k = Rd / RE;
   const hc = halfChord(b);
   const yT = C.y - b * k;
@@ -791,7 +806,7 @@ function renderTunnel(d: Draw, s: GravState, p: Params, trail: GravState[], fs: 
   // Gráfico s(t)
   const Tm = (2.05 * periodTunnel()) / 60;
   const R0 = RE / 1000;
-  const A = panel(d, { x0: 12.2, y0: 1.3, x1: 19.6, y1: 10.6 }, { min: 0, max: Tm }, { min: -R0 * 1.05, max: R0 * 1.05 });
+  const A = panel(d, { x0: 12.2, y0: 1.3, x1: 19.6, y1: 10.6 }, { min: 0, max: Tm }, { min: -R0 * 1.05, max: R0 * 1.05 }, PO());
   A.frame({ xlabel: "t (min)", ylabel: "s (km)", fx: (v) => fmt(v, 3), fy: (v) => fmt(v, 4) });
   A.plot((t) => (hc / 1000) * Math.cos(w0 * t * 60), 0, Tm, { color: theme.series[2], width: 1.5, dash: [5, 3], n: 300 });
   const pts: [number, number][] = trail.map((q) => [q.tau / 60, q.s / 1000]);
@@ -856,7 +871,7 @@ function renderElevator(d: Draw, s: GravState, p: Params, fs: Fs) {
   }
   const bNow = ballRel(c, BALL_H0, t, BALL_R);
   d.circle(ballX, toY(bNow.y, t), BALL_R, { fill: theme.series[3] });
-  d.text("bola", ballX, toY(bNow.y, t), { size: fs(9), color: theme.series[3], align: "left", dx: 10 });
+  d.text("bola", ballX, toY(bNow.y, t), { size: fs(9), color: theme.series[3], align: "left", dx: 16 });
 
   const lNow = lightRel(c, LIGHT_H, C_DRAW, t);
   const path: [number, number][] = [];

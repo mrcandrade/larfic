@@ -91,7 +91,7 @@ como na barreira do efeito túnel (seção 38-9). A função de onda e sua deriv
 - o número de estados ligados é **finito**: só os níveis com $E < U_0$ ficam presos. Acima de $U_0$, o elétron não está confinado e pode ter qualquer energia (contínuo);
 - um poço finito sempre tem pelo menos um estado ligado, por mais raso que seja.
 
-Exemplo: para um poço de largura $0{,}50$ nm (cujo análogo infinito tem $E_1 = 1{,}5$ eV) e profundidade $U_0 = 10$ eV, os níveis ligados são três, com energias um pouco abaixo de $1{,}5$, $6{,}0$ e $13{,}5$ eV... só que o terceiro não cabe, pois $13{,}5 > 10$; o cálculo mostra que ele desce para perto de $9$ eV, ainda ligado por pouco. Um fóton com energia maior que $U_0 - E_1$ libera o elétron do poço.
+Exemplo: tome um poço de largura $0{,}50$ nm, cujo análogo infinito tem níveis $1{,}5$, $6{,}0$ e $13{,}5$ eV, com profundidade $U_0 = 10$ eV. Resolvendo as condições de continuidade, encontram-se três estados ligados, com cerca de $1{,}0$, $3{,}8$ e $8{,}0$ eV: todos abaixo dos do poço infinito, e o terceiro ainda preso, embora seu análogo infinito ficasse acima de $U_0$. Um fóton com energia maior que $U_0 - E_1 \approx 9$ eV libera o elétron do estado fundamental.
 
 Armadilha: achar que a penetração viola a conservação de energia, porque na região de fora a energia cinética "seria negativa". Não há como medir o elétron lá sem dar a ele energia suficiente; a penetração só aparece como probabilidade de detecção.
 

@@ -470,14 +470,29 @@ function eixos(d: Draw, box: typeof G0, xmax: number, ymax: number, xl: string, 
     d.line(box.x0, Y(v), box.x1, Y(v), { color: th.grid, width: 1 });
     if (!pequeno || v + py > ymax * 1.0001) d.text(fmt(v, 3), box.x0 - 0.08, Y(v), { size: sz, color: th.muted, align: "right" });
   }
-  d.text(xl, box.x1, box.y0 - (pequeno ? 0.22 : 0.55), { size: sz + 1, align: "right", color: th.text, dx: pequeno ? -26 : 0 });
+  if (xl) d.text(xl, box.x1, box.y0 - (pequeno ? 0.22 : 0.55), { size: sz + 1, align: "right", color: th.text, dx: pequeno ? -26 : 0 });
   d.text(yl, box.x0 + 0.1, box.y1 - 0.2, { size: sz + 1, align: "left", color: th.text, weight: "600" });
   return { X, Y };
 }
 
-function titulo(d: Draw, t: string, sub: string) {
+/** Palco estreito (celular): menos texto e fontes menores. */
+const compacto = (d: Draw) => d.px > 1 / 34;
+
+function titulo(d: Draw, t: string, sub: string, status = "", corStatus = d.theme.text) {
+  if (compacto(d)) {
+    d.text(t, 0.1, 9.75, { size: 12, align: "left", weight: "700" });
+    if (status) d.text(status, 0.1, 9.2, { size: 11, align: "left", weight: "700", color: corStatus });
+    return;
+  }
   d.text(t, 0.25, 9.7, { size: 14, align: "left", weight: "700" });
   d.text(sub, 0.25, 9.25, { size: 11, align: "left", color: d.theme.muted });
+  if (status) d.text(status, 11.8, 9.7, { size: 12, align: "right", weight: "700", color: corStatus });
+}
+
+/** Bloco de linhas de texto à direita do desenho. */
+function bloco(d: Draw, x: number, ls: [string, string][]) {
+  const c = compacto(d);
+  (c ? ls.slice(0, 4) : ls).forEach(([t, cor], i) => d.text(t, x, 8.4 - (c ? 0.5 : 0.55) * i, { size: c ? 9.5 : 12, align: "left", color: cor }));
 }
 
 /** Ampliação (potência de 10) para tornar visível uma deformação pequena. */
@@ -495,7 +510,6 @@ function renderTracao(d: Draw, frame: RenderFrame) {
   const e = s[EPS]!, emax = s[EMAX]!;
   const roto = s[BROKEN]! > 0.5;
   const r = medir(s, p);
-  titulo(d, `Tração: ${m.nome}`, `L₀ = ${fmt(num(p, "L0", 0.2), 3)} m · d = ${fmt(num(p, "d", 10), 3)} mm · E = ${fmt(m.E / 1e9, 3)} GPa`);
 
   // corpo de prova (comprimento em escala real até 50%; a borracha é reescalada para caber)
   const yc = 7.0;
@@ -531,8 +545,9 @@ function renderTracao(d: Draw, frame: RenderFrame) {
     d.arrowPx(x0 + Lc + 1.1, yc, 1, 0, 34, { color: th.accent, width: 2.5 });
     d.arrowPx(0.5, yc, -1, 0, 0, { color: th.accent });
   }
-  d.text(`F = ${fmt(r.F / 1000, 4)} kN`, x0 + Lc / 2, yc - 1.05, { size: 12, weight: "600", color: th.accent });
-  d.text(`ΔL = ${fmt(r.desl * 1000, 4)} mm · Δd = ${fmt(r.dlat * 1e6, 3)} μm`, x0 + Lc / 2, yc - 1.5, { size: 11, color: th.muted });
+  const pqT = compacto(d);
+  d.text(`F = ${fmt(r.F / 1000, 4)} kN`, x0 + Lc / 2, yc - 1.05, { size: pqT ? 10 : 12, weight: "600", color: th.accent });
+  d.text(`ΔL = ${fmt(r.desl * 1000, 4)} mm · Δd = ${fmt(r.dlat * 1e6, 3)} μm`, x0 + Lc / 2, yc - (pqT ? 1.45 : 1.5), { size: pqT ? 9 : 11, color: th.muted });
   const estado = roto
     ? "ruptura"
     : s[DIR] === 0
@@ -542,15 +557,14 @@ function renderTracao(d: Draw, frame: RenderFrame) {
         : m.tipo === "ductil" && emax > epsY(m)
           ? e < emax ? "regime elástico (recarga/descarga)" : "escoamento e encruamento"
           : "regime elástico";
-  d.text(estado, 11.8, 9.7, { size: 12, align: "right", weight: "700", color: roto ? th.positive : th.series[2]! });
+  titulo(d, `Tração: ${m.nome}`, `L₀ = ${fmt(num(p, "L0", 0.2), 3)} m · d = ${fmt(num(p, "d", 10), 3)} mm · E = ${fmt(m.E / 1e9, 3)} GPa`, estado, roto ? th.positive : th.series[2]!);
+  const pq = compacto(d);
 
   // curva σ × ε
   const xmax = 100 * m.er * 1.08;
   const ymax = (m.tipo === "ductil" ? m.su : sigmaCurva(m, m.er)) / 1e6 * 1.15;
   const { X, Y } = eixos(d, G0, xmax, ymax, "ε (%)", "σ (MPa)");
-  d.plot((x) => sigmaCurva(m, x / 100) / 1e6, 0, 100 * m.er, { color: th.muted, dash: [5, 4], width: 1.2, n: 300 } as never);
   const curva = (xs: number) => Y(sigmaCurva(m, xs / 100) / 1e6);
-  // a função plot recebe x do mundo; redesenha em coordenadas do gráfico
   const pts: [number, number][] = [];
   for (let i = 0; i <= 300; i++) {
     const xv = (100 * m.er * i) / 300;
@@ -564,17 +578,18 @@ function renderTracao(d: Draw, frame: RenderFrame) {
   d.dot(X(100 * e), Y(r.y / 1e6), 5, th.accent);
   if (m.tipo !== "borracha") {
     d.line(G0.x0, Y(m.sy / 1e6), G0.x1, Y(m.sy / 1e6), { color: th.series[2]!, dash: [3, 3], width: 1 });
-    d.text(m.tipo === "fragil" ? "resistência (ruptura frágil)" : "limite elástico σ_y", G0.x1 - 0.1, Y(m.sy / 1e6) + (m.tipo === "fragil" ? 0.2 : -0.2), { size: 10, align: "right", color: th.series[2]! });
+    d.text(pq ? (m.tipo === "fragil" ? "σ_u" : "σ_y") : m.tipo === "fragil" ? "resistência (ruptura frágil)" : "limite elástico σ_y", G0.x1 - 0.1, Y(m.sy / 1e6) + (m.tipo === "fragil" ? 0.2 : -0.2), { size: 10, align: "right", color: th.series[2]! });
   }
   if (m.tipo === "ductil") {
     d.line(G0.x0, Y(m.su / 1e6), G0.x1, Y(m.su / 1e6), { color: th.positive, dash: [3, 3], width: 1 });
-    d.text("limite de resistência σ_u", G0.x1 - 0.1, Y(m.su / 1e6) + 0.2, { size: 10, align: "right", color: th.positive });
-    // ampliação do trecho elástico
+    d.text(pq ? "σ_u" : "limite de resistência σ_u", G0.x1 - 0.1, Y(m.su / 1e6) + 0.2, { size: 10, align: "right", color: th.positive });
+    // ampliação do trecho elástico (some no celular)
+    if (pq) return;
     const box = { x0: 6.2, x1: 9.0, y0: 1.25, y1: 2.95 };
     const ex = 100 * epsY(m) * 3;
     const ey = (m.sy / 1e6) * 1.25;
     d.rect(box.x0 - 0.05, box.y0 - 0.05, box.x1 - box.x0 + 0.1, box.y1 - box.y0 + 0.1, { fill: th.dark ? "#141b26" : "#ffffff" });
-    const z = eixos(d, box, ex, ey, "ε (%)", "", true);
+    const z = eixos(d, box, ex, ey, "", "", true);
     const zp: [number, number][] = [];
     for (let i = 0; i <= 120; i++) {
       const xv = (ex * i) / 120;
@@ -599,29 +614,29 @@ function renderCisalhamento(d: Draw, frame: RenderFrame) {
   const G = moduloG(m);
   const gFinal = Math.min(tauMax(p), m.tauLim) / G;
   const amp = ampliacao(Math.tan(gFinal) || gFinal, 0.35);
-  titulo(d, `Cisalhamento: ${m.nome}`, `G = ${fmt(G / 1e9, 4)} GPa · A = ${fmt(num(p, "A", 400), 4)} cm² · h = ${fmt(num(p, "h", 50), 3)} mm`);
-  const yb = 5.6, H = 2.4, W0 = 3.6, xb = 3.0;
+  const noLimite = s[LAM]! * tauMax(p) >= m.tauLim * 0.999;
+  titulo(d, `Cisalhamento: ${m.nome}`, `G = ${fmt(G / 1e9, 4)} GPa · A = ${fmt(num(p, "A", 400), 4)} cm² · h = ${fmt(num(p, "h", 50), 3)} mm`, noLimite ? "limite de cisalhamento atingido" : "", th.positive);
+  const pq = compacto(d);
+  const yb = 5.6, H = 2.4, W0 = pq ? 2.6 : 3.6, xb = pq ? 0.6 : 3.0;
   d.support(xb - 0.6, yb, xb + W0 + 0.6, yb, { color: th.muted });
   const dx = H * Math.min(0.9, r.x * amp);
   d.polyline([[xb, yb], [xb + W0, yb], [xb + W0 + dx, yb + H], [xb + dx, yb + H]], { close: true, fill: th.series[m.tipo === "borracha" ? 4 : 0]!, color: th.text, width: 1.2, alpha: 0.85 });
   d.polyline([[xb, yb], [xb, yb + H], [xb + W0, yb + H], [xb + W0, yb]], { color: th.muted, dash: [4, 4], width: 1 });
   d.rect(xb + dx - 0.1, yb + H, W0 + 0.2, 0.2, { fill: th.muted });
   if (r.F > 0) d.arrowPx(xb + dx + W0 + 0.15, yb + H + 0.1, 1, 0, 40, { color: th.accent, width: 2.5 });
-  d.text("F", xb + dx + W0 + 0.35, yb + H + 0.45, { size: 12, color: th.accent, weight: "700" });
+  d.text("F", xb + dx + W0 + 0.55, yb + H + 0.45, { size: 12, color: th.accent, weight: "700" });
   // ângulo γ
   if (dx > 0.05) {
     d.line(xb, yb, xb + dx, yb + H, { color: th.positive, width: 1.5 });
     d.text("γ", xb + 0.25, yb + 0.85, { size: 12, color: th.positive, weight: "700" });
   }
-  const tx = 8.0;
-  [
+  bloco(d, pq ? 6.1 : 8.3, [
     [`F = ${fmt(r.F / 1000, 4)} kN`, th.accent],
     [`τ = F/A = ${fmt(r.y / 1e6, 4)} MPa`, th.text],
     [`γ = τ/G = ${fmt(r.x, 4)} rad`, th.text],
     [`Δx = γh = ${fmt(r.desl * 1000, 4)} mm`, th.text],
     [ampTxt(amp), th.muted],
-  ].forEach(([t, c], i) => d.text(t!, tx, 8.4 - 0.55 * i, { size: 12, align: "left", color: c }));
-  if (s[LAM]! * tauMax(p) >= m.tauLim * 0.999) d.text("limite de cisalhamento atingido", tx, 5.6, { size: 12, align: "left", color: th.positive, weight: "700" });
+  ]);
 
   const tmax = Math.max(tauMax(p), 1) / 1e6;
   const ymax = Math.min(tmax, m.tauLim / 1e6) * 1.15;
@@ -635,7 +650,7 @@ function renderCisalhamento(d: Draw, frame: RenderFrame) {
     d.line(G0.x0, Y(m.tauLim / 1e6), G0.x1, Y(m.tauLim / 1e6), { color: th.positive, dash: [3, 3], width: 1 });
     d.text("limite de cisalhamento", G0.x1 - 0.1, Y(m.tauLim / 1e6) - 0.2, { size: 10, align: "right", color: th.positive });
   }
-  d.text(`inclinação G = ${fmt(G / 1e9, 4)} GPa`, X(xmax * unid * 0.45), Y(ymax * 0.45) + 0.35, { size: 10, align: "right", color: th.muted });
+  if (!pq) d.text(`inclinação G = ${fmt(G / 1e9, 4)} GPa`, X(xmax * unid * 0.45), Y(ymax * 0.45) + 0.35, { size: 10, align: "right", color: th.muted });
 }
 
 // ------------------------------------------------------------------ compressão
@@ -651,18 +666,18 @@ function renderCompressao(d: Draw, frame: RenderFrame) {
   const amp = ampliacao(pf / K / 3, 0.12);
   titulo(d, `Compressão hidráulica: ${m.nome}`, `K = ${fmt(K / 1e9, 4)} GPa · pistão de ${fmt(num(p, "dp", 20), 3)} mm · cubo de ${fmt(num(p, "aCubo", 5), 3)} cm`);
   // câmara
-  const cx = 3.6, y0 = 5.2, wC = 4.4, hC = 2.9;
+  const cx = 3.4, y0 = 5.1, wC = 4.2, hC = 2.4;
   d.rect(cx - wC / 2 - 0.2, y0 - 0.2, wC + 0.4, hC + 0.2, { fill: th.muted });
   d.rect(cx - wC / 2, y0, wC, hC, { fill: th.negative, alpha: 0.18 });
   // pistão
   const yp = y0 + hC - 0.15 * s[LAM]!;
-  d.rect(cx - 0.45, yp, 0.9, 1.1, { fill: th.muted, stroke: th.text, width: 1 });
+  d.rect(cx - 0.45, yp, 0.9, 0.7, { fill: th.muted, stroke: th.text, width: 1 });
   d.rect(cx - wC / 2 - 0.2, y0 + hC, wC / 2 - 0.25, 0.2, { fill: th.muted });
   d.rect(cx + 0.45, y0 + hC, wC / 2 - 0.25, 0.2, { fill: th.muted });
-  if (r.F > 0) d.arrowPx(cx, yp + 1.1 + 40 / frame.scale, 0, -1, 36, { color: th.accent, width: 2.5 });
-  d.text("F", cx + 0.3, yp + 1.5, { size: 12, color: th.accent, weight: "700", align: "left" });
+  if (r.F > 0) d.arrowPx(cx, yp + 0.7 + 28 / frame.scale, 0, -1, 26, { color: th.accent, width: 2.5 });
+  d.text("F", cx + 0.25, yp + 1.0, { size: 12, color: th.accent, weight: "700", align: "left" });
   // cubo (encolhimento ampliado)
-  const a0 = 1.5;
+  const a0 = 1.3;
   const a = a0 * (1 - Math.min(0.5, (r.x / 3) * amp));
   d.rect(cx - a0 / 2, y0 + 0.5, a0, a0, { stroke: th.muted, dash: [4, 4], width: 1 });
   d.rect(cx - a / 2, y0 + 0.5 + (a0 - a) / 2, a, a, { fill: th.series[m.tipo === "borracha" ? 4 : 0]!, stroke: th.text, width: 1.2 });
@@ -672,15 +687,14 @@ function renderCompressao(d: Draw, frame: RenderFrame) {
       const ccx = cx, ccy = y0 + 0.5 + a0 / 2;
       d.arrowPx(ccx - ux * (a / 2) - ux * (22 / frame.scale), ccy - uy * (a / 2) - uy * (22 / frame.scale), ux, uy, 18, { color: th.accent, width: 1.8 });
     }
-  const tx = 6.6;
   const prof = r.y / (1025 * 9.81) / 1000;
-  [
-    [`F = ${fmt(r.F / 1000, 4)} kN  →  p = ${fmt(r.y / 1e6, 4)} MPa`, th.accent],
+  bloco(d, 6.3, [
+    [`F = ${fmt(r.F / 1000, 4)} kN → p = ${fmt(r.y / 1e6, 4)} MPa`, th.accent],
     [`|ΔV|/V = p/K = ${fmt(r.x * 100, 4)} %`, th.text],
     [`Δa = ${fmt(r.desl * 1e6, 4)} μm na aresta`, th.text],
     [`profundidade no mar com essa pressão: ${fmt(prof, 3)} km`, th.muted],
     [ampTxt(amp), th.muted],
-  ].forEach(([t, c], i) => d.text(t!, tx, 8.4 - 0.55 * i, { size: 12, align: "left", color: c }));
+  ]);
 
   const ymax = Math.max(pf, 1) / 1e6 * 1.1;
   const xmax = 100 * Math.max((pf * 1.1) / K, (pf * 1.1) / K_AGUA * (K < K_AGUA * 3 ? 1 : 0), 1e-9);
@@ -691,7 +705,7 @@ function renderCompressao(d: Draw, frame: RenderFrame) {
   };
   const ra = reta(K_AGUA);
   d.line(ra[0], ra[1], ra[2], ra[3], { color: th.series[0]!, dash: [3, 4], width: 1.2 });
-  d.text("água (K = 2,2 GPa)", ra[2] - 0.1, ra[3] - 0.25, { size: 10, align: "right", color: th.series[0]! });
+  d.text("água (K = 2,2 GPa)", ra[2] - 0.2, ra[3] - 0.45, { size: 10, align: "right", color: th.series[0]! });
   const rm = reta(K);
   d.line(rm[0], rm[1], rm[2], rm[3], { color: th.muted, dash: [5, 4], width: 1.2 });
   d.line(X(0), Y(0), X(100 * r.x), Y(r.y / 1e6), { color: th.accent, width: 2.5 });
@@ -719,8 +733,14 @@ function renderMesa(d: Draw, frame: RenderFrame) {
   const mesa = mesaDe(p);
   const k = mesa.k[0]!;
   const Wmax = num(p, "W", 1500);
-  d.text("Mesa de quatro pernas (vista de cima)", 0.25, 9.7, { size: 14, align: "left", weight: "700" });
-  d.text(`pernas de ${m.nome.toLowerCase()} · k = EA/L = ${fmt(k, 3)} N/m`, 0.25, 9.25, { size: 11, align: "left", color: th.muted });
+  const pq = compacto(d);
+  titulo(
+    d,
+    "Mesa de quatro pernas (vista de cima)",
+    `pernas de ${m.nome[0]!.toLowerCase()}${m.nome.slice(1)} · k = EA/L = ${fmt(k, 3)} N/m`,
+    r.contato === 4 ? "4 pernas no chão" : `${r.contato} pernas no chão: a mesa manca`,
+    r.contato === 4 ? th.series[2]! : th.positive,
+  );
   const [tx0, ty0] = mesaParaMundo(-TAMPO_A / 2, -TAMPO_B / 2);
   d.rect(tx0, ty0, TAMPO_A * MC.k, TAMPO_B * MC.k, { fill: th.series[5]!, alpha: 0.25, stroke: th.text, width: 1.2 });
   const Fm = Math.max(Wmax / 2, 1);
@@ -734,9 +754,9 @@ function renderMesa(d: Draw, frame: RenderFrame) {
     const acima = y > 0;
     const tx = X + (x > 0 ? 0.25 : -0.25);
     const al = x > 0 ? "left" : "right";
-    d.text(`perna ${i + 1}${i === 3 ? ` (−${fmt(num(p, "delta", 0.05), 3)} mm)` : ""}`, tx, Y + (acima ? 0.38 : -0.38), { size: 10, align: al, color: th.muted });
-    d.text(`${fmt(F, 4)} N`, tx, Y + (acima ? 0.0 : 0.0), { size: 12, align: al, weight: "700", color: F > 0 ? th.text : th.muted });
-    d.text(F > 0 ? `u = ${fmt(r.Fp[i]! / k * 1e6, 3)} μm` : "no ar", tx, Y + (acima ? -0.38 : 0.38), { size: 10, align: al, color: th.muted });
+    d.text(`${pq ? "" : "perna "}${i + 1}${i === 3 && !pq ? ` (−${fmt(num(p, "delta", 0.05), 3)} mm)` : ""}`, tx, Y + (acima ? 0.38 : -0.38), { size: pq ? 9 : 10, align: al, color: th.muted });
+    d.text(`${fmt(F, 4)} N`, tx, Y, { size: pq ? 10 : 12, align: al, weight: "700", color: F > 0 ? th.text : th.muted });
+    if (!pq) d.text(F > 0 ? `u = ${fmt(r.Fp[i]! / k * 1e6, 3)} μm` : "no ar", tx, Y + (acima ? -0.38 : 0.38), { size: 10, align: al, color: th.muted });
   });
   // diagonal 1–3 (eixo de báscula quando a perna 4 está no ar)
   if (r.contato === 3) {
@@ -746,8 +766,7 @@ function renderMesa(d: Draw, frame: RenderFrame) {
   const [wx, wy] = mesaParaMundo(s[XW]!, s[YW]!);
   d.circle(wx, wy, 0.32, { fill: th.accent, alpha: 0.85, stroke: th.text, width: 1 });
   d.text("W", wx, wy, { size: 11, weight: "700", color: "#ffffff" });
-  d.text(`W = ${fmt(r.F, 4)} N (arraste)`, wx, wy - 0.55, { size: 10, color: th.accent });
-  d.text(r.contato === 4 ? "4 pernas no chão" : `${r.contato} pernas no chão: a mesa manca`, 11.8, 9.7, { size: 12, align: "right", weight: "700", color: r.contato === 4 ? th.series[2]! : th.positive });
+  if (!pq) d.text(`W = ${fmt(r.F, 4)} N (arraste)`, wx, wy - 0.55, { size: 10, color: th.accent });
 
   // forças nas pernas em função do peso, na posição atual
   const ymax = Math.max(Wmax * 0.6, 1);
@@ -759,11 +778,16 @@ function renderMesa(d: Draw, frame: RenderFrame) {
     const sol = resolveMesa(mesa, W, s[XW]!, s[YW]!);
     sol.F.forEach((F, j) => curvas[j]!.push([X(W), Y(Math.min(F, ymax))]));
   }
+  // rótulos no fim das curvas; curvas que terminam juntas dividem o rótulo
+  const grupos: { y: number; nomes: number[] }[] = [];
   curvas.forEach((c, j) => {
-    d.polyline(c, { color: th.series[j]!, width: j === 3 ? 2.6 : 1.8, dash: j === 1 ? [6, 4] : undefined });
-    const ult = c[c.length - 1]!;
-    d.text(`F${j + 1}`, ult[0] + 0.1, ult[1], { size: 10, align: "left", color: th.series[j]!, weight: "700" });
+    d.polyline(c, { color: th.series[j]!, width: j === 3 ? 2.6 : 1.8, dash: j === 1 || j === 3 ? [6, 4] : undefined });
+    const yf = c[c.length - 1]![1];
+    const g = grupos.find((q) => Math.abs(q.y - yf) < 0.22);
+    if (g) g.nomes.push(j);
+    else grupos.push({ y: yf, nomes: [j] });
   });
+  for (const g of grupos) d.text(g.nomes.map((j) => `F${j + 1}`).join(" = "), G0.x1 - 0.08, g.y + 0.22, { size: 10, align: "right", color: th.series[g.nomes[0]!]!, weight: "700" });
   const Wst = k * (num(p, "delta", 0.05) / 1000);
   if (Wst > 0 && Wst < Wmax && Math.abs(s[XW]!) < 1e-9 && Math.abs(s[YW]!) < 1e-9) {
     d.line(X(Wst), G0.y0, X(Wst), G0.y1, { color: th.series[3]!, dash: [3, 3], width: 1 });

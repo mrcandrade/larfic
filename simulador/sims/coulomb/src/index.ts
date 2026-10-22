@@ -77,6 +77,8 @@ export interface Element {
   ring?: number;
   dq: number;
   dE: V3;
+  /** Contribuição escalar dV = k dq / r ao potencial em P (V). */
+  dV: number;
 }
 
 /** Projeção oblíqua de um vetor 3D (x, y, z') no plano do palco. */
@@ -99,7 +101,7 @@ export function elements(p: Params, P: { x: number; y: number }): Element[] {
       const d = Math.hypot(...r);
       const f = (K_COULOMB * dq) / d ** 3;
       const [sx, sy] = project(e);
-      out.push({ sx, sy, back: e[2] > 1e-12, dq, dE: [f * r[0], f * r[1], f * r[2]] });
+      out.push({ sx, sy, back: e[2] > 1e-12, dq, dE: [f * r[0], f * r[1], f * r[2]], dV: (K_COULOMB * dq) / d });
     }
   } else if (m === MODE.disco) {
     // Disco = N anéis concêntricos de largura R/N (regra do ponto médio em r).
@@ -110,7 +112,7 @@ export function elements(p: Params, P: { x: number; y: number }): Element[] {
       const dq = sigma * 2 * Math.PI * ri * dr;
       const z = P.x;
       const Ez = (K_COULOMB * dq * z) / (z * z + ri * ri) ** 1.5;
-      out.push({ sx: 0, sy: ri, back: false, ring: ri, dq, dE: [Ez, 0, 0] });
+      out.push({ sx: 0, sy: ri, back: false, ring: ri, dq, dE: [Ez, 0, 0], dV: (K_COULOMB * dq) / Math.hypot(z, ri) });
     }
   } else if (m === MODE.fio) {
     // Fio de comprimento L sobre o eixo y, centrado na origem.
@@ -122,7 +124,7 @@ export function elements(p: Params, P: { x: number; y: number }): Element[] {
       const ry = P.y - y;
       const d = Math.hypot(rx, ry);
       const f = d > 0 ? (K_COULOMB * dq) / d ** 3 : 0;
-      out.push({ sx: 0, sy: y, back: false, dq, dE: [f * rx, f * ry, 0] });
+      out.push({ sx: 0, sy: y, back: false, dq, dE: [f * rx, f * ry, 0], dV: d > 0 ? (K_COULOMB * dq) / d : 0 });
     }
   }
   return out;
@@ -171,6 +173,66 @@ export function exactField(p: Params, P: { x: number; y: number }): V3 {
 }
 
 const mag = (v: V3) => Math.hypot(v[0], v[1], v[2]);
+
+/** Soma dos k primeiros dV (escalar, em volts). */
+export function partialV(els: readonly Element[], k = els.length): number {
+  const n = Math.min(els.length, Math.floor(k + 1e-9));
+  let v = 0;
+  for (let i = 0; i < n; i++) v += els[i]!.dV;
+  return v;
+}
+
+/** Potencial exato (fórmula fechada, V = 0 no infinito) no ponto P, em volts. */
+export function exactPotential(p: Params, P: { x: number; y: number }): number {
+  const Q = num(p, "Q") * nC;
+  const R = num(p, "R", 0.3);
+  const z = P.x;
+  switch (mode(p)) {
+    case MODE.anel:
+      return (K_COULOMB * Q) / Math.hypot(z, R);
+    case MODE.disco: {
+      const sigma = Q / (Math.PI * R * R);
+      return (sigma / (2 * EPS0)) * (Math.hypot(z, R) - Math.abs(z));
+    }
+    case MODE.fio: {
+      const L = num(p, "L", 1);
+      const lam = Q / L;
+      const u1 = -L / 2 - P.y;
+      const u2 = L / 2 - P.y;
+      // ∫ k λ du / √(x² + u²) = k λ ln[(u₂ + r₂)/(u₁ + r₁)], escrito de forma estável para u < 0
+      const F = (u: number) => (u >= 0 ? Math.log(u + Math.hypot(P.x, u)) : Math.log(P.x * P.x) - Math.log(Math.hypot(P.x, u) - u));
+      // Fio todo de um lado (u₁ < u₂ ≤ 0): usa a simetria u → −u (vale também sobre o prolongamento do fio)
+      const I = u2 <= 0 ? F(-u1) - F(-u2) : F(u2) - F(u1);
+      return K_COULOMB * lam * I;
+    }
+    default:
+      return 0;
+  }
+}
+
+export function relErrorV(p: Params, P: { x: number; y: number }): number {
+  const ex = exactPotential(p, P);
+  return ex !== 0 ? (100 * Math.abs(partialV(elements(p, P)) - ex)) / Math.abs(ex) : 0;
+}
+
+/** Energia potencial (J) do par i–j: k qi qj / rij. */
+export function pairEnergy(s: CoulombState, i: number, j: number): number {
+  const a = s.charges[i];
+  const b = s.charges[j];
+  if (!a || !b) return 0;
+  const r = Math.hypot(a.x - b.x, a.y - b.y);
+  return r > 0 ? (K_COULOMB * a.q * uC * b.q * uC) / r : 0;
+}
+
+/** Energia potencial do sistema (J): soma sobre os pares = trabalho para trazer as cargas do infinito. */
+export function systemEnergy(s: CoulombState): number {
+  let U = 0;
+  for (let i = 0; i < s.charges.length; i++) for (let j = i + 1; j < s.charges.length; j++) U += pairEnergy(s, i, j);
+  return U;
+}
+
+/** Mostrar potencial/energia em vez de campo/força. */
+const showV = (p: Params) => Math.round(num(p, "grandeza")) === 1;
 
 export function relError(p: Params, P: { x: number; y: number }): number {
   const ex = exactField(p, P);
@@ -461,6 +523,110 @@ function renderContinuous(d: Draw, s: CoulombState, p: Params) {
   tag(d, hint, VIEW_CONT.xMin + 0.03, VIEW_CONT.yMin + 0.05, { color: theme.muted, size: 10, align: "left" });
 }
 
+/** Cargas pontuais com a energia de cada par e o trabalho para montar o sistema. */
+function renderEnergy(d: Draw, s: CoulombState) {
+  const { theme } = d;
+  const n = s.charges.length;
+  for (let i = 0; i < n; i++)
+    for (let j = i + 1; j < n; j++) {
+      const a = s.charges[i]!;
+      const b = s.charges[j]!;
+      const U = pairEnergy(s, i, j);
+      d.line(a.x, a.y, b.x, b.y, { color: U >= 0 ? theme.positive : theme.negative, width: 2, dash: [5, 4], alpha: 0.7 });
+      tag(d, `U${i + 1}${j + 1} = ${fmt(U)} J`, (a.x + b.x) / 2, (a.y + b.y) / 2, { color: U >= 0 ? theme.positive : theme.negative, size: 10, weight: "600" });
+    }
+  s.charges.forEach((c, i) => {
+    const r = 10 + Math.min(6, Math.abs(c.q) * 0.6);
+    d.dot(c.x, c.y, r + 2, theme.dark ? "#0b0f14" : "#ffffff");
+    d.dot(c.x, c.y, r, chargeColor(d, c.q));
+    d.text(c.q > 0 ? "+" : c.q < 0 ? "−" : "0", c.x, c.y, { color: "#ffffff", size: 14, weight: "700", dy: 1 });
+    tag(d, `q${i + 1} = ${fmt(c.q, 2)} µC`, c.x, c.y - (r + 11) * d.px, { size: 10, weight: "600" });
+  });
+  // Montagem passo a passo: cada carga chega do infinito trazida contra as que já estão lá
+  const rows: string[] = ["Montar o sistema, uma carga por vez:", "trazer q1: W = 0 (nada no lugar ainda)"];
+  for (let k = 1; k < n; k++) {
+    let W = 0;
+    const terms: string[] = [];
+    for (let j = 0; j < k; j++) {
+      W += pairEnergy(s, j, k);
+      terms.push(`U${j + 1}${k + 1}`);
+    }
+    rows.push(`trazer q${k + 1}: W = ${terms.join(" + ")} = ${fmt(W)} J`);
+  }
+  const U = systemEnergy(s);
+  rows.push(`U total = ${fmt(U)} J ${U < 0 ? "(sistema ligado: é preciso dar energia para separar)" : U > 0 ? "(as cargas se afastariam sozinhas)" : ""}`);
+  rows.forEach((t, i) =>
+    tag(d, t, VIEW_PT.xMin + 0.04, VIEW_PT.yMax - 0.07 - i * 0.075, { size: 10, align: "left", color: i === rows.length - 1 ? theme.series[2] : theme.text, weight: i === rows.length - 1 ? "600" : "400" }),
+  );
+  tag(d, "Arraste as cargas: a energia depende só das distâncias entre os pares (U = k qᵢqⱼ/rᵢⱼ).", VIEW_PT.xMin + 0.04, VIEW_PT.yMin + 0.06, {
+    color: theme.muted,
+    size: 10,
+    align: "left",
+  });
+}
+
+/** Distribuição contínua: soma escalar dos dV = k dq / r, sem cancelamentos. */
+function renderPotential(d: Draw, s: CoulombState, p: Params) {
+  const { theme } = d;
+  const m = mode(p);
+  const els = elements(p, s.P);
+  const N = els.length;
+  const k = Math.min(N, Math.floor(s.k + 1e-9));
+  const R = num(p, "R", 0.3);
+  const L = num(p, "L", 1);
+  const Q = num(p, "Q");
+  const qColor = Q >= 0 ? theme.positive : theme.negative;
+  const P = s.P;
+  const Vk = partialV(els, k);
+  const Vn = partialV(els);
+  const Vx = exactPotential(p, P);
+  d.line(VIEW_CONT.xMin + 0.02, 0, 1.0, 0, { color: theme.muted, width: 1, dash: m === MODE.fio ? [2, 5] : [6, 4], alpha: 0.6 });
+  if (m === MODE.anel) ellipse(d, 0, 0, OBL * R, R, { color: qColor, width: 2.5, alpha: 0.5 });
+  else if (m === MODE.disco) {
+    ellipse(d, 0, 0, OBL * R, R, { color: qColor, width: 1, fill: qColor, alpha: 0.12 });
+    els.forEach((e, i) => {
+      const r = e.ring! + R / N / 2;
+      ellipse(d, 0, 0, OBL * r, r, { color: i < k ? qColor : theme.muted, width: i < k ? 1.3 : 0.8, alpha: i < k ? 0.75 : 0.35 });
+    });
+  } else d.line(0, -L / 2, 0, L / 2, { color: qColor, width: 5, alpha: 0.35 });
+  if (m !== MODE.disco) els.forEach((e, i) => d.dot(e.sx, e.sy, i < k ? 4.5 : 3.5, i < k ? qColor : theme.muted, (e.back ? 0.45 : 1) * (i < k ? 1 : 0.45)));
+  const cur = els[Math.min(N - 1, Math.max(0, k - 1))];
+  if (cur && k > 0) {
+    const [ex, ey] = m === MODE.disco ? [0, cur.ring!] : [cur.sx, cur.sy];
+    d.line(ex, ey, P.x, P.y, { color: theme.series[1], width: 1.4, dash: [4, 3] });
+    tag(d, `dV = k·dq/r = ${fmt(cur.dV)} V`, (ex + P.x) / 2, (ey + P.y) / 2 + 0.05, { color: theme.series[1], size: 10 });
+  }
+  d.dot(P.x, P.y, 5, theme.text);
+  d.text("P", P.x, P.y, { color: theme.text, size: 13, weight: "700", dx: 4, dy: 16 });
+  // Painel: barra empilhada das contribuições (escalares, todas com o sinal de Q)
+  const X0 = PANEL.x0;
+  const X1 = PANEL.x1;
+  d.rect(X0, PANEL.y0, X1 - X0, PANEL.y1 - PANEL.y0, { fill: theme.dark ? "#161c24" : "#f6f8fb", stroke: theme.grid, width: 1 });
+  d.text(`Soma de ${k} de ${N} elementos`, X0 + 0.04, PANEL.y1 - 0.07, { color: theme.text, size: 12, weight: "600", align: "left" });
+  d.text(`ΣdV = ${fmt(Vk)} V`, X0 + 0.04, PANEL.y1 - 0.16, { color: theme.series[2], size: 11, align: "left" });
+  d.text(`Fórmula: ${fmt(Vx)} V`, X0 + 0.04, PANEL.y1 - 0.24, { color: theme.text, size: 11, align: "left" });
+  const err = Vx !== 0 ? (100 * Math.abs(Vn - Vx)) / Math.abs(Vx) : 0;
+  d.text(`Erro com N = ${N}: ${fmt(err < 1e-9 ? 0 : err, 2)} %`, X0 + 0.04, PANEL.y1 - 0.32, { color: theme.muted, size: 11, align: "left" });
+  const top = 0.28;
+  const base = -0.4;
+  const vmax = Math.max(Math.abs(Vn), Math.abs(Vx), 1e-30);
+  const bx = (X0 + X1) / 2 - 0.12;
+  d.text("dV empilhados", bx + 0.12, top + 0.04, { color: theme.muted, size: 10 });
+  let acc = 0;
+  for (let i = 0; i < k; i++) {
+    const h = (Math.abs(els[i]!.dV) / vmax) * (top - base);
+    d.rect(bx, base + acc, 0.24, h, { fill: i === k - 1 ? theme.series[1] : theme.series[4], stroke: theme.grid, width: 0.5, alpha: 0.9 });
+    acc += h;
+  }
+  const hx = (Math.abs(Vx) / vmax) * (top - base);
+  d.line(bx - 0.08, base + hx, bx + 0.32, base + hx, { color: theme.text, width: 2, dash: [4, 3] });
+  d.text("fórmula", bx + 0.34, base + hx, { color: theme.text, size: 10, align: "left" });
+  d.line(bx - 0.08, base, bx + 0.32, base, { color: theme.muted, width: 1 });
+  const hint =
+    m === MODE.fio ? "Arraste P. O potencial é uma soma de números: nada se cancela." : "Arraste P ao longo do eixo. O potencial é uma soma de números: nada se cancela.";
+  tag(d, hint, VIEW_CONT.xMin + 0.03, VIEW_CONT.yMin + 0.05, { color: theme.muted, size: 10, align: "left" });
+}
+
 // ---------------------------------------------------------------------------
 // Simulação
 // ---------------------------------------------------------------------------
@@ -481,6 +647,20 @@ export const coulomb = defineSim<CoulombState>({
   ],
   liveEquations(s0, p) {
     const s = mode(p) === MODE.pontuais ? liveCharges(s0, p) : s0;
+    if (mode(p) === MODE.pontuais && showV(p)) {
+      const terms: string[] = [];
+      for (let i = 0; i < s.charges.length; i++) for (let j = i + 1; j < s.charges.length; j++) terms.push(String.raw`U_{${i + 1}${j + 1}}`);
+      return [
+        String.raw`U = \sum_{i<j} \frac{k\,q_i q_j}{r_{ij}} = ${terms.join(" + ")} = ${texNum(systemEnergy(s))}\ \text{J}`,
+        String.raw`U_{12} = \frac{k\,q_1 q_2}{r_{12}} = ${texNum(pairEnergy(s, 0, 1))}\ \text{J}`,
+      ];
+    }
+    if (mode(p) !== MODE.pontuais && showV(p)) {
+      return [
+        String.raw`V(P) = \sum_{i=1}^{${Math.floor(s.k + 1e-9)}} \frac{k\,\Delta q_i}{r_i} = ${texNum(partialV(elements(p, s.P), s.k))}\ \text{V}`,
+        String.raw`\text{Fórmula fechada: } V = ${texNum(exactPotential(p, s.P))}\ \text{V} \qquad \text{erro com } N = ${Math.max(1, Math.round(num(p, "N", 12)))}: ${texNum(relErrorV(p, s.P))}\,\%`,
+      ];
+    }
     if (mode(p) === MODE.pontuais) {
       const out: string[] = [];
       if (s.charges.length >= 2) {
@@ -541,6 +721,20 @@ export const coulomb = defineSim<CoulombState>({
     { key: "L", label: "Comprimento do fio L", unit: "m", min: 0.2, max: 1.4, step: 0.05, default: 1, live: true },
     { key: "N", label: "Número de elementos N", unit: "", min: 1, max: 60, step: 1, default: 12, live: true },
     { key: "z", label: "Posição inicial de P (x)", unit: "m", min: -0.7, max: 0.95, step: 0.01, default: 0.45 },
+    {
+      key: "grandeza",
+      label: "Grandeza mostrada",
+      unit: "",
+      min: 0,
+      max: 1,
+      step: 1,
+      default: 0,
+      live: true,
+      options: [
+        { value: 0, label: "Campo e força (vetores)" },
+        { value: 1, label: "Potencial e energia (escalares)" },
+      ],
+    },
   ],
 
   observables: [
@@ -553,6 +747,9 @@ export const coulomb = defineSim<CoulombState>({
     { key: "erro", label: "Erro relativo da soma", unit: "%", value: (s, p) => relError(p, s.P) },
     { key: "xP", label: "Posição de P (x)", unit: "m", value: (s) => s.P.x },
     { key: "k", label: "Elementos somados", unit: "", value: (s) => Math.floor(s.k + 1e-9) },
+    { key: "Vsoma", label: "ΣdV (soma parcial do potencial)", unit: "V", value: (s, p) => partialV(elements(p, s.P), s.k) },
+    { key: "Vexato", label: "V pela fórmula", unit: "V", value: (s, p) => exactPotential(p, s.P) },
+    { key: "U", label: "Energia potencial do sistema de cargas U", unit: "J", value: (s, p) => systemEnergy(liveCharges(s, p)) },
   ],
   chart: { x: "t", y: "Esoma" },
 
@@ -613,6 +810,46 @@ export const coulomb = defineSim<CoulombState>({
 2. Arraste P para fora da mediatriz: agora sobra uma componente paralela ao fio, e a fórmula fechada geral continua batendo com a soma quando $N$ é grande.
 3. Com P bem perto do fio ($d \\ll L$), compare com o fio infinito $E = 2k\\lambda/d$, com $\\lambda = Q/L$.
 4. Com P muito perto, poucos elementos dão um erro grande: o elemento mais próximo domina. Aumente $N$.`,
+    },
+    {
+      id: "potencial-continuo",
+      label: "Potencial de um disco: soma de escalares",
+      params: { modo: 2, grandeza: 1, Q: 10, R: 0.4, N: 6, z: 0.2 },
+      guide: `### Somar potenciais é somar números
+1. O disco foi fatiado em $N$ anéis. Todos os pontos de um anel estão à mesma distância $r = \\sqrt{z^2 + r_i^2}$ de P, então cada anel contribui com $dV = k\\,dq/r$, um **número** (sem direção).
+2. Inicie: as barras empilham os $dV$. Não há componentes a cancelar; a soma só cresce (todos têm o sinal de $Q$).
+3. Compare com a fórmula $V = \\frac{\\sigma}{2\\varepsilon_0}\\left(\\sqrt{z^2+R^2} - z\\right)$. Aumente $N$ e veja o erro cair.
+4. Troque para o **anel**: com $N = 1$ a soma já é exata, $V = kQ/\\sqrt{z^2+R^2}$ (todo o anel está à mesma distância). Para o campo, $N = 1$ dava errado. Por quê?
+5. Troque para o **fio** e arraste P: $V = k\\lambda \\ln\\frac{u_2 + r_2}{u_1 + r_1}$. Depois volte a grandeza para **campo** e compare o trabalho que dá somar vetores.`,
+      predict: [
+        {
+          question: "No centro de um anel carregado (z = 0), o campo é nulo. E o potencial?",
+          options: ["também é nulo", "vale kQ/R, o máximo sobre o eixo", "é infinito", "depende do número de elementos"],
+          answer: 1,
+          explanation: "Os $d\\vec E$ se cancelam aos pares, mas os $dV = k\\,dq/R$ são escalares de mesmo sinal: somam $kQ/R$. Campo nulo num ponto não implica potencial nulo, só que $V$ é estacionário ali.",
+        },
+      ],
+    },
+    {
+      id: "energia-sistema",
+      label: "Energia de um sistema de cargas",
+      params: { modo: 0, grandeza: 1, n: 3, q1: 3, q2: -2, q3: 2 },
+      guide: `### Quanto trabalho custa montar este arranjo?
+1. Imagine as três cargas muito longe umas das outras ($U = 0$). Traga $q_1$: nada está no lugar, o trabalho é zero.
+2. Traga $q_2$ contra o campo de $q_1$: o trabalho é $U_{12} = kq_1q_2/r_{12}$. Traga $q_3$: paga $U_{13} + U_{23}$.
+3. A energia do sistema é a soma sobre **pares**, cada par contado uma vez:
+$$U = \\sum_{i<j}\\frac{k\\,q_iq_j}{r_{ij}}$$
+Pares de mesmo sinal contribuem com $U > 0$ (vermelho); de sinais opostos, com $U < 0$ (azul).
+4. Arraste as cargas e confira que só as distâncias importam, não a ordem em que você imaginou a montagem.
+5. Ponha $q_2 = -2$ e afaste $q_3$ para longe: $U$ fica negativo, o sistema é **ligado** e é preciso dar energia para desmontá-lo.`,
+      predict: [
+        {
+          question: "Dobrando todas as distâncias entre as três cargas (mesmo formato, cargas iguais), a energia U do sistema:",
+          options: ["dobra", "cai pela metade", "cai a um quarto", "não muda"],
+          answer: 1,
+          explanation: "Cada termo $kq_iq_j/r_{ij}$ cai pela metade, então a soma também: $U \\propto 1/r$, não $1/r^2$ como a força.",
+        },
+      ],
     },
   ],
 
@@ -704,10 +941,12 @@ export const coulomb = defineSim<CoulombState>({
     const p = frame.params;
     if (mode(p) === MODE.pontuais) {
       d.grid(VIEW_PT.xMin, VIEW_PT.xMax, VIEW_PT.yMin, VIEW_PT.yMax, 0.25);
-      renderPoints(d, liveCharges(frame.state, p));
+      if (showV(p)) renderEnergy(d, liveCharges(frame.state, p));
+      else renderPoints(d, liveCharges(frame.state, p));
     } else {
       d.grid(VIEW_CONT.xMin, 1.0, VIEW_CONT.yMin, VIEW_CONT.yMax, 0.25);
-      renderContinuous(d, frame.state, p);
+      if (showV(p)) renderPotential(d, frame.state, p);
+      else renderContinuous(d, frame.state, p);
     }
   },
 });

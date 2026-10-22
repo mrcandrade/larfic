@@ -137,7 +137,7 @@ button.book-chip:hover { border-color: var(--accent); }
 .pt-swatch { width: 0.8rem; height: 0.8rem; border-radius: 3px; background: color-mix(in srgb, var(--fam) 60%, var(--panel)); border: 1px solid var(--fam); }
 .pt-details { border-left: 6px solid var(--fam); }
 .pt-details-head { display: flex; gap: 1rem; align-items: center; }
-.pt-details-head h2 { margin: 0; }
+.pt-details-head h2 { margin: 0; text-transform: none; letter-spacing: 0; color: var(--text); font-size: 1.3rem; }
 .pt-big {
   display: grid; justify-items: center; min-width: 4rem; padding: 0.4rem; border-radius: 8px; font-size: 1.8rem; font-weight: 700;
   background: color-mix(in srgb, var(--fam) 30%, var(--panel)); border: 1px solid var(--fam);

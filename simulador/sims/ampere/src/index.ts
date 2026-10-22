@@ -6,6 +6,7 @@ import {
   distToPath,
   enclosedCurrent,
   fieldAt,
+  forcePerLength,
   lineIntegral,
   perimeter,
   pointAt,
@@ -33,6 +34,10 @@ export const T_LAP = 6;
 const VP = { xMin: -12, xMax: 12, yMin: -9, yMax: 8.8 };
 
 const pathKind = (p: Params) => Math.round(num(p, "caminho"));
+/** Montagens dos dois fios paralelos, em que o palco mostra a força entre eles. */
+const showForces = (p: Params) => Math.round(num(p, "montagem")) >= 4;
+/** Força por comprimento (N/m) sobre o fio 1 (componente x: positiva = para a direita, rumo ao fio 2). */
+const f1x = (s: AmpState) => forcePerLength(s.wires, 0)[0];
 
 export function makePath(p: Params, cx = 0, cy = 0): Pt[] {
   const R = num(p, "R", 4);
@@ -62,6 +67,16 @@ export function makeWires(p: Params): Wire[] {
         { x: -2, y: 1, I },
         { x: 2, y: -1.5, I },
         { x: 7, y: 4, I: -I },
+      ];
+    case 4:
+      return [
+        { x: -2, y: 0, I },
+        { x: 2, y: 0, I },
+      ];
+    case 5:
+      return [
+        { x: -2, y: 0, I },
+        { x: 2, y: 0, I: -I },
       ];
     default:
       return [{ x: 0, y: 0, I }];
@@ -154,7 +169,7 @@ export const ampere = defineSim<AmpState>({
       label: "Fios iniciais",
       unit: "",
       min: 0,
-      max: 3,
+      max: 5,
       step: 1,
       default: 0,
       options: [
@@ -162,6 +177,8 @@ export const ampere = defineSim<AmpState>({
         { value: 1, label: "Um fio fora do caminho" },
         { value: 2, label: "Par de correntes opostas + um fio fora" },
         { value: 3, label: "Três fios" },
+        { value: 4, label: "Dois fios paralelos (mesmo sentido): forças" },
+        { value: 5, label: "Dois fios paralelos (sentidos opostos): forças" },
       ],
     },
     { key: "R", label: "Tamanho do caminho (raio ou meio-lado)", unit: "cm", min: 1, max: 7, step: 0.1, default: 4 },
@@ -182,6 +199,13 @@ export const ampere = defineSim<AmpState>({
         const B = fieldAt(s.wires, p[0], p[1]);
         return B[0] * t[0] + B[1] * t[1];
       },
+    },
+    { key: "F1", label: "Força por comprimento no fio 1 (x; + = rumo ao fio 2)", unit: "N/m", value: (s) => f1x(s) },
+    {
+      key: "d12",
+      label: "Distância entre os fios 1 e 2",
+      unit: "cm",
+      value: (s) => (s.wires.length >= 2 ? Math.hypot(s.wires[0]!.x - s.wires[1]!.x, s.wires[0]!.y - s.wires[1]!.y) : 0),
     },
   ],
   chart: { x: "t", y: "parcial" },
@@ -271,7 +295,7 @@ export const ampere = defineSim<AmpState>({
 
   init(p) {
     const m = Math.round(num(p, "montagem"));
-    return { wires: makeWires(p), path: makePath(p, m === 1 ? -1 : 0, 0), u: 0, drag: -1, grab: [0, 0] };
+    return { wires: makeWires(p), path: makePath(p, m === 1 ? -1 : m >= 4 ? -2 : 0, 0), u: 0, drag: -1, grab: [0, 0] };
   },
   step(s, _p, _t, dt) {
     return { ...s, u: (s.u + dt / T_LAP) % 1 };
@@ -393,6 +417,29 @@ export const ampere = defineSim<AmpState>({
       d.arrowPx(p[0], p[1], t[0], t[1], 24, { color: theme.text, width: 1.5, dash: [3, 2] });
       d.dot(p[0], p[1], 5.5, theme.text);
       d.text("B", p[0] + (B[0] / (Math.hypot(B[0], B[1]) || 1)) * 44 * d.px, p[1] + (B[1] / (Math.hypot(B[0], B[1]) || 1)) * 44 * d.px, { color: theme.accent, weight: "700" });
+    }
+
+    // Força entre fios (montagens de fios paralelos)
+    if (showForces(frame.params)) {
+      const fs = s.wires.map((_, k) => forcePerLength(s.wires, k));
+      const fmax = Math.max(...fs.map((f) => Math.hypot(f[0], f[1])), 1e-30);
+      fs.forEach((f, k) => {
+        const m = Math.hypot(f[0], f[1]);
+        if (m < 1e-15) return;
+        const w = s.wires[k]!;
+        d.arrowPx(w.x + (f[0] / m) * 0.5, w.y + (f[1] / m) * 0.5, f[0], f[1], 20 + 50 * (m / fmax), { color: theme.series[3]!, width: 3.5, head: 11 });
+        d.text(`F/L = ${fmt(m, "N/m")}`, w.x, w.y + 1.1, { color: theme.series[3]!, size: 11, weight: "600" });
+      });
+      if (s.wires.length >= 2) {
+        const [a, b] = s.wires as [Wire, Wire];
+        const dd = Math.hypot(a.x - b.x, a.y - b.y) / 100;
+        d.text(
+          `μ₀I₁I₂/(2πd) = ${fmt((MU0 * Math.abs(a.I * b.I)) / (2 * Math.PI * dd), "N/m")} com d = ${Number((dd * 100).toPrecision(3)).toString().replace(".", ",")} cm: ${a.I * b.I > 0 ? "correntes no mesmo sentido se atraem" : "correntes opostas se repelem"}`,
+          VP.xMin + 0.3,
+          VP.yMax - 1.3,
+          { color: theme.series[3]!, size: 12, weight: "600", align: "left" },
+        );
+      }
     }
 
     // Placar

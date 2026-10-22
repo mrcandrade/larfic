@@ -122,7 +122,7 @@ export function hundTerm(Z: number, real = true): { S: number; L: number; J: num
     }
   });
   const half = dominant >= 0 ? 2 * dominant + 1 : 0;
-  const J = dominant < 0 ? 0 : domK < half ? Math.abs(L - S) : L + S;
+  const J = dominant < 0 ? 0 : domK <= half ? Math.abs(L - S) : L + S;
   const letters = "SPDFGHIKLMNOQ";
   const jTxt = Number.isInteger(J) ? String(J) : `${Math.round(2 * J)}/2`;
   return { S, L, J, text: `${2 * S + 1}${letters[L] ?? "?"}${jTxt}` };
@@ -143,7 +143,7 @@ export function position(Z: number): { period: number; group: number; f: boolean
   while (Z >= starts[period]!) period++;
   const i = Z - starts[period - 1]!;
   if (period === 1) return { period, group: Z === 1 ? 1 : 18, f: false, fIndex: -1 };
-  if (period <= 3) return { period, group: i < 2 ? i + 1 : i + 10, f: false, fIndex: -1 };
+  if (period <= 3) return { period, group: i < 2 ? i + 1 : i + 11, f: false, fIndex: -1 };
   if (period <= 5) return { period, group: i + 1, f: false, fIndex: -1 };
   if (i < 2) return { period, group: i + 1, f: false, fIndex: -1 };
   if (i <= 16) return { period, group: 3, f: true, fIndex: i - 2 };

@@ -6,7 +6,8 @@ import { clamp, defineSim, deg, draw, num, rad, texNum, type Params } from "@fis
  * inercial). Três cenas:
  *  - barco: a velocidade própria do barco é em relação à água (S');
  *  - avião: a velocidade própria do avião é em relação ao ar (S');
- *  - chuva: a velocidade da gota é em relação ao solo (S); S' é o carro.
+ *  - chuva: a velocidade da gota é em relação ao solo (S); S' é o carro;
+ *  - trem: movimento 1D; a velocidade do passageiro é em relação ao trem (S').
  */
 export interface Rel {
   /** Velocidade própria do objeto: em relação a S' (barco, avião) ou ao solo (chuva). */
@@ -29,6 +30,12 @@ export interface Rel {
 export const cena = (p: Params) => Math.round(num(p, "cena"));
 /** Altura de onde as gotas caem (m). */
 export const H_RAIN = 25;
+/** Altura (m) do ponto marcado no passageiro do trem (o peito). */
+export const PASS_Y = 2.5;
+/** Tempo máximo da cena do trem quando o passageiro está parado no vagão (s). */
+export const T_TREM = 30;
+/** Velocidade do passageiro em relação ao solo, no trem: u = u' + V (1D). */
+export const velTrem = (vp: number, Vt: number) => vp + Vt;
 
 /** Velocidade do objeto em relação ao solo. */
 export const velS = (s: Rel, p: Params): [number, number] => (cena(p) === 2 ? [s.ox, s.oy] : [s.ox + s.Vx, s.oy + s.Vy]);
@@ -63,13 +70,18 @@ function initial(p: Params): Rel {
   if (c === 2) {
     return { ...base, ox: num(p, "wx", 0), oy: -num(p, "vr", 8), Vx: num(p, "Vc", 15), Vy: 0, y: H_RAIN };
   }
+  if (c === 3) {
+    const vp = num(p, "vp", 1.5);
+    // o passageiro parte da ponta de trás do vagão (ou da da frente, se anda para trás)
+    return { ...base, ox: vp, oy: 0, Vx: num(p, "Vt", 10), Vy: 0, x: vp < 0 ? num(p, "Lt", 16) : 0, y: PASS_Y };
+  }
   const vb = num(p, "vb", 3);
   const th = rad(num(p, "theta", 0));
   return { ...base, ox: -vb * Math.sin(th), oy: vb * Math.cos(th), Vx: num(p, "u", 1.5), Vy: 0 };
 }
 
 /** Escala de velocidades de cada cena (m/s), usada no diagrama e nas setas. */
-const vref = (p: Params) => [6, 120, 25][cena(p)] ?? 6;
+const vref = (p: Params) => [6, 120, 25, 12][cena(p)] ?? 6;
 
 // ---------- Layout do palco (unidades abstratas) ----------
 interface Box {
@@ -98,6 +110,11 @@ function worldBox(p: Params) {
     const hw = 20;
     const hh = hw * aspect;
     return { cx: 0, cy: hh - 2, hw, hh };
+  }
+  if (c === 3) {
+    const hw = 18;
+    const hh = hw * aspect;
+    return { cx: num(p, "Lt", 16) / 2, cy: hh - 3, hw, hh };
   }
   const L = num(p, "L", 100);
   const hh = 0.62 * L;
@@ -143,6 +160,7 @@ function dragDiagram(s: Rel, p: Params, pt: { x: number; y: number }, which: "u"
   vx = Math.round(vx * 10) / 10;
   vy = Math.round(vy * 10) / 10;
   if (c === 2) return { ...s, ox: vx, oy: Math.min(vy, -0.5) };
+  if (c === 3) return { ...s, ox: vx - s.Vx, oy: 0 };
   return { ...s, ox: vx - s.Vx, oy: vy - s.Vy };
 }
 
@@ -158,7 +176,7 @@ function nearDiagram(s: Rel, p: Params, pt: { x: number; y: number }): "" | "u" 
 /** Rumo que leva o objeto em linha reta de A a B (barco: atravessa; avião: segue +x). */
 function headingStraight(s: Rel, p: Params): Rel {
   const c = cena(p);
-  if (c === 2) return s;
+  if (c === 2 || c === 3) return s;
   const speed = Math.hypot(s.ox, s.oy);
   if (c === 0) {
     if (Math.abs(s.Vx) >= speed) return s;
@@ -175,7 +193,7 @@ function headingFastest(s: Rel, p: Params): Rel {
   return headingStraight(s, p);
 }
 
-const frameName = (p: Params) => ["água", "ar", "carro"][cena(p)] ?? "S'";
+const frameName = (p: Params) => ["água", "ar", "carro", "trem"][cena(p)] ?? "S'";
 
 export const movimentoRelativo = defineSim<Rel>({
   id: "movimento-relativo",
@@ -207,6 +225,8 @@ export const movimentoRelativo = defineSim<Rel>({
           ? String.raw`\theta^* = \arcsin\frac{${texNum(s.Vx)}}{${texNum(vb)}} = ${texNum(th)}^\circ \qquad t_{\min} = \frac{${texNum(L)}}{${texNum(vb)}} = ${texNum(L / vb)}\ \text{s}`
           : String.raw`u_c \ge v' \Rightarrow \text{impossível atravessar reto} \qquad t_{\min} = ${texNum(L / vb)}\ \text{s}`,
       );
+    } else if (c === 3) {
+      out.push(String.raw`u_x = u'_x + V_x = ${texNum(s.ox)} + ${texNum(s.Vx)} = ${texNum(s.ox + s.Vx)}\ \text{m/s}`);
     } else if (c === 2) {
       out.push(String.raw`\alpha = \arctan\frac{|${texNum(px)}|}{|${texNum(py)}|} = ${texNum(deg(Math.atan2(Math.abs(px), Math.abs(py))))}^\circ`);
     } else {
@@ -232,6 +252,7 @@ export const movimentoRelativo = defineSim<Rel>({
         { value: 0, label: "Barco atravessando o rio" },
         { value: 1, label: "Avião com vento" },
         { value: 2, label: "Chuva vista de um carro" },
+        { value: 3, label: "Passageiro andando no trem (1D)" },
       ],
     },
     { key: "L", label: "Largura do rio", unit: "m", min: 20, max: 200, step: 5, default: 60 },
@@ -247,6 +268,9 @@ export const movimentoRelativo = defineSim<Rel>({
     { key: "wx", label: "Vento na chuva (horizontal)", unit: "m/s", min: -10, max: 10, step: 0.5, default: 0 },
     { key: "Vc", label: "Velocidade do carro", unit: "m/s", min: 0, max: 30, step: 0.5, default: 15 },
     { key: "A", label: "Aceleração de S' (não inercial)", unit: "m/s²", min: -3, max: 3, step: 0.1, default: 0 },
+    { key: "Vt", label: "Trem: velocidade em relação ao solo", unit: "m/s", min: -30, max: 30, step: 0.5, default: 10 },
+    { key: "vp", label: "Trem: passageiro em relação ao trem", unit: "m/s", min: -3, max: 3, step: 0.1, default: 1.5 },
+    { key: "Lt", label: "Trem: comprimento do vagão", unit: "m", min: 8, max: 30, step: 1, default: 16 },
   ],
 
   observables: [
@@ -332,6 +356,25 @@ export const movimentoRelativo = defineSim<Rel>({
 3. Compare as acelerações: no solo $\\vec a = 0$ (velocidade terminal); no carro $\\vec a\\,' = \\vec a - \\vec A = -\\vec A$.
 4. Troque de referencial com os botões e acompanhe o gráfico de $y$ contra $x$ nos dois casos.`,
     },
+    {
+      id: "trem",
+      label: "Passageiro no trem (1D)",
+      params: { cena: 3, Vt: 10, vp: -2, Lt: 16, A: 0 },
+      guide: `### Uma dimensão, dois observadores
+1. O trem anda a $V = 10$ m/s em relação ao solo; o passageiro caminha **para trás** a $u' = -2$ m/s em relação ao trem. Rode e compare os painéis.
+2. No referencial do trem, o passageiro percorre o vagão devagar; no do solo, ele vai **para a frente** a $u = u' + V = 8$ m/s. Em 1D a soma é de números com sinal.
+3. Use **Ver do solo** e **Ver de S'** e leia $v_x$ nos dois: a diferença é sempre $V$. As posições também diferem por $X_{S'} = Vt$: $x = x' + Vt$.
+4. Ponha $V = 2$ m/s e $u' = -2$ m/s: o passageiro anda no vagão, mas para quem está na plataforma ele fica parado ($u = 0$). Com $u' = +2$ m/s, ele passa a $12$ m/s se $V = 10$ m/s.
+5. Acelere o trem ($A \\neq 0$). As velocidades continuam somando, e as acelerações também: $a = a' + A$. Como $V$ muda, o referencial do trem deixa de ser inercial.`,
+      predict: [
+        {
+          question: "O trem passa pela plataforma a 10 m/s e o passageiro anda para o fundo do vagão a 2 m/s em relação ao trem. Para quem está na plataforma, o passageiro anda:",
+          options: ["a 12 m/s para a frente", "a 8 m/s para a frente", "a 2 m/s para trás", "a 8 m/s para trás"],
+          answer: 1,
+          explanation: "Com o eixo $x$ no sentido do trem, $u' = -2$ m/s e $V = +10$ m/s: $u = u' + V = +8$ m/s. O passageiro anda para trás no vagão, mas o vagão o carrega para a frente mais depressa.",
+        },
+      ],
+    },
   ],
 
   exercises: [
@@ -381,10 +424,18 @@ export const movimentoRelativo = defineSim<Rel>({
   sampleEvery: 5,
   maxSamples: 4000,
   tEnd: 1200,
-  stopWhen(s, p) {
+  stopWhen(s, p, _t) {
     const c = cena(p);
     if (c === 0) return num(p, "L", 60) - s.y;
     if (c === 1) return num(p, "D", 6000) - s.x;
+    if (c === 3) {
+      // o passageiro chega à outra ponta do vagão (ou o tempo da cena acaba, se está parado nele)
+      const xl = s.x - s.Rx;
+      const Lt = num(p, "Lt", 16);
+      if (s.ox > 0) return Lt - xl;
+      if (s.ox < 0) return xl;
+      return T_TREM - _t;
+    }
     return 1;
   },
 
@@ -402,7 +453,7 @@ export const movimentoRelativo = defineSim<Rel>({
   },
   actions: [
     { id: "solo", label: "Ver do solo (S)", run: (s) => ({ ...s, ref: 0 }), active: (s) => s.ref === 0 },
-    { id: "movel", label: "Ver de S' (água, ar ou carro)", run: (s) => ({ ...s, ref: 1 }), active: (s) => s.ref === 1 },
+    { id: "movel", label: "Ver de S' (água, ar, carro ou trem)", run: (s) => ({ ...s, ref: 1 }), active: (s) => s.ref === 1 },
     { id: "reto", label: "Rumo para ir reto de A a B", run: headingStraight },
     { id: "rapido", label: "Rumo de tempo mínimo", run: headingFastest },
   ],
@@ -465,6 +516,34 @@ export const movimentoRelativo = defineSim<Rel>({
           d.circle(X(cxw + offX), Y(offY), 0.9, { fill: theme.ground, stroke: theme.text, width: 1 });
           d.text(nm, X(cxw + offX), Y(offY) - 2, { size: 11, weight: "600" });
         }
+      } else if (c === 3) {
+        const W = 2 * wb.hw;
+        const Lt = num(p, "Lt", 16);
+        d.rect(X(wb.cx - wb.hw), Y(wb.cy - wb.hh), panel.x1 - panel.x0, Y(-1) - Y(wb.cy - wb.hh), { fill: theme.ground });
+        // dormentes e postes: fixos no solo
+        for (let i = 0; i < 18; i++) {
+          const xx = wrap(i * 2 + offX, wb.cx - wb.hw, W);
+          d.rect(X(xx), Y(-1.3), 0.5 * m.k, 0.3 * m.k, { fill: theme.muted, alpha: 0.6 });
+        }
+        for (let i = 0; i < 3; i++) {
+          const xx = wrap(i * 12 + offX, wb.cx - wb.hw, W);
+          d.line(X(xx), Y(-1), X(xx), Y(7), { color: theme.muted, width: 2 });
+        }
+        // vagão: anda no solo (com volta), parado no referencial do trem
+        const tx = f === 1 ? 0 : wrap(s.Rx, wb.cx - wb.hw, W);
+        d.rect(X(tx), Y(-0.6), Lt * m.k, 5 * m.k, { fill: theme.series[1]!, alpha: 0.18 });
+        d.rect(X(tx), Y(-0.6), Lt * m.k, 5 * m.k, { stroke: theme.series[1]!, width: 1.5 });
+        d.line(X(tx), Y(0), X(tx + Lt), Y(0), { color: theme.series[1]!, width: 1.5 });
+        for (let i = 1; i < Math.floor(Lt / 4); i++) d.rect(X(tx + i * 4 - 1), Y(3.2), 1.6 * m.k, 0.9 * m.k, { fill: theme.series[1]!, alpha: 0.35 });
+        d.circle(X(tx + 2), Y(-0.6), 0.5 * m.k, { fill: theme.text });
+        d.circle(X(tx + Lt - 2), Y(-0.6), 0.5 * m.k, { fill: theme.text });
+        if (f === 0) {
+          d.arrow(X(tx + Lt / 2), Y(5.6), s.Vx * ka, 0, { color: theme.series[1]! });
+          if (Math.abs(s.Vx) > 0.3) d.text("V", X(tx + Lt / 2) + s.Vx * ka + (s.Vx > 0 ? 1 : -1), Y(5.6) + 0.8, { color: theme.series[1]!, size: 11, weight: "600" });
+        } else if (Math.abs(s.Vx) > 0.3) {
+          d.arrow(X(wb.cx), Y(8.5), -s.Vx * ka, 0, { color: theme.series[1]! });
+          d.text("−V (solo)", X(wb.cx), Y(8.5) + 1.4, { color: theme.series[1]!, size: 10 });
+        }
       } else {
         const W = 2 * wb.hw;
         d.rect(X(wb.cx - wb.hw), Y(wb.cy - wb.hh), panel.x1 - panel.x0, Y(0) - Y(wb.cy - wb.hh), { fill: theme.ground });
@@ -497,7 +576,7 @@ export const movimentoRelativo = defineSim<Rel>({
       }
 
       // ---- objeto e trajetória ----
-      const carShift = c === 2 && f === 0 ? wrap(s.Rx, wb.cx - wb.hw, 2 * wb.hw) - s.Rx : 0;
+      const carShift = (c === 2 || c === 3) && f === 0 ? wrap(s.Rx, wb.cx - wb.hw, 2 * wb.hw) - s.Rx : 0;
       const pts: [number, number][] = [];
       let prevY = Infinity;
       for (let i = trail.length - 1; i >= 0; i--) {
@@ -529,6 +608,13 @@ export const movimentoRelativo = defineSim<Rel>({
           d.text("−V (solo)", X(wb.cx + wb.hw * 0.55) + 2, Y(-1), { color: theme.series[1]!, size: 10, align: "left" });
         }
         d.dot(X(ox), Y(oy), 4, theme.series[3]!);
+      } else if (c === 3) {
+        // passageiro: pés no piso do vagão (y = 0), ponto marcado no peito
+        const col = theme.series[4]!;
+        d.circle(X(ox), Y(oy + 0.9), 0.35 * m.k, { fill: col });
+        d.line(X(ox), Y(oy + 0.55), X(ox), Y(oy - 1), { color: col, width: 2.5 });
+        d.line(X(ox), Y(oy - 1), X(ox - 0.4), Y(0), { color: col, width: 2 });
+        d.line(X(ox), Y(oy - 1), X(ox + 0.4), Y(0), { color: col, width: 2 });
       } else {
         // barco/avião aponta para u' (rumo), mas anda com u no solo
         const hl = Math.hypot(s.ox, s.oy) || 1;
@@ -567,7 +653,7 @@ export const movimentoRelativo = defineSim<Rel>({
       ctx.restore();
 
       d.rect(panel.x0, panel.y0, panel.x1 - panel.x0, panel.y1 - panel.y0, { stroke: hi ? theme.accent : theme.grid, width: hi ? 2.5 : 1 });
-      const title = f === 0 ? "Referencial do solo (S)" : ["Referencial da água (S')", "Referencial do ar (S')", "Referencial do carro (S')"][c]!;
+      const title = f === 0 ? "Referencial do solo (S)" : ["Referencial da água (S')", "Referencial do ar (S')", "Referencial do carro (S')", "Referencial do trem (S')"][c]!;
       d.text(title + (f === 1 && A !== 0 ? " — não inercial" : ""), panel.x0 + 1, panel.y1 - 1.6, {
         align: "left",
         size: 12,
@@ -590,10 +676,10 @@ export const movimentoRelativo = defineSim<Rel>({
     d.circle(Vt[0], Vt[1], 0.7, { fill: theme.series[1]!, alpha: s.drag === "V" ? 0.9 : 0.35 });
     d.text("Arraste as pontas", DIAG.cx, DIAG.cy - DIAG_R - 0.2, { color: theme.muted, size: 10, baseline: "top" });
     const lx = DIAG.cx + DIAG_R + 1.5;
-    const vlabel = ["correnteza", "vento", "carro"][c];
-    const ulabel = c === 2 ? "chuva" : c === 0 ? "barco" : "avião";
+    const vlabel = ["correnteza", "vento", "carro", "trem"][c];
+    const ulabel = c === 2 ? "chuva" : c === 0 ? "barco" : c === 3 ? "passageiro" : "avião";
     d.text(`u: ${ulabel} em relação ao solo`, lx, 17.5, { color: theme.accent, align: "left", size: 11, weight: "600" });
-    d.text(`u': ${ulabel} em relação ${c === 2 ? "ao carro" : c === 0 ? "à água" : "ao ar"}`, lx, 15, { color: theme.series[2]!, align: "left", size: 11, weight: "600" });
+    d.text(`u': ${ulabel} em relação ${c === 2 ? "ao carro" : c === 0 ? "à água" : c === 3 ? "ao trem" : "ao ar"}`, lx, 15, { color: theme.series[2]!, align: "left", size: 11, weight: "600" });
     d.text(`V: ${vlabel} em relação ao solo`, lx, 12.5, { color: theme.series[1]!, align: "left", size: 11, weight: "600" });
     d.text("u = u' + V", lx, 10, { align: "left", size: 12, weight: "700" });
 
@@ -617,6 +703,12 @@ export const movimentoRelativo = defineSim<Rel>({
       lines.push(ok ? `Para ir reto: ψ = ${fmt(deg(Math.asin(-s.Vy / va)))}°` : "Vento lateral ≥ v': impossível manter a rota");
       lines.push(ok && gs > 0 ? `Velocidade no solo ${fmt(gs)} m/s, t = ${fmt(D / gs)} s` : "Não chega a B");
       lines.push(`Sem vento: t = ${fmt(D / va)} s`);
+    } else if (c === 3) {
+      const Lt = num(p, "Lt", 16);
+      lines.push(`Passageiro no trem: u' = ${fmt(s.ox)} m/s`);
+      lines.push(`Trem no solo: V = ${fmt(s.Vx)} m/s`);
+      lines.push(`Passageiro no solo: u = u' + V = ${fmt(s.ox + s.Vx)} m/s`);
+      lines.push(`Posição no vagão x' = ${fmt(s.x - s.Rx)} m de ${fmt(Lt, 2)} m; no solo x = ${fmt(s.x)} m`);
     } else {
       lines.push(`Chuva no solo: ${fmt(deg(Math.atan2(Math.abs(s.ox), Math.abs(s.oy))))}° com a vertical`);
       lines.push(`Vista do carro: ${fmt(deg(Math.atan2(Math.abs(px), Math.abs(py))))}° com a vertical`);

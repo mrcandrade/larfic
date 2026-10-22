@@ -29,7 +29,7 @@ export const constantes: Constante[] = [
   { id: "e", nome: "Carga elementar", simbolo: "e", valor: 1.602176634e-19, unidade: "C", tipo: "definida" },
   { id: "k", nome: "Constante de Boltzmann", simbolo: "k", valor: 1.380649e-23, unidade: "J/K", tipo: "definida" },
   { id: "NA", nome: "Constante de Avogadro", simbolo: "N_A", valor: 6.02214076e23, unidade: "mol^{-1}", tipo: "definida" },
-  { id: "dnuCs", nome: "Frequência da transição hiperfina do césio 133", simbolo: "\\Delta\\nu_{\\text{Cs}}", valor: 9192631770, unidade: "Hz", tipo: "definida" },
+  { id: "dnuCs", nome: "Frequência da transição hiperfina do césio 133", simbolo: "\\Delta\\nu_{\\text{Cs}}", valor: 9192631770, unidade: "Hz", tipo: "definida", texto: "9,192631770" },
   { id: "Kcd", nome: "Eficácia luminosa da radiação de 540 THz", simbolo: "K_{\\text{cd}}", valor: 683, unidade: "lm/W", tipo: "definida" },
   // Exatas por combinação
   { id: "hbar", nome: "Constante de Planck reduzida", simbolo: "\\hbar = h/2\\pi", valor: 6.62607015e-34 / (2 * Math.PI), unidade: "J\\cdot s", tipo: "exata", texto: "1,054571817…" },

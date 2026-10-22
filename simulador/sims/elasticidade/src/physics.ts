@@ -194,7 +194,7 @@ export function resolveMesa(mesa: Mesa, W: number, xw: number, yw: number): Solu
     }
     const sol: Solucao = {
       u: u.map((v, i) => (S.includes(i) ? Math.max(0, v) : 0)),
-      F: u.map((v, i) => (S.includes(i) ? mesa.k[i]! * Math.max(0, v) : 0)),
+      F: u.map((v, i) => (S.includes(i) && v > 1e-12 * escala ? mesa.k[i]! * v : 0)),
       h0: c[0]!,
       ax: c[1]!,
       ay: c[2]!,

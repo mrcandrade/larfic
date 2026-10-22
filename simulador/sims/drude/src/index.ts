@@ -7,6 +7,7 @@ import {
   currentDensity,
   driftSpeed,
   E_CHARGE,
+  isSuperconducting,
   makeGas,
   massOf,
   material,
@@ -34,6 +35,8 @@ const mat = (p: Params) => material(num(p, "material"));
 const T = (p: Params) => num(p, "T", 300);
 const Ef = (p: Params) => num(p, "E", 1);
 const tauFs = (p: Params) => relaxationTime(mat(p), T(p)) * 1e15;
+/** Estado supercondutor (material com T_c e T < T_c). */
+const sc = (p: Params) => isSuperconducting(mat(p), T(p));
 /** Desvio-padrão de cada componente da velocidade (nm/fs): √(kT/m). */
 const sigmaV = (p: Params) => (thermalSpeed(mat(p), T(p)) / Math.SQRT2) * 1e-6;
 /** Passo físico (fs) por passo da animação: pelo menos 10 passos por τ. */
@@ -50,7 +53,7 @@ export function zoom(p: Params): number {
 export function electronCount(p: Params): number {
   const m = mat(p);
   const n = carrierDensity(m, T(p));
-  if (m.kind === "metal") return clamp(Math.round(n * BOX_W * BOX_H * 1.5e-27), 30, 260);
+  if (m.kind !== "semicondutor") return clamp(Math.round(n * BOX_W * BOX_H * 1.5e-27), 30, 260);
   return clamp(Math.round((40 * n) / m.n300), 2, 260);
 }
 
@@ -90,6 +93,12 @@ export const drude = defineSim<DState>({
   ],
   liveEquations(s, p) {
     const m = mat(p);
+    if (sc(p))
+      return [
+        String.raw`T = ${texNum(T(p))}\ \text{K} < T_c = ${texNum(m.Tc ?? 0)}\ \text{K} \;\Rightarrow\; \rho = 0,\ \sigma \to \infty`,
+        String.raw`\Delta V = RI = 0:\ \text{a corrente circula sem campo elétrico e sem dissipar } P = RI^2 = 0`,
+        String.raw`\text{acima de } T_c:\ \rho(${texNum(m.Tc ?? 0)}\ \text{K}) \approx ${texNum(1 / (carrierDensity(m, m.Tc ?? 100) * E_CHARGE ** 2 * relaxationTime(m, m.Tc ?? 100) / massOf(m)))}\ \Omega\cdot\text{m}`,
+      ];
     const tau = relaxationTime(m, T(p));
     const vd = driftSpeed(m, T(p), Ef(p));
     return [
@@ -106,13 +115,14 @@ export const drude = defineSim<DState>({
       label: "Material",
       unit: "",
       min: 0,
-      max: 2,
+      max: 3,
       step: 1,
       default: 0,
       options: [
         { value: 0, label: "Cobre (metal)" },
         { value: 1, label: "Alumínio (metal)" },
         { value: 2, label: "Silício intrínseco (semicondutor)" },
+        { value: 3, label: "YBCO (supercondutor, T_c = 92 K)" },
       ],
     },
     { key: "T", label: "Temperatura", unit: "K", min: 50, max: 800, step: 10, default: 300 },
@@ -199,6 +209,25 @@ export const drude = defineSim<DState>({
         },
       ],
     },
+    {
+      id: "supercondutor",
+      label: "Supercondutor: resistência zero abaixo de T_c",
+      params: { material: 3, T: 150, E: 1, lupa: 1 },
+      guide: `### A resistividade que some
+1. A 150 K o YBCO se comporta como um metal ruim: há colisões, uma deriva pequena e $\\rho \\approx 10^{-6}\\ \\Omega\\cdot\\text{m}$, caindo quase linearmente quando esfria (gráfico $\\rho(T)$).
+2. Baixe $T$ para 100 K e depois para 90 K. Abaixo de $T_c = 92\\ \\text{K}$ a resistividade não fica só pequena: ela vai **exatamente a zero**, de forma abrupta (linha vertical no gráfico).
+3. Na animação, abaixo de $T_c$ os portadores param de colidir e andam juntos. Com $\\rho = 0$, o campo interno é $E = \\rho J = 0$: a corrente circula **sem** tensão e sem dissipar $RI^2$. Numa espira supercondutora, uma corrente induzida dura anos.
+4. O modelo de Drude não explica isso: com $\\tau$ finito, $\\rho$ nunca zera. A explicação (teoria BCS) é quântica: elétrons se juntam em pares que se movem como um todo e não trocam energia com a rede em colisões isoladas.
+5. Compare com o cobre a 50 K: muito bom condutor, mas $\\rho > 0$ por causa das impurezas.`,
+      predict: [
+        {
+          question: "Ao resfriar o YBCO de 100 K para 80 K (T_c = 92 K), a resistividade:",
+          options: ["cai um pouco, como num metal", "cai pela metade", "vai a zero, de repente, em T_c", "aumenta, como num semicondutor"],
+          answer: 2,
+          explanation: "Acima de $T_c$ ela cai suavemente com $T$, como num metal. Em $T_c$ há uma transição de fase: abaixo dela a resistência DC é nula, não apenas pequena.",
+        },
+      ],
+    },
   ],
 
   exercises: [
@@ -221,6 +250,12 @@ export const drude = defineSim<DState>({
 
   init(p) {
     const gas = makeGas(electronCount(p), sigmaV(p), 12345);
+    if (sc(p)) {
+      // Estado supercondutor: os pares andam juntos (corrente persistente), sem colisões nem campo.
+      const v = -0.3 * sigmaV(p);
+      gas.vx = gas.vx.map(() => v);
+      gas.vy = gas.vy.map(() => 0);
+    }
     return { gas, tfs: 0, vxEma: 0, path: [[gas.x[0]!, gas.y[0]!]] };
   },
 
@@ -229,7 +264,8 @@ export const drude = defineSim<DState>({
     const tau = tauFs(p);
     // a = −eE/m (elétron, E em +x), em nm/fs², com o fator de ampliação.
     const ax = ((-E_CHARGE * Ef(p) * zoom(p)) / massOf(mat(p))) * 1e-21;
-    const gas = stepGas(s.gas, h, tau, ax, sigmaV(p));
+    // Supercondutor: nenhuma colisão e nenhum campo interno (ρ = 0 ⇒ E = ρJ = 0).
+    const gas = sc(p) ? stepGas(s.gas, h, 1e30, 0, sigmaV(p)) : stepGas(s.gas, h, tau, ax, sigmaV(p));
     const N = gas.vx.length;
     let mean = 0;
     for (let i = 0; i < N; i++) mean += gas.vx[i]!;
@@ -275,8 +311,11 @@ export const drude = defineSim<DState>({
     for (let i = 0; i < g.x.length; i++) d.dot(g.x[i]!, y0 + g.y[i]!, i === 0 ? 4.5 : 3, i === 0 ? theme.series[1]! : theme.negative, i === 0 ? 1 : 0.85);
 
     // Campo e deriva
-    d.arrow(2, y0 + BOX_H + 2, 10, 0, { color: theme.accent, width: 2.5 });
-    d.text(`E = ${fmtSci(Ef(p))} V/m`, 13, y0 + BOX_H + 2, { color: theme.accent, size: 12, align: "left", weight: "600" });
+    if (sc(p)) d.text("E = 0 (ρ = 0): corrente persistente, sem colisões", 1, y0 + BOX_H + 2, { color: theme.accent, size: 12, align: "left", weight: "600" });
+    else {
+      d.arrow(2, y0 + BOX_H + 2, 10, 0, { color: theme.accent, width: 2.5 });
+      d.text(`E = ${fmtSci(Ef(p))} V/m`, 13, y0 + BOX_H + 2, { color: theme.accent, size: 12, align: "left", weight: "600" });
+    }
     const vdAnim = s.vxEma; // nm/fs
     const sv = sigmaV(p);
     if (Math.abs(vdAnim) > 1e-6) {
@@ -333,7 +372,7 @@ export const drude = defineSim<DState>({
     for (let t = 50; t <= 800; t += 10) Ts.push(t);
     const logR = Ts.map((t) => Math.log10(resistivity(m, t)));
     const lo = Math.min(...logR), hi = Math.max(...logR);
-    const metal = m.kind === "metal";
+    const metal = m.kind !== "semicondutor";
     const val = (t: number) => (metal ? resistivity(m, t) / resistivity(m, 800) : (Math.log10(resistivity(m, t)) - lo) / Math.max(hi - lo, 1e-9));
     const px = (t: number) => RHO.x0 + ((t - 50) / 750) * (RHO.x1 - RHO.x0);
     const py = (u: number) => RHO.y0 + u * (RHO.y1 - RHO.y0);
@@ -343,7 +382,11 @@ export const drude = defineSim<DState>({
     d.dot(px(T(p)), py(val(T(p))), 5, theme.series[1]!);
     d.text(metal ? "ρ(T) (linear)" : "log ρ(T)", RHO.x0, RHO.y1 + 1.4, { color: theme.text, size: 12, align: "left", weight: "600" });
     d.text("T (K)", RHO.x1, RHO.y0 - 1.3, { color: theme.muted, size: 11, align: "right" });
-    d.text(`ρ = ${fmtSci(resistivity(m, T(p)))} Ω·m`, RHO.x0, RHO.y0 - 3, { color: theme.text, size: 12, align: "left" });
+    d.text(`ρ = ${fmtSci(resistivity(m, T(p)))} Ω·m${sc(p) ? " (supercondutor)" : ""}`, RHO.x0, RHO.y0 - 3, { color: theme.text, size: 12, align: "left" });
+    if (m.Tc !== undefined) {
+      d.line(px(m.Tc), RHO.y0, px(m.Tc), RHO.y1, { color: theme.muted, width: 1, dash: [3, 3] });
+      d.text("T_c", px(m.Tc), RHO.y1 - 0.6, { color: theme.muted, size: 11, align: "left", dx: 3 });
+    }
   },
 });
 

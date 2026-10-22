@@ -530,7 +530,7 @@ function PeriodicTable() {
     <>
       <p className="muted">Clique (ou use Tab e Enter) num elemento para ver as propriedades do Apêndice F. Clique numa família da legenda para destacá-la.</p>
       <div className="pt-wrap">
-        <div className="pt-grid" role="grid" aria-label="Tabela periódica">
+        <div className="pt-grid" role="group" aria-label="Tabela periódica">
           {elementos.map((e) => {
             const p = posicao(e);
             const dim = fam && e.familia !== fam;

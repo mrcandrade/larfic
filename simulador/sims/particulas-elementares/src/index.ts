@@ -130,7 +130,7 @@ function drawZoo(d: Draw, s: PState, p: Params) {
 
   // massa × vida média
   const pl = ltPanel(d);
-  u.text("Vida média × massa: a interação do decaimento fixa a escala de tempo", LT.x0 - 1.9, LT.y1 + 0.55, { size: 11, align: "left", weight: "700" });
+  u.text("Vida média × massa: a interação do decaimento fixa a escala de tempo", LT.x0 - 1.9, LT.y1 + 1.0, { size: 11, align: "left", weight: "700" });
   const band = (t0: number, t1: number, v: Via, label: string) => {
     d.rect(LT.x0, pl.Y(t0), LT.x1 - LT.x0, pl.Y(t1) - pl.Y(t0), { fill: viaColor(d, v), alpha: 0.08 });
     u.text(label, LT.x1 - 0.15, pl.Y(Math.sqrt(t0 * t1)), { size: 9.5, align: "right", color: viaColor(d, v), weight: "600" });
@@ -314,7 +314,12 @@ function drawConservation(d: Draw, s: PState, p: Params) {
   QKEYS.forEach(({ key, label }, i) => {
     const y = ty0 - i * dy;
     const [a, b] = c.sums[key];
-    u.text(label, tx[0]!, y, { size: 11.5, align: "left" });
+    const lep = { Le: "L_e", Lm: "L_μ", Lt: "L_τ" }[key as string];
+    if (lep) {
+      const w = u.measure("número leptônico ", 11.5);
+      u.text("número leptônico", tx[0]!, y, { size: 11.5, align: "left" });
+      u.sym(lep, tx[0]! + w, y, { size: 11.5, align: "left", weight: "400" });
+    } else u.text(label, tx[0]!, y, { size: 11.5, align: "left" });
     u.text(frac(a), tx[1]!, y, { size: 12 });
     u.text(frac(b), tx[2]!, y, { size: 12 });
     if (key === "S") {
@@ -325,7 +330,7 @@ function drawConservation(d: Draw, s: PState, p: Params) {
   });
   const fermions = (ps: Particle[]) => ps.filter((x) => Math.round(2 * x.spin) % 2 === 1).length;
   const yF = ty0 - QKEYS.length * dy;
-  u.text("nº de férmions (spin)", tx[0]!, yF, { size: 11.5, align: "left" });
+  u.text("nº de férmions (paridade)", tx[0]!, yF, { size: 11.5, align: "left" });
   u.text(String(fermions(L)), tx[1]!, yF, { size: 12 });
   u.text(String(fermions(R)), tx[2]!, yF, { size: 12 });
   mark(c.spinOk, yF);
@@ -472,6 +477,10 @@ function drawEightfold(d: Draw, s: PState, p: Params) {
     u.text(`S = ${frac(S).replace("+", "")}`, -15.3, y, { size: 11, align: "right", color: th.muted });
   }
   // diagonais de carga: I₃ = Q − B/2 − S/2
+  d.ctx.save();
+  d.ctx.beginPath();
+  d.ctx.rect(-15, -9, 14.6, 18);
+  d.ctx.clip();
   for (let Q = -1; Q <= (k === 1 ? 2 : 1); Q++) {
     const xA = EW.cx + (Q - B / 2 - Smax / 2) * EW.ux;
     const xB = EW.cx + (Q - B / 2 - Smin / 2) * EW.ux;
@@ -481,6 +490,7 @@ function drawEightfold(d: Draw, s: PState, p: Params) {
     d.line(xA - slope * 0.9, yA, xB + slope * 0.9, yB, { color: th.series[0]!, width: 1, dash: [5, 4], alpha: 0.55 });
     u.text(`Q = ${frac(Q).replace("+", "")}`, xA - slope * 0.9, yA + 0.35, { size: 10, color: th.series[0]! });
   }
+  d.ctx.restore();
   // membros
   for (const m of members) {
     const pt = particle(m.id);
@@ -553,7 +563,10 @@ function drawEightfold(d: Draw, s: PState, p: Params) {
       d.line(pl.X(3.1), pl.Y(pred), pl.X(3.9), pl.Y(pred), { color: th.series[4]!, width: 1.5, dash: [2, 2] });
       u.text(`Gell-Mann (espaçamento igual): ${fmt(pred, 4)}  ·  medido: 1672,45`, box.x1, box.y0 + 0.5, { size: 10, align: "right", color: th.series[4]! });
       u.text(`erro do palpite: ${fmt(guess - particle("Omega-").m, 3)} MeV`, box.x1, box.y0 + 1.1, { size: 10.5, align: "right", weight: "700", color: th.accent });
-    } else u.text("Os espaçamentos são quase iguais: preveja a massa da linha S = −3.", box.x0 + 0.2, box.y1 - 0.45, { size: 10.5, align: "left", color: th.muted });
+    } else {
+      u.text("Os espaçamentos são quase iguais:", box.x0 + 0.2, box.y1 - 0.45, { size: 10.5, align: "left", color: th.muted });
+      u.text("preveja a massa da linha S = −3.", box.x0 + 0.2, box.y1 - 1.0, { size: 10.5, align: "left", color: th.muted });
+    }
   } else if (k === 0) {
     const g = gmoOctet();
     u.text("Gell-Mann–Okubo:  (m_N + m_Ξ)/2 ≈ (3m_Λ + m_Σ)/4", box.x0 + 0.2, box.y1 - 0.45, { size: 10.5, align: "left" });
@@ -575,7 +588,7 @@ function eightfoldHit(pt: WorldPoint, p: Params): string | null {
 }
 
 // ------------------------------------------------------------------ tema 3: quarks
-const QBTN = { x0: -15.6, dx: 2.3, y0: 6.6, y1: 4.4, r: 0.85 };
+const QBTN = { x0: -15.6, dx: 2.3, y0: 6.6, y1: 3.9, r: 0.85 };
 const qbtn = (i: number): [number, number] => [QBTN.x0 + (i % 4) * QBTN.dx, i < 4 ? QBTN.y0 : QBTN.y1];
 const BAG = { cx: -10.6, cy: -3.4, r: 4.2 };
 const COLORS = ["#e0483e", "#2fa84f", "#2f6fd9"];
@@ -600,8 +613,8 @@ function drawQuarks(d: Draw, s: PState, p: Params) {
   const th = d.theme;
   const u = ui(d);
   u.text("Monte hádrons com quarks e antiquarks", -16.6, 8.9, { size: 15, weight: "700", align: "left" });
-  u.text("quarks", QBTN.x0 - 0.9, QBTN.y0 + 1.25, { size: 10, align: "left", color: th.muted });
-  u.text("antiquarks", QBTN.x0 - 0.9, QBTN.y1 + 1.25, { size: 10, align: "left", color: th.muted });
+  u.text("quarks", QBTN.x0 - 0.9, QBTN.y0 + 1.1, { size: 10, align: "left", color: th.muted });
+  u.text("antiquarks", QBTN.x0 - 0.9, QBTN.y1 + 1.1, { size: 10, align: "left", color: th.muted });
   for (let i = 0; i < 8; i++) {
     const f = FLAVORS[i % 4]!;
     const bar = i >= 4;
@@ -673,10 +686,10 @@ function drawQuarks(d: Draw, s: PState, p: Params) {
     d.rect(x + 0.2, yb - 1.6, Math.max(W * Math.min(frq, 1), d.px * 2), 0.8, { fill: th.series[3]! });
     u.text(`massa do hádron: ${fmt(h.m, 5)} MeV/c²`, x + 0.2, yb - 0.55, { size: 11, align: "left" });
     u.text(`soma das massas dos quarks: ${fmt(r.quarkMass, 4)} MeV/c²  →  ${fmt(100 * frq, 3)}%`, x + 0.2, yb - 2.3, { size: 11, align: "left", color: th.series[3]!, weight: "600" });
-    u.text(`o resto (${fmt(100 * (1 - Math.min(frq, 1)), 3)}%) é energia dos glúons e do movimento dos quarks: E = mc²`, x + 0.2, yb - 2.95, { size: 10.5, align: "left", color: th.muted });
+    u.text(`o resto (${fmt(100 * (1 - Math.min(frq, 1)), 3)}%) é energia dos glúons e dos quarks (E = mc²)`, x + 0.2, yb - 2.95, { size: 10.5, align: "left", color: th.muted });
   } else u.text("Monte um hádron para comparar a massa dele com a dos quarks.", x + 0.2, yb - 0.8, { size: 10.5, align: "left", color: th.muted });
   u.text(aligned(p) ? "spins alinhados: bárions de spin 3/2 e mésons de spin 1" : "spins opostos: bárions de spin ½ e mésons de spin 0", x + 0.2, -6.1, { size: 10.5, align: "left" });
-  u.text("cores: quark vermelho, verde ou azul; antiquark com a anticor (ciano, magenta, amarelo)", x + 0.2, -6.8, { size: 9.5, align: "left", color: th.muted });
+  u.text("quark: vermelho, verde ou azul; antiquark: ciano, magenta ou amarelo", x + 0.2, -6.8, { size: 9.5, align: "left", color: th.muted });
 }
 
 function splitLine(t: string, n: number): string[] {
@@ -879,16 +892,19 @@ function drawMomentum(d: Draw, before: Vec[], after: Vec[]) {
   let a: [number, number] = [0, 0];
   for (const v of before) {
     d.arrow(ox + a[0] * sc, oy + a[1] * sc, v.v[0] * sc, v.v[1] * sc, { color: v.color, width: 3.5, alpha: 0.45 });
-    u.text(v.label + " (antes)", ox + (a[0] + v.v[0] / 2) * sc, oy + a[1] * sc, { size: 10, dy: 11, color: v.color });
+    if (Math.hypot(v.v[0], v.v[1]) * sc > 4 * d.px) u.text(v.label + " (antes)", ox + (a[0] + v.v[0] / 2) * sc, oy + a[1] * sc, { size: 10, dy: 12, color: v.color });
     a = [a[0] + v.v[0], a[1] + v.v[1]];
   }
   a = [0, 0];
-  for (const v of after) {
+  after.forEach((v, i) => {
     const len = Math.hypot(v.v[0], v.v[1]) * sc;
     if (len > 2 * d.px) d.arrow(ox + a[0] * sc, oy + a[1] * sc, v.v[0] * sc, v.v[1] * sc, { color: v.color, width: 2 });
-    u.text(v.label, ox + (a[0] + v.v[0] / 2) * sc, oy + (a[1] + v.v[1] / 2) * sc, { size: 10, dx: 0, dy: -11, color: v.color, weight: "600" });
+    const nx = len > 0 ? -v.v[1] / Math.hypot(v.v[0], v.v[1]) : 0;
+    const ny = len > 0 ? v.v[0] / Math.hypot(v.v[0], v.v[1]) : 1;
+    const side = i % 2 === 0 ? 1 : -1;
+    u.text(v.label, ox + (a[0] + v.v[0] * 0.3) * sc + side * nx * 0.55, oy + (a[1] + v.v[1] * 0.3) * sc + side * ny * 0.55, { size: 10, color: v.color, weight: "600" });
     a = [a[0] + v.v[0], a[1] + v.v[1]];
-  }
+  });
   const err = Math.hypot(a[0] - P[0], a[1] - P[1]);
   u.text(`|Σp depois − Σp antes| = ${sci(err, 2)} MeV/c`, box.x1, box.y0 - 0.35, { size: 9.5, align: "right", color: th.muted });
 }

@@ -32,7 +32,9 @@ export const fmt = (v: number, digits = 3) => formatBR(v, digits);
  * Gráfico embutido no palco: converte dados em coordenadas do mundo, desenha
  * moldura, grade e rótulos, e recorta as curvas à moldura.
  */
-export function panel(d: Draw, box: Box, xr: Range, yr: Range) {
+/** `font` escala os textos (telas estreitas); `ticks` é o número aproximado de marcas no eixo x. */
+export function panel(d: Draw, box: Box, xr: Range, yr: Range, opt: { font?: number; ticks?: number } = {}) {
+  const fz = opt.font ?? 1;
   const tf = (r: Range, v: number) => (r.log ? Math.log10(Math.max(v, 1e-300)) : v);
   const X = (v: number) => box.x0 + ((tf(xr, v) - tf(xr, xr.min)) / (tf(xr, xr.max) - tf(xr, xr.min))) * (box.x1 - box.x0);
   const Y = (v: number) => box.y0 + ((tf(yr, v) - tf(yr, yr.min)) / (tf(yr, yr.max) - tf(yr, yr.min))) * (box.y1 - box.y0);
@@ -51,25 +53,25 @@ export function panel(d: Draw, box: Box, xr: Range, yr: Range) {
     inside: (x: number, y: number) => x >= xr.min && x <= xr.max && y >= yr.min && y <= yr.max,
     /** Moldura, grade, marcas e rótulos dos eixos. */
     frame(opts: { xlabel?: string; ylabel?: string; xticks?: number[]; yticks?: number[]; fx?: (v: number) => string; fy?: (v: number) => string; zero?: boolean } = {}) {
-      const xt = opts.xticks ?? (xr.log ? logTicks(xr) : niceTicks(xr.min, xr.max));
-      const yt = opts.yticks ?? (yr.log ? logTicks(yr) : niceTicks(yr.min, yr.max, 4));
+      const xt = opts.xticks ?? (xr.log ? logTicks(xr) : niceTicks(xr.min, xr.max, opt.ticks ?? 5));
+      const yt = opts.yticks ?? (yr.log ? logTicks(yr) : niceTicks(yr.min, yr.max, fz < 0.85 ? 3 : 4));
       const fx = opts.fx ?? ((v: number) => fmt(v));
       const fy = opts.fy ?? ((v: number) => fmt(v));
       for (const v of xt) {
         if (v < xr.min || v > xr.max) continue;
         d.line(X(v), box.y0, X(v), box.y1, { color: theme.grid, width: 1 });
-        d.text(fx(v), X(v), box.y0, { color: theme.muted, size: 10, dy: 9 });
+        d.text(fx(v), X(v), box.y0, { color: theme.muted, size: 10 * fz, dy: 9 * fz });
       }
       for (const v of yt) {
         if (v < yr.min || v > yr.max) continue;
         d.line(box.x0, Y(v), box.x1, Y(v), { color: theme.grid, width: 1 });
-        d.text(fy(v), box.x0, Y(v), { color: theme.muted, size: 10, align: "right", dx: -4 });
+        d.text(fy(v), box.x0, Y(v), { color: theme.muted, size: 10 * fz, align: "right", dx: -4 });
       }
       if (opts.zero !== false && !yr.log && yr.min < 0 && yr.max > 0) d.line(box.x0, Y(0), box.x1, Y(0), { color: theme.muted, width: 1 });
       if (opts.zero !== false && !xr.log && xr.min < 0 && xr.max > 0) d.line(X(0), box.y0, X(0), box.y1, { color: theme.muted, width: 1 });
       d.rect(box.x0, box.y0, box.x1 - box.x0, box.y1 - box.y0, { stroke: theme.muted, width: 1 });
-      if (opts.xlabel) d.text(opts.xlabel, box.x1, box.y0, { color: theme.muted, size: 11, align: "right", dy: 22 });
-      if (opts.ylabel) d.text(opts.ylabel, box.x0, box.y1, { color: theme.muted, size: 11, align: "left", dy: -9 });
+      if (opts.xlabel) d.text(opts.xlabel, box.x1, box.y0, { color: theme.muted, size: 11 * fz, align: "right", dy: 22 * fz });
+      if (opts.ylabel) d.text(opts.ylabel, box.x0, box.y1, { color: theme.muted, size: 11 * fz, align: "left", dy: -9 * fz });
     },
     /** Executa desenhos recortados à moldura. */
     clip(fn: () => void) {

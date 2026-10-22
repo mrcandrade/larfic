@@ -152,7 +152,7 @@ Uma consequência: um pacote livre **se alarga** com o tempo, porque suas compon
 
 Outra: ao passar luz ou elétrons por uma fenda de largura $a$, a posição transversal fica conhecida com $\Delta y \sim a$, e o momento transversal ganha uma incerteza $\Delta p_y \sim h/a$. É exatamente o espalhamento angular da difração, $\sin\theta \approx \lambda/a$: estreitar a fenda alarga o padrão.
 
-Exemplo: um elétron confinado numa região de $0{,}10$ nm (tamanho de um átomo) tem $\Delta p \ge 1{,}055\times10^{-34}/(2\cdot10^{-11}) \approx 5{,}3\times10^{-25}$ kg·m/s, o que corresponde a uma energia cinética da ordem de alguns eV, justamente a escala das energias atômicas. Já um grão de poeira de $1$ µg localizado em $1$ µm tem incerteza de velocidade de $10^{-19}$ m/s, irrelevante.
+Exemplo: um elétron confinado numa região de $0{,}10$ nm (tamanho de um átomo) tem $\Delta p \ge 1{,}055\times10^{-34}/(2\cdot10^{-11}) \approx 5{,}3\times10^{-25}$ kg·m/s, o que corresponde a uma energia cinética da ordem de $1$ eV, justamente a escala das energias atômicas. Já um grão de poeira de $1$ µg localizado em $1$ µm tem incerteza de velocidade de $10^{-19}$ m/s, irrelevante.
 
 Armadilha: dizer que "medir perturba e por isso há incerteza". A perturbação existe, mas o princípio é mais profundo: a própria descrição ondulatória não admite um estado com $\Delta x$ e $\Delta p$ simultaneamente pequenos.
 

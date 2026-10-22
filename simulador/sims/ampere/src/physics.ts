@@ -29,6 +29,17 @@ export function fieldAt(wires: Wire[], x: number, y: number): Pt {
   return [bx, by];
 }
 
+/**
+ * Força por unidade de comprimento (N/m) sobre o fio k, exercida pelos demais:
+ * dF/dl = I_k ẑ × B_outros (B dos outros fios no ponto do fio k).
+ */
+export function forcePerLength(wires: Wire[], k: number): Pt {
+  const w = wires[k];
+  if (!w) return [0, 0];
+  const B = fieldAt(wires.filter((_, j) => j !== k), w.x, w.y);
+  return [-w.I * B[1], w.I * B[0]];
+}
+
 // Gauss-Legendre de 4 pontos em [0, 1]
 const GL_X = [0.0694318442029737, 0.3300094782075719, 0.6699905217924281, 0.9305681557970263];
 const GL_W = [0.1739274225687269, 0.3260725774312731, 0.3260725774312731, 0.1739274225687269];

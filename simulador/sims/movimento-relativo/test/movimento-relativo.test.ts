@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
-import { anguloChuva, movimentoRelativo as sim, rumoReto, velP, velS } from "../src/index.ts";
+import { PASS_Y, anguloChuva, movimentoRelativo as sim, rumoReto, velP, velS, velTrem } from "../src/index.ts";
 
 const P = (o: Record<string, number>) => withOverrides(sim, o);
 const act = (id: string) => sim.actions!.find((a) => a.id === id)!;
@@ -60,5 +60,38 @@ describe("Movimento relativo", () => {
     const t = r.t;
     expect(r.state.x - r.state.Rx).toBeCloseTo(-0.5 * 2.5 * t * t, 9);
     expect(r.state.x).toBeCloseTo(0, 12);
+  });
+});
+
+describe("Movimento relativo: passageiro no trem (1D)", () => {
+  it("u = u' + V: andando para trás a 2 m/s num trem a 10 m/s, vai a 8 m/s no solo", () => {
+    expect(velTrem(-2, 10)).toBe(8);
+    const p = P({ cena: 3, Vt: 10, vp: -2, Lt: 16, A: 0 });
+    const r = new Runner(sim, p);
+    expect(r.value("vx")).toBeCloseTo(8, 12);
+    r.setState(act("movel").run(r.state, p));
+    expect(r.value("vx")).toBeCloseTo(-2, 12);
+    r.runToEnd();
+    expect(r.finished).toBe(true);
+    // percorre o vagão de 16 m em 8 s; no solo anda x = x' + V t
+    expect(r.t).toBeCloseTo(8, 6);
+    expect(r.state.x - r.state.Rx).toBeCloseTo(0, 6);
+    expect(r.state.x).toBeCloseTo(16 + 8 * 8, 6);
+    expect(r.state.y).toBeCloseTo(PASS_Y, 12);
+  });
+
+  it("trem acelerando: a velocidade no solo cresce com A e a do passageiro no trem fica constante", () => {
+    const p = P({ cena: 3, Vt: 0, vp: 1, Lt: 20, A: 1 });
+    const r = new Runner(sim, p);
+    for (let i = 0; i < 200; i++) r.stepOnce();
+    expect(r.state.ox).toBe(1);
+    expect(r.value("vx")).toBeCloseTo(1 + r.t, 9);
+    expect(r.state.x - r.state.Rx).toBeCloseTo(r.t, 9);
+  });
+
+  it("a ação de rumo não altera a cena do trem", () => {
+    const p = P({ cena: 3 });
+    const s = sim.init(p);
+    expect(act("reto").run(s, p)).toBe(s);
   });
 });
