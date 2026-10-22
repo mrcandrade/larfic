@@ -151,6 +151,12 @@ import { rmnMri } from "@fisilab/sim-rmn-mri";
 import { moleculasLuz } from "@fisilab/sim-moleculas-luz";
 import { probabilidadeMontecarlo } from "@fisilab/sim-probabilidade-montecarlo";
 import { epidemiaSir } from "@fisilab/sim-epidemia-sir";
+import { escalasUnidades } from "@fisilab/sim-escalas-unidades";
+import { elasticidade } from "@fisilab/sim-elasticidade";
+import { gravitacaoTerra } from "@fisilab/sim-gravitacao-terra";
+import { tabelaPeriodica } from "@fisilab/sim-tabela-periodica";
+import { particulasElementares } from "@fisilab/sim-particulas-elementares";
+import { cosmologia } from "@fisilab/sim-cosmologia";
 import { planoInclinado } from "@fisilab/sim-plano-inclinado";
 import { plan, type PlannedSim } from "./plan.ts";
 import { practices } from "./practices.ts";
@@ -316,6 +322,12 @@ export const catalog: CatalogEntry[] = [
   { sim: moleculasLuz, covers: [] },
   { sim: probabilidadeMontecarlo, covers: [] },
   { sim: epidemiaSir, covers: [] },
+  { sim: escalasUnidades, covers: [] },
+  { sim: elasticidade, covers: [] },
+  { sim: gravitacaoTerra, covers: [] },
+  { sim: tabelaPeriodica, covers: [] },
+  { sim: particulasElementares, covers: [] },
+  { sim: cosmologia, covers: [] },
 ];
 
 export const simulations = catalog.map((c) => c.sim);

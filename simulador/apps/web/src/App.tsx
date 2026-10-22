@@ -9,6 +9,15 @@ import { SensorPage } from "./pages/SensorPage.tsx";
 import { ConceptsPage } from "./pages/ConceptsPage.tsx";
 import { ChallengesPage } from "./pages/ChallengesPage.tsx";
 import { NotebookPage } from "./pages/NotebookPage.tsx";
+import { BookPage } from "./pages/BookPage.tsx";
+import { ChapterPage } from "./pages/ChapterPage.tsx";
+import { AppendixPage } from "./pages/AppendixPage.tsx";
+import { AnswersPage } from "./pages/AnswersPage.tsx";
+import { BookIndexPage } from "./pages/BookIndexPage.tsx";
+import { chapters, findChapter } from "./livro/sumario.ts";
+import { chapterContents } from "./livro/conteudo.ts";
+import { findApendice } from "./livro/apendices/index.ts";
+import { BOOK_HREF, CATALOG_HREF, bookRefs } from "./livro/livro.ts";
 import { catalog, findSim, pending } from "./catalog.ts";
 import { plan } from "./plan.ts";
 import { paramsFromQuery, practiceHref, simHref, useRoute } from "./router.ts";
@@ -31,19 +40,37 @@ export function App() {
   useEffect(() => {
     const sim = route.simId ? findSim(route.simId) : undefined;
     const pr = route.practiceId ? findPractice(route.practiceId) : undefined;
-    document.title = sim ? `${sim.title} · FisiLab` : pr ? `${pr.title} · FisiLab` : "FisiLab · Simulador";
-  }, [route.simId, route.practiceId]);
+    const ch = route.page === "chapter" && route.chapter ? findChapter(route.chapter) : undefined;
+    const ap = route.page === "appendix" && route.appendixId ? findApendice(route.appendixId) : undefined;
+    document.title = sim
+      ? `${sim.title} · FisiLab`
+      : pr
+        ? `${pr.title} · FisiLab`
+        : ch
+          ? `Cap. ${ch.n} ${ch.title} · FisiLab`
+          : ap
+            ? `Apêndice ${ap.letra} · FisiLab`
+            : route.page === "catalog"
+              ? "Simulações · FisiLab"
+              : "FisiLab · Física para engenharia";
+  }, [route.simId, route.practiceId, route.page, route.chapter, route.appendixId]);
 
   if (embed && route.page === "sim") return <SimPage simId={route.simId!} query={route.query} embed />;
 
   return (
     <div className="app">
       <header className="topbar">
-        <a className="brand" href="#/">
+        <a className="brand" href={BOOK_HREF}>
           FisiLab
         </a>
         <span className="subtitle">Laboratório virtual de física para engenharia</span>
         <nav className="nav-links" aria-label="Seções">
+          <a className="nav-link" href={BOOK_HREF}>
+            Livro
+          </a>
+          <a className="nav-link" href={CATALOG_HREF}>
+            Simulações
+          </a>
           <a className="nav-link" href="#/concepcoes">
             Concepções
           </a>
@@ -84,8 +111,18 @@ export function App() {
           <ChallengesPage id={route.challengeId} />
         ) : route.page === "assignment" && route.code ? (
           <AssignmentPage code={route.code} query={route.query} />
-        ) : (
+        ) : route.page === "catalog" ? (
           <CatalogPage />
+        ) : route.page === "chapter" && route.chapter ? (
+          <ChapterPage n={route.chapter} sectionId={route.sectionId} />
+        ) : route.page === "appendix" && route.appendixId ? (
+          <AppendixPage id={route.appendixId} />
+        ) : route.page === "answers" ? (
+          <AnswersPage chapter={route.chapter} />
+        ) : route.page === "bookIndex" ? (
+          <BookIndexPage />
+        ) : (
+          <BookPage />
         )}
       </main>
     </div>
@@ -245,7 +282,7 @@ function SimPage({ simId, query, embed }: { simId: string; query: URLSearchParam
       <div className="notfound">
         <h1>Simulação não encontrada</h1>
         <p>
-          <a href="#/">Voltar ao catálogo</a>
+          <a href={CATALOG_HREF}>Voltar ao catálogo</a>
         </p>
       </div>
     );
@@ -267,7 +304,7 @@ function SimPage({ simId, query, embed }: { simId: string; query: URLSearchParam
     <>
       {!embed && (
         <nav className="crumbs">
-          <a href="#/">Catálogo</a> <span aria-hidden>›</span> {sim.course} <span aria-hidden>›</span> {sim.title}
+          <a href={CATALOG_HREF}>Simulações</a> <span aria-hidden>›</span> {sim.course} <span aria-hidden>›</span> {sim.title}
           {query.get("concepcao") && (
             <>
               {" "}
@@ -291,6 +328,7 @@ function SimPage({ simId, query, embed }: { simId: string; query: URLSearchParam
           </span>
         </nav>
       )}
+      {!embed && <InTheBook simId={sim.id} />}
       <SimView
         key={sim.id}
         sim={sim}
@@ -333,7 +371,7 @@ function PracticePage({ id }: { id: string }) {
       <div className="notfound">
         <h1>Prática não encontrada</h1>
         <p>
-          <a href="#/">Voltar ao catálogo</a>
+          <a href={CATALOG_HREF}>Voltar ao catálogo</a>
         </p>
       </div>
     );
@@ -341,7 +379,7 @@ function PracticePage({ id }: { id: string }) {
   return (
     <>
       <nav className="crumbs">
-        <a href="#/">Catálogo</a> <span aria-hidden>›</span> {practice.course} <span aria-hidden>›</span> {practice.title}
+        <a href={CATALOG_HREF}>Simulações</a> <span aria-hidden>›</span> {practice.course} <span aria-hidden>›</span> {practice.title}
       </nav>
       <SimView
         key={practice.id}
@@ -357,5 +395,24 @@ function PracticePage({ id }: { id: string }) {
         )}
       />
     </>
+  );
+}
+
+/** "No livro: Cap. 2, seção 2-7 …": onde a simulação aparece nos capítulos escritos. */
+function InTheBook({ simId }: { simId: string }) {
+  const refs = useMemo(() => bookRefs(chapters, chapterContents, simId), [simId]);
+  if (!refs.length) return null;
+  return (
+    <p className="in-the-book">
+      <span className="in-the-book-label">No livro:</span>{" "}
+      {refs.map((r, i) => (
+        <span key={r.href}>
+          {i > 0 && "; "}
+          <a href={r.href}>
+            Cap. {r.chapter}, seção {r.sectionId} {r.sectionTitle}
+          </a>
+        </span>
+      ))}
+    </p>
   );
 }

@@ -211,6 +211,15 @@ export const processosPv = defineSim<PVState>({
 2. Troque para **adiabático** (sem reiniciar): o mesmo volume final dá outro ponto B. Qual caminho tem mais área?
 3. Trabalho e calor dependem do caminho; $\\Delta U$ depende só dos estados inicial e final.`,
     },
+    {
+      id: "isocorica",
+      label: "Aquecimento a volume constante",
+      params: { processo: ISOCORICO, n: 1, P0: 100, V0: 25, Pf: 150 },
+      guide: `### Volume fixo: termômetro de gás e $C_V$
+1. Arraste B para cima e para baixo. O volume não muda, e a temperatura final acompanha a pressão: $P/T$ fica constante. É o princípio do **termômetro de gás a volume constante**.
+2. Confira que $W = 0$ e que todo o calor vira energia interna: $Q = \\Delta U = nC_V\\Delta T$.
+3. Divida $Q$ por $n\\Delta T$ e compare com $\\tfrac{3}{2}R$ (monoatômico); troque para diatômico (reinicia) e compare com $\\tfrac{5}{2}R$.`,
+    },
   ],
 
   exercises: [
