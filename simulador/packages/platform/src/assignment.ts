@@ -44,6 +44,68 @@ export interface ExerciseAttempt {
   tries: number;
 }
 
+/**
+ * Previsão feita durante a atividade (ciclo prever → observar → explicar). `chosen` é o índice da
+ * opção escolhida (-1 = não respondida). `sim`, `scenario` e `index` identificam a pergunta; envios
+ * antigos (Fase 6) só traziam `question`, `chosen` e `correct`.
+ */
+export interface SubmissionPrediction {
+  question: string;
+  chosen: number;
+  correct: boolean;
+  sim?: string;
+  scenario?: string;
+  /** Posição da pergunta no cenário. */
+  index?: number;
+  /** Texto da opção escolhida, para o professor ler sem abrir a sim. */
+  option?: string;
+  /** Quando foi escolhida (ISO). */
+  at?: string;
+  /** A resposta já foi revelada (o aluno rodou a sim depois de prever): não muda mais. */
+  locked?: boolean;
+}
+
+const samePrediction = (a: SubmissionPrediction, b: SubmissionPrediction) =>
+  (a.sim ?? "") === (b.sim ?? "") && (a.scenario ?? "") === (b.scenario ?? "") && (a.index !== undefined && b.index !== undefined ? a.index === b.index : a.question === b.question);
+
+/**
+ * Registra (ou troca) a escolha do aluno numa pergunta de previsão. Uma previsão já revelada
+ * fica valendo: voltar ao cenário e escolher de novo, sabendo a resposta, não a substitui.
+ */
+export function recordPrediction(list: SubmissionPrediction[], p: SubmissionPrediction): SubmissionPrediction[] {
+  const i = list.findIndex((x) => samePrediction(x, p));
+  if (i < 0) return [...list, p];
+  if (list[i]!.locked) return list;
+  return list.map((x, k) => (k === i ? { ...p, locked: x.locked || p.locked } : x));
+}
+
+/** Trava as previsões de um cenário quando a resposta é revelada. */
+export function lockPredictions(list: SubmissionPrediction[], sim: string, scenario: string): SubmissionPrediction[] {
+  if (!list.some((x) => x.sim === sim && x.scenario === scenario && !x.locked)) return list;
+  return list.map((x) => (x.sim === sim && x.scenario === scenario && x.chosen >= 0 ? { ...x, locked: true } : x));
+}
+
+/**
+ * Previsões que vão na entrega: as registradas (válidas) mais as perguntas esperadas da atividade
+ * que o aluno deixou sem resposta, como em branco (chosen = -1), para contarem no mapa e na nota.
+ */
+export function submissionPredictions(
+  recorded: unknown,
+  expected: { sim: string; scenario: string; questions: string[] }[] = [],
+): SubmissionPrediction[] {
+  const out: SubmissionPrediction[] = [];
+  for (const r of Array.isArray(recorded) ? (recorded as Partial<SubmissionPrediction>[]) : []) {
+    if (!r || typeof r.question !== "string" || typeof r.chosen !== "number" || !Number.isInteger(r.chosen) || r.chosen < 0) continue;
+    out.push({ ...(r as SubmissionPrediction), correct: r.correct === true });
+  }
+  for (const e of expected)
+    e.questions.forEach((question, index) => {
+      const blank: SubmissionPrediction = { question, chosen: -1, correct: false, sim: e.sim, scenario: e.scenario, index };
+      if (!out.some((x) => samePrediction(x, blank))) out.push(blank);
+    });
+  return out;
+}
+
 export interface Submission {
   v: 1;
   assignment: string;
@@ -52,7 +114,7 @@ export interface Submission {
   startedAt: string;
   submittedAt: string;
   exercises: ExerciseAttempt[];
-  predictions: { question: string; chosen: number; correct: boolean }[];
+  predictions: SubmissionPrediction[];
   practice?: { rows: number; results: { label: string; value: number; u: number; compatible?: boolean }[]; report: string };
   /** Resumo SHA-256 do conteúdo, para o professor detectar arquivos editados à mão. */
   digest?: string;
@@ -63,7 +125,9 @@ export function grade(a: Assignment, s: Submission): number {
   const w = a.weights ?? (a.kind === "pratica" ? { exercises: 4, practice: 6, prediction: 0 } : { exercises: 10, practice: 0, prediction: 0 });
   const total = w.exercises + w.practice + w.prediction || 1;
   const ex = s.exercises.length ? s.exercises.filter((e) => e.correct).length / s.exercises.length : 0;
-  const pr = s.predictions.length ? s.predictions.length / Math.max(1, s.predictions.length) : 0; // ter feito a previsão conta, acertar não
+  const preds = Array.isArray(s.predictions) ? s.predictions : [];
+  // Ter feito a previsão conta, acertar não (prever errado e depois entender é o objetivo).
+  const pr = preds.length ? preds.filter((p) => p.chosen >= 0).length / preds.length : 0;
   let pt = 0;
   if (s.practice) {
     const res = s.practice.results;
@@ -138,6 +202,11 @@ export function submissionFeedback(s: Submission): string {
     const res = s.practice.results;
     parts.push(`medidas: ${s.practice.rows}`);
     if (res.length) parts.push(`resultados compatíveis: ${res.filter((r) => r.compatible !== false).length}/${res.length}`);
+  }
+  const preds = Array.isArray(s.predictions) ? s.predictions : [];
+  if (preds.length) {
+    const done = preds.filter((p) => p.chosen >= 0);
+    parts.push(`previsões feitas: ${done.length}/${preds.length} (${done.filter((p) => p.correct).length} certa${done.filter((p) => p.correct).length === 1 ? "" : "s"})`);
   }
   return parts.join("; ");
 }
@@ -249,7 +318,13 @@ export function difficultyMap(subs: Submission[], describe: (s: Submission) => {
     const d = describe(s);
     const lab = (kind: DifficultyItem["kind"], key: string, fallback: string) => d.label?.(kind, key) ?? fallback;
     for (const e of s.exercises) touch(d.topic, "exercicio", e.exercise, lab("exercicio", e.exercise, e.exercise), s.student.id, e.tries > 0 || e.answer !== null, e.correct);
-    for (const p of s.predictions) touch(d.topic, "previsao", p.question, lab("previsao", p.question, p.question), s.student.id, p.chosen >= 0, p.correct);
+    for (const p of Array.isArray(s.predictions) ? s.predictions : []) {
+      if (!p || typeof p.question !== "string") continue;
+      // Mesma pergunta em cenários diferentes são itens diferentes.
+      const key = p.scenario ? `${p.scenario}|${p.question}` : p.question;
+      const answered = typeof p.chosen === "number" && p.chosen >= 0;
+      touch(d.topic, "previsao", key, lab("previsao", key, p.question), s.student.id, answered, answered && p.correct === true);
+    }
     for (const r of s.practice?.results ?? []) {
       if (r.compatible === undefined) continue;
       touch(d.topic, "pratica", r.label, lab("pratica", r.label, `Resultado: ${r.label}`), s.student.id, true, r.compatible);
