@@ -8,3 +8,4 @@ export * from "./exercises.ts";
 export * from "./vec.ts";
 export * from "./mna.ts";
 export * from "./fields.ts";
+export * from "./view3d.ts";

@@ -4,6 +4,9 @@ import { Bench, SimView, Tutor, getProgress, onProgressChange, useTheme } from "
 import { tutorClient } from "./account.ts";
 import { AssignmentPage } from "./pages/AssignmentPage.tsx";
 import { TeacherPage } from "./pages/TeacherPage.tsx";
+import { VideoPage } from "./pages/VideoPage.tsx";
+import { SensorPage } from "./pages/SensorPage.tsx";
+import { NotebookPage } from "./pages/NotebookPage.tsx";
 import { catalog, findSim, pending } from "./catalog.ts";
 import { plan } from "./plan.ts";
 import { paramsFromQuery, practiceHref, simHref, useRoute } from "./router.ts";
@@ -38,9 +41,20 @@ export function App() {
           FisiLab
         </a>
         <span className="subtitle">Laboratório virtual de física para engenharia</span>
-        <a className="nav-link" href="#/professor">
-          Professor
-        </a>
+        <nav className="nav-links" aria-label="Seções">
+          <a className="nav-link" href="#/video">
+            Vídeo
+          </a>
+          <a className="nav-link" href="#/sensores">
+            Sensores
+          </a>
+          <a className="nav-link" href="#/notebook">
+            Notebook
+          </a>
+          <a className="nav-link" href="#/professor">
+            Professor
+          </a>
+        </nav>
         <ThemeToggle />
       </header>
       <main className="content">
@@ -50,6 +64,12 @@ export function App() {
           <PracticePage id={route.practiceId} />
         ) : route.page === "teacher" ? (
           <TeacherPage query={route.query} />
+        ) : route.page === "video" ? (
+          <VideoPage />
+        ) : route.page === "sensors" ? (
+          <SensorPage />
+        ) : route.page === "notebook" ? (
+          <NotebookPage />
         ) : route.page === "assignment" && route.code ? (
           <AssignmentPage code={route.code} query={route.query} />
         ) : (
