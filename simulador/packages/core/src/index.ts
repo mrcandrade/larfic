@@ -2,3 +2,8 @@ export * from "./simulation.ts";
 export * from "./integrators.ts";
 export * from "./runner.ts";
 export * from "./export.ts";
+export * from "./draw.ts";
+export * from "./random.ts";
+export * from "./exercises.ts";
+export * from "./vec.ts";
+export * from "./mna.ts";

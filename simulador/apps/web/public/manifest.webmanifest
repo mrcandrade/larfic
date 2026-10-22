@@ -1,0 +1,12 @@
+{
+  "name": "FisiLab · Simulador",
+  "short_name": "FisiLab",
+  "description": "Laboratório virtual de física para engenharia",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7f9",
+  "theme_color": "#2f7de1",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

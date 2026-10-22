@@ -1,0 +1,152 @@
+/* Design system do FisiLab: tokens no :root, componentes com prefixo fl-. */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --text: #1c2430;
+  --muted: #5d6b7e;
+  --border: #dde2e9;
+  --grid: rgba(93, 107, 126, 0.18);
+  --accent: #2f7de1;
+  --accent-text: #ffffff;
+  --ok: #18794e;
+  --bad: #c2382f;
+  --scheme: light;
+  color-scheme: light;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161c;
+    --panel: #1a2029;
+    --text: #e6ebf2;
+    --muted: #97a3b4;
+    --border: #2b3441;
+    --grid: rgba(151, 163, 180, 0.15);
+    --accent: #5b9cf0;
+    --accent-text: #0b1220;
+    --ok: #4cc38a;
+    --bad: #f0645a;
+    --scheme: dark;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161c;
+  --panel: #1a2029;
+  --text: #e6ebf2;
+  --muted: #97a3b4;
+  --border: #2b3441;
+  --grid: rgba(151, 163, 180, 0.15);
+  --accent: #5b9cf0;
+  --accent-text: #0b1220;
+  --ok: #4cc38a;
+  --bad: #f0645a;
+  --scheme: dark;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); }
+h1, h2, h3 { margin: 0 0 0.5rem; line-height: 1.2; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+h3 { font-size: 1rem; }
+a { color: var(--accent); }
+
+button, select, input, textarea { font: inherit; color: inherit; }
+button {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.4rem 0.8rem; cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.fl-primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); min-width: 6rem; }
+button.fl-active { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
+select, input[type="number"], input[type="text"], input:not([type]), textarea {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.3rem 0.45rem;
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.fl-simview {
+  display: grid; gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-areas:
+    "head head"
+    "stage side"
+    "chart readouts"
+    "theory theory"
+    "extra extra";
+}
+.fl-simview > section, .fl-simview > aside {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; min-width: 0;
+}
+.fl-sim-header { grid-area: head; }
+.fl-sim-header p { margin: 0; color: var(--muted); max-width: 72ch; }
+.fl-eyebrow { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem !important; }
+.fl-stage-panel { grid-area: stage; align-self: start; }
+.fl-side-panel { grid-area: side; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-content: start; }
+.fl-side-panel select { width: 100%; min-width: 0; }
+.fl-readouts { grid-area: readouts; }
+.fl-chart-panel { grid-area: chart; }
+.fl-theory { grid-area: theory; display: grid; gap: 1rem; }
+.fl-extra { grid-area: extra; }
+
+.fl-embed { grid-template-areas: "stage side" "chart readouts"; }
+
+.fl-stage canvas { width: 100%; display: block; }
+.fl-playback, .fl-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+.fl-speed { display: flex; gap: 0.4rem; align-items: center; color: var(--muted); font-size: 0.9rem; }
+.fl-clock { margin-left: auto; font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; }
+
+.fl-scenario { display: grid; gap: 0.3rem; font-size: 0.9rem; color: var(--muted); }
+.fl-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+.fl-control { min-width: 0; display: grid; gap: 0.2rem; font-size: 0.9rem; }
+.fl-control label { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.fl-value { display: flex; align-items: center; gap: 0.3rem; }
+.fl-control input[type="number"] { width: 5.5rem; text-align: right; }
+.fl-control input[type="range"] { width: 100%; margin: 0; accent-color: var(--accent); }
+.fl-unit { color: var(--muted); font-size: 0.85rem; min-width: 2.5rem; }
+
+.fl-readouts table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 0.75rem; }
+.fl-readouts th { text-align: left; font-weight: 400; color: var(--muted); padding: 0.2rem 0; }
+.fl-readouts td { text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; padding: 0.2rem 0.3rem; }
+.fl-check { font-size: 0.85rem; color: var(--muted); }
+
+.fl-chart-controls { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; margin-bottom: 0.5rem; }
+.fl-chart-controls label { display: flex; gap: 0.4rem; align-items: center; font-size: 0.9rem; color: var(--muted); }
+.fl-plot { position: relative; width: 100%; }
+.fl-plot canvas { width: 100%; display: block; }
+.fl-plot-tip {
+  position: absolute; transform: translate(-50%, calc(-100% - 10px)); pointer-events: none;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 0.15rem 0.4rem;
+  font-size: 0.8rem; font-family: ui-monospace, monospace; white-space: nowrap;
+}
+
+.fl-equation { overflow-x: auto; overflow-y: hidden; }
+.fl-live { border-top: 1px solid var(--border); padding-top: 0.5rem; }
+.fl-markdown { max-width: 75ch; }
+.fl-markdown p { margin: 0.4rem 0; }
+
+.fl-predict, .fl-exercises { border-top: 1px solid var(--border); padding-top: 1rem; max-width: 75ch; }
+.fl-predict fieldset { border: 0; padding: 0; margin: 0 0 1rem; }
+.fl-predict legend { padding: 0; margin-bottom: 0.4rem; font-weight: 600; }
+.fl-option { display: flex; gap: 0.5rem; align-items: baseline; padding: 0.35rem 0.5rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
+.fl-option.chosen { border-color: var(--accent); }
+.fl-option.correct { border-color: var(--ok); color: var(--ok); }
+.fl-option.wrong { border-color: var(--bad); color: var(--bad); }
+.fl-explain { margin-top: 0.4rem; padding: 0.5rem 0.75rem; border-left: 3px solid var(--accent); background: var(--bg); border-radius: 0 6px 6px 0; }
+.fl-hint { color: var(--muted); font-size: 0.9rem; }
+.fl-exercise-list, .fl-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.fl-exercise { margin-top: 0.75rem; display: grid; gap: 0.6rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; }
+.fl-exercise label { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.fl-exercise input { width: 9rem; }
+.fl-ok { color: var(--ok); font-weight: 600; }
+.fl-bad { color: var(--bad); font-weight: 600; }
+
+@media (max-width: 900px) {
+  .fl-simview, .fl-embed {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "head" "stage" "side" "chart" "readouts" "theory" "extra";
+  }
+}

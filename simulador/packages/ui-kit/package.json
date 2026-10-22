@@ -1,0 +1,23 @@
+{
+  "name": "@fisilab/ui-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "dependencies": {
+    "@fisilab/core": "workspace:*",
+    "katex": "^0.16.22",
+    "uplot": "^1.6.32"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/katex": "^0.16.8",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1"
+  }
+}
