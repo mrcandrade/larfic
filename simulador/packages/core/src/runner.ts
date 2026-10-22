@@ -1,9 +1,9 @@
 import { integrators } from "./integrators.ts";
 import type { IntegratorName, Params, Simulation, State } from "./simulation.ts";
 
-export interface Sample {
+export interface Sample<S = State> {
   t: number;
-  state: State;
+  state: S;
   /** Valores dos observáveis, na ordem de `sim.observables`. */
   values: number[];
 }
@@ -18,35 +18,39 @@ export interface RunnerOptions {
   maxSamples?: number;
 }
 
+function clone<S>(s: S): S {
+  return Array.isArray(s) ? (s.slice() as S) : structuredClone(s);
+}
+
 /**
  * Executa uma simulação com passo de tempo fixo, desacoplado da taxa de
  * quadros: a UI chama `advance(segundosReais)` e o runner dá quantos passos
  * forem necessários. Guarda um histórico de amostras que serve para os
  * gráficos, a exportação CSV e para voltar no tempo.
  */
-export class Runner {
-  readonly sim: Simulation;
+export class Runner<S = State> {
+  readonly sim: Simulation<S>;
   params: Params;
   dt: number;
   integrator: IntegratorName;
   speed = 1;
   t = 0;
-  state: State;
+  state: S;
   finished = false;
-  samples: Sample[] = [];
+  samples: Sample<S>[] = [];
 
   private readonly sampleEvery: number;
   private readonly maxSamples: number;
   private stepCount = 0;
   private accumulator = 0;
 
-  constructor(sim: Simulation, params: Params, opts: RunnerOptions = {}) {
+  constructor(sim: Simulation<S>, params: Params, opts: RunnerOptions = {}) {
     this.sim = sim;
     this.params = { ...params };
-    this.dt = opts.dt ?? 1e-3;
+    this.dt = opts.dt ?? sim.dt ?? 1e-3;
     this.integrator = opts.integrator ?? sim.integrator ?? "rk4";
-    this.sampleEvery = opts.sampleEvery ?? 10;
-    this.maxSamples = opts.maxSamples ?? 20_000;
+    this.sampleEvery = opts.sampleEvery ?? sim.sampleEvery ?? 10;
+    this.maxSamples = opts.maxSamples ?? sim.maxSamples ?? 20_000;
     this.state = sim.init(this.params);
     this.record();
   }
@@ -62,12 +66,24 @@ export class Runner {
     this.record();
   }
 
+  /** Troca parâmetros sem reiniciar (para parâmetros marcados como `live`). */
+  setLiveParams(params: Params): void {
+    this.params = { ...params };
+  }
+
+  /** Substitui o estado (interação do aluno no palco) e grava uma amostra. */
+  setState(state: S): void {
+    this.state = state;
+    this.finished = false;
+    this.record();
+  }
+
   /** Avança `realSeconds` de tempo de parede multiplicado por `speed`. */
   advance(realSeconds: number): void {
     if (this.finished) return;
     this.accumulator += realSeconds * this.speed;
-    // Evita a "espiral da morte" quando a aba fica em segundo plano.
-    const maxSteps = 20_000;
+    // Limita o trabalho por quadro para não travar a aba (ex.: voltou do segundo plano).
+    const maxSteps = 5_000;
     let n = 0;
     while (this.accumulator >= this.dt && !this.finished && n < maxSteps) {
       this.stepOnce();
@@ -94,7 +110,18 @@ export class Runner {
     this.state = next;
     this.t = tNext;
     this.stepCount++;
+    if (this.sim.tEnd !== undefined && this.t >= this.sim.tEnd - 1e-12) {
+      this.finished = true;
+      this.record();
+      return;
+    }
     if (this.stepCount % this.sampleEvery === 0) this.record();
+  }
+
+  /** Avança até o fim (ou `tMax`) sem animação: usado em testes e exercícios. */
+  runToEnd(tMax = this.sim.tEnd ?? 60): this {
+    while (!this.finished && this.t < tMax - 1e-12) this.stepOnce();
+    return this;
   }
 
   /** Volta o estado para a amostra gravada mais próxima de `t` (descarta o futuro). */
@@ -104,26 +131,34 @@ export class Runner {
     const s = this.samples[i];
     if (!s) return;
     this.samples.length = i + 1;
-    this.state = [...s.state];
+    this.state = clone(s.state);
     this.t = s.t;
     this.finished = false;
     this.accumulator = 0;
     this.stepCount = Math.round(s.t / this.dt);
   }
 
-  observe(state: State = this.state, t: number = this.t): number[] {
+  observe(state: S = this.state, t: number = this.t): number[] {
     return this.sim.observables.map((o) => o.value(state, this.params, t));
   }
 
-  private integrate(y: State, t: number, h: number): State {
+  /** Valor atual de um observável pela chave ("t" devolve o tempo). */
+  value(key: string): number {
+    if (key === "t") return this.t;
+    const o = this.sim.observables.find((x) => x.key === key);
+    if (!o) throw new Error(`${this.sim.id}: observável desconhecido "${key}"`);
+    return o.value(this.state, this.params, this.t);
+  }
+
+  private integrate(y: S, t: number, h: number): S {
     if (this.sim.step) return this.sim.step(y, this.params, t, h);
     const f = this.sim.derivatives;
     if (!f) throw new Error(`${this.sim.id}: implemente derivatives ou step`);
-    return integrators[this.integrator](f, y, this.params, t, h);
+    return integrators[this.integrator](f, y as State, this.params, t, h) as S;
   }
 
   /** Bissecção no tamanho do passo até o evento cruzar zero. */
-  private locateEvent(y: State, t: number, dt: number): number {
+  private locateEvent(y: S, t: number, dt: number): number {
     const stop = this.sim.stopWhen!;
     let lo = 0;
     let hi = dt;
@@ -136,7 +171,7 @@ export class Runner {
   }
 
   private record(): void {
-    this.samples.push({ t: this.t, state: [...this.state], values: this.observe() });
+    this.samples.push({ t: this.t, state: clone(this.state), values: this.observe() });
     if (this.samples.length > this.maxSamples) this.samples.splice(0, this.samples.length - this.maxSamples);
   }
 }
