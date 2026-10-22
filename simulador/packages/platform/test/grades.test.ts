@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { askReportReview, csvField, encodeAssignment, difficultyMap, latestSubmissions, moodleCsv, reportReviewSystem, type Assignment, type Submission } from "../src/index.ts";
+import {
+  askReportReview, classCsv, csvField, encodeAssignment, difficultyMap, grade, latestSubmissions, lockPredictions, moodleCsv, recordPrediction, reportReviewSystem,
+  assignmentOf, legacyWeights, submissionFeedback, submissionPredictions, suggestedWeights, weightShares, type Assignment, type Submission, type SubmissionPrediction,
+} from "../src/index.ts";
 
 const a: Assignment = { v: 1, title: "Pêndulo, lista 1", kind: "sim", target: "pendulos", perExercise: 1 };
 
@@ -110,5 +113,113 @@ describe("revisão de relatório pelo tutor", () => {
     expect(reportReviewSystem()).toContain("português do Brasil");
     const failing = (async () => new Response("{}", { status: 500 })) as unknown as typeof fetch;
     expect(await askReportReview("# R", { endpoint: "https://x", fetchFn: failing })).toBeNull();
+  });
+});
+
+describe("previsões na atividade", () => {
+  const q = (index: number, chosen: number, correct: boolean, extra: Partial<SubmissionPrediction> = {}): SubmissionPrediction => ({
+    sim: "pendulos", scenario: "grande", index, question: `Pergunta ${index + 1}?`, chosen, correct, option: `opção ${chosen + 1}`, ...extra,
+  });
+
+  it("troca a escolha até a resposta ser revelada; depois ela fica valendo", () => {
+    let l = recordPrediction([], q(0, 1, false));
+    l = recordPrediction(l, q(1, 0, true));
+    l = recordPrediction(l, q(0, 2, true));
+    expect(l.map((p) => [p.index, p.chosen])).toEqual([[0, 2], [1, 0]]);
+    l = lockPredictions(l, "pendulos", "grande");
+    expect(l.every((p) => p.locked)).toBe(true);
+    expect(lockPredictions(l, "pendulos", "grande")).toBe(l);
+    // Voltar ao cenário e responder sabendo a resposta não muda a previsão registrada.
+    expect(recordPrediction(l, q(0, 0, true))).toBe(l);
+    // A mesma pergunta em outro cenário é outra previsão; travar um cenário não trava o outro.
+    l = recordPrediction(l, q(0, 1, false, { scenario: "pequeno" }));
+    expect(l).toHaveLength(3);
+    expect(lockPredictions(l, "pendulos", "grande")).toBe(l);
+    expect(lockPredictions(l, "pendulos", "pequeno")[2]!.locked).toBe(true);
+  });
+
+  it("monta as previsões da entrega: descarta registros inválidos e põe em branco as cobradas sem resposta", () => {
+    const recorded = [q(0, 1, true), { question: "sem escolha" }, { question: "x", chosen: -1, correct: true }, null, q(5, 0, "sim" as unknown as boolean)];
+    const out = submissionPredictions(recorded, [{ sim: "pendulos", scenario: "grande", questions: ["Pergunta 1?", "Pergunta 2?"] }]);
+    expect(out.map((p) => [p.index, p.chosen, p.correct])).toEqual([[0, 1, true], [5, 0, false], [1, -1, false]]);
+    expect(out[2]).toMatchObject({ question: "Pergunta 2?", sim: "pendulos", scenario: "grande" });
+    expect(submissionPredictions(undefined)).toEqual([]);
+    expect(submissionPredictions("lixo", [])).toEqual([]);
+  });
+
+  const base = (id: string, name: string, predictions: SubmissionPrediction[]): Submission => ({ ...sub(id, name, "2026-10-02", []), predictions });
+
+  it("entram no mapa por cenário, com brancos e a distribuição das escolhas", () => {
+    const subs = [
+      base("1", "Ana", [q(0, 1, false), q(1, -1, false)]),
+      base("2", "Bia", [q(0, 0, true), q(1, 2, true)]),
+      base("3", "Caio", [q(0, 1, false), q(0, 0, true, { scenario: "pequeno" })]),
+      // Envio antigo (Fase 6), só com o texto da pergunta.
+      { ...sub("4", "Davi", "2026-10-02", []), predictions: [{ question: "Pergunta 1?", chosen: 3, correct: false }] },
+    ];
+    const m = difficultyMap(subs, () => ({ topic: "Oscilações" }));
+    const items = m.topics[0]!.items;
+    const p1 = items.find((i) => i.key === "Oscilações|previsao|grande|Pergunta 1?")!;
+    expect(p1.kind).toBe("previsao");
+    expect(p1.label).toBe("Pergunta 1?");
+    expect(p1.total).toEqual({ attempts: 3, correct: 1, blank: 0, rate: 1 / 3 });
+    expect(p1.choices).toEqual({ "opção 2": 2, "opção 1": 1 });
+    const p2 = items.find((i) => i.key === "Oscilações|previsao|grande|Pergunta 2?")!;
+    expect(p2.total).toEqual({ attempts: 1, correct: 1, blank: 1, rate: 1 });
+    expect(p2.cells["1"]).toEqual({ attempts: 0, correct: 0, blank: 1, rate: null });
+    expect(items.find((i) => i.key === "Oscilações|previsao|pequeno|Pergunta 1?")!.total.rate).toBe(1);
+    const old = items.find((i) => i.key === "Oscilações|previsao|Pergunta 1?")!;
+    expect(old.choices).toEqual({ "Opção 4": 1 });
+    // Item mais difícil primeiro.
+    expect(items[0]!.total.rate).toBe(0);
+  });
+
+  it("na nota conta ter previsto (não acertar); planilha e comentário mostram as previsões", () => {
+    const w: Assignment = { ...a, weights: { exercises: 0, practice: 0, prediction: 10 } };
+    expect(grade(w, base("1", "Ana", [q(0, 1, false), q(1, -1, false)]))).toBe(5);
+    expect(grade(w, base("2", "Bia", [q(0, 0, true), q(1, 2, false)]))).toBe(10);
+    expect(grade(w, base("3", "Caio", []))).toBe(0);
+    const s = base("1", "Ana", [q(0, 1, false), q(1, 0, true), q(2, -1, false)]);
+    expect(submissionFeedback(s)).toBe("Exercícios certos: 0/0; previsões feitas: 2/3 (1 certa)");
+    const csv = classCsv(w, [s]).split("\n");
+    expect(csv[0]).toContain("Previsões feitas;Previsões certas;Nota");
+    expect(csv[1]).toMatch(/;2;1;6,7$/);
+  });
+});
+
+describe("pesos da nota", () => {
+  it("sugere 10% para previsões quando o cenário tem perguntas; sem elas, como antes", () => {
+    expect(suggestedWeights("sim", { predictions: true, exercises: true })).toEqual({ exercises: 9, practice: 0, prediction: 1 });
+    expect(suggestedWeights("sim", { predictions: false, exercises: true })).toEqual(legacyWeights("sim"));
+    expect(suggestedWeights("pratica", { predictions: true, exercises: true })).toEqual({ exercises: 3, practice: 6, prediction: 1 });
+    expect(suggestedWeights("pratica", { predictions: false, exercises: true })).toEqual(legacyWeights("pratica"));
+    expect(suggestedWeights("pratica", { predictions: true, exercises: false })).toEqual({ exercises: 0, practice: 9, prediction: 1 });
+    expect(suggestedWeights("sim", { predictions: true, exercises: false })).toEqual({ exercises: 0, practice: 0, prediction: 10 });
+    for (const k of ["sim", "pratica"] as const)
+      for (const predictions of [true, false]) {
+        const w = suggestedWeights(k, { predictions, exercises: true });
+        expect(w.exercises + w.practice + w.prediction).toBe(10);
+      }
+  });
+
+  it("mostra a soma e a fração de cada parte, ignorando valores inválidos", () => {
+    expect(weightShares({ exercises: 9, practice: 0, prediction: 1 })).toEqual({ total: 10, exercises: 90, practice: 0, prediction: 10 });
+    expect(weightShares({ exercises: 2, practice: 4, prediction: 2 })).toEqual({ total: 8, exercises: 25, practice: 50, prediction: 25 });
+    expect(weightShares({ exercises: Number.NaN, practice: -3, prediction: 0 })).toEqual({ total: 0, exercises: 0, practice: 0, prediction: 0 });
+  });
+
+  it("atividades antigas sem pesos dão a mesma nota de antes; a nota usa os pesos gravados no envio", () => {
+    const s: Submission = {
+      ...sub("1", "Ana", "2026-10-03", [true, false]),
+      predictions: [{ question: "q", chosen: 0, correct: false }],
+    };
+    expect(grade(a, s)).toBe(5); // sem pesos: só exercícios
+    expect(grade({ ...a, weights: suggestedWeights("sim", { predictions: true, exercises: true }) }, s)).toBe(5.5);
+    expect(grade({ ...a, weights: { exercises: Number.NaN, practice: 0, prediction: 1 } }, s)).toBe(10);
+    const comPesos = { ...s, assignment: encodeAssignment({ ...a, weights: { exercises: 1, practice: 0, prediction: 1 } }) };
+    expect(assignmentOf(comPesos, a).weights).toEqual({ exercises: 1, practice: 0, prediction: 1 });
+    expect(assignmentOf(s, a)).toBe(a);
+    expect(classCsv(a, [comPesos]).split("\n")[1]).toMatch(/;7,5$/);
+    expect(classCsv(a, [s]).split("\n")[1]).toMatch(/;5$/);
   });
 });

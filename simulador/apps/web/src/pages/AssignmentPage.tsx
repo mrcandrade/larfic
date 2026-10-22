@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { analyze, draftReport, mergeSections, reportKey, reportToMarkdown, type Row, type SavedReport } from "@fisilab/analysis";
-import { decodeAssignment, grade, sealSubmission, studentSeed, type Assignment, type ExerciseAttempt, type Submission } from "@fisilab/platform";
+import {
+  decodeAssignment, grade, lockPredictions, recordPrediction, sealSubmission, studentSeed, submissionPredictions,
+  type Assignment, type ExerciseAttempt, type Submission, type SubmissionPrediction,
+} from "@fisilab/platform";
 import { Bench, GradedExercises, Markdown, SimView, Tutor, useTheme } from "@fisilab/ui-kit";
 import { backend, freshSession, tutorClient, useProfile } from "../account.ts";
 import { findSim } from "../catalog.ts";
@@ -10,6 +13,8 @@ import { ProfileForm } from "./ProfileForm.tsx";
 interface Local {
   startedAt: string;
   attempts: ExerciseAttempt[];
+  /** Previsões feitas na atividade (sobrevivem a recarregar a página até o envio). */
+  predictions?: SubmissionPrediction[];
   submittedAt?: string;
 }
 
@@ -78,6 +83,10 @@ export function AssignmentPage({ code, query }: { code: string; query: URLSearch
   const exIds = a.exercises?.length ? a.exercises : (sim.exercises ?? []).map((e) => e.id);
   const items = exIds.flatMap((ex) => Array.from({ length: a.perExercise ?? 1 }, (_, k) => ({ exercise: ex, seed: studentSeed(profile.matricula, code, ex, k) })));
   const late = a.due ? Date.now() > Date.parse(a.due) : false;
+  // Cenário da atividade: as perguntas de previsão dele são cobradas (as não respondidas vão em branco).
+  const mainScenario = sim.scenarios.find((s) => s.id === (a.scenario ?? practice?.scenario)) ?? sim.scenarios[0];
+  const expectedPredictions = mainScenario?.predict?.length ? [{ sim: sim.id, scenario: mainScenario.id, questions: mainScenario.predict.map((q) => q.question) }] : [];
+  const madePredictions = (local.predictions ?? []).filter((p) => p.chosen >= 0).length;
 
   // Relatório do gerador da bancada (seções editadas pelo aluno sobre o rascunho automático).
   const practiceReport = (rows: Row[], answers: string[], res: ReturnType<typeof analyze>) => {
@@ -116,7 +125,7 @@ export function AssignmentPage({ code, query }: { code: string; query: URLSearch
       startedAt: local.startedAt,
       submittedAt: new Date().toISOString(),
       exercises: items.map((it) => local.attempts.find((x) => x.exercise === it.exercise && x.seed === it.seed) ?? { ...it, answer: null, correct: false, tries: 0 }),
-      predictions: [],
+      predictions: submissionPredictions(local.predictions, expectedPredictions),
       practice: practicePart,
     });
     const nota = grade(a, sub);
@@ -160,6 +169,11 @@ export function AssignmentPage({ code, query }: { code: string; query: URLSearch
         initialScenario={a.scenario ?? practice?.scenario}
         initialParams={{ ...practice?.params, ...a.params }}
         locked={[...(practice?.locked ?? []), ...(a.locked ?? [])]}
+        predictions={{
+          saved: local.predictions ?? [],
+          onRecord: (p) => setLocal((l) => l && { ...l, predictions: recordPrediction(l.predictions ?? [], p) }),
+          onReveal: (scenario) => setLocal((l) => l && { ...l, predictions: lockPredictions(l.predictions ?? [], sim.id, scenario) }),
+        }}
         sidebar={({ runner, scenarioId }) => (
           <>
             {practice && <Bench practice={practice} runner={runner} theme={theme} studentId={profile.matricula} tutor={tutorClient()} />}
@@ -183,6 +197,12 @@ export function AssignmentPage({ code, query }: { code: string; query: URLSearch
           {local.submittedAt ? "Enviar de novo" : "Enviar atividade"}
         </button>
         {local.submittedAt && <span className="fl-muted"> Último envio: {new Date(local.submittedAt).toLocaleString("pt-BR")}</span>}
+        {(madePredictions > 0 || expectedPredictions.length > 0) && (
+          <p className="fl-muted">
+            Previsões registradas: {madePredictions}
+            {expectedPredictions[0] && ` (o cenário da atividade tem ${expectedPredictions[0].questions.length} pergunta${expectedPredictions[0].questions.length === 1 ? "" : "s"} de previsão)`}.
+          </p>
+        )}
         {msg && <p>{msg}</p>}
       </section>
     </div>

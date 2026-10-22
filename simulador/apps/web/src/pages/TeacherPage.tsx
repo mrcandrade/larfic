@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { withOverrides } from "@fisilab/core";
 import {
-  checkSubmission, classCsv, csvField, decodeAssignment, difficultyMap, encodeAssignment, grade, moodleCsv,
-  type Assignment, type DifficultyCell, type DifficultyMap, type Submission,
+  assignmentOf, checkSubmission, clampWeight, classCsv, csvField, decodeAssignment, difficultyMap, encodeAssignment, grade, moodleCsv, suggestedWeights, weightShares,
+  type Assignment, type DifficultyCell, type DifficultyMap, type Submission, type Weights,
 } from "@fisilab/platform";
 import { backend, freshSession, useProfile } from "../account.ts";
 import { catalog, findSim } from "../catalog.ts";
@@ -21,6 +21,27 @@ function download(name: string, text: string, type: string) {
 const narrow: React.CSSProperties = { gridTemplateColumns: "minmax(0, 1fr)" };
 const fullWidth: React.CSSProperties = { width: "100%" };
 
+/** Texto curto para a tabela: sem fórmulas ($…$) nem marcação, até 70 caracteres. */
+function shorten(text: string): string {
+  const t = text.replace(/\$[^$]*\$/g, "…").replace(/\*\*|__|`/g, "").replace(/\s+/g, " ").trim();
+  return t.length > 70 ? `${t.slice(0, 68)}…` : t;
+}
+
+/** Previsões de um envio: feitas/registradas e quantas certas. */
+function predictionSummary(s: Submission): string {
+  const p = Array.isArray(s.predictions) ? s.predictions : [];
+  if (!p.length) return "—";
+  const done = p.filter((x) => x.chosen >= 0);
+  return `${done.length}/${p.length} (${done.filter((x) => x.correct).length} certa${done.filter((x) => x.correct).length === 1 ? "" : "s"})`;
+}
+
+/** Escolhas da turma numa previsão, da mais frequente para a menos. */
+const choicesText = (c: Record<string, number>) =>
+  Object.entries(c)
+    .sort((x, y) => y[1] - x[1])
+    .map(([opt, n]) => `${shorten(opt)} (${n})`)
+    .join("; ");
+
 /** Tópico e rótulos das questões de um envio, a partir da atividade codificada nele. */
 function describeSubmission(s: Submission) {
   let a: Assignment | null = null;
@@ -35,11 +56,17 @@ function describeSubmission(s: Submission) {
   return {
     topic,
     label: (kind: string, key: string) => {
+      if (kind === "previsao") {
+        // Chave "cenário|pergunta" (envios da Fase 7) ou só a pergunta (envios antigos).
+        const bar = key.indexOf("|");
+        const sc = bar > 0 ? sim?.scenarios.find((x) => x.id === key.slice(0, bar)) : undefined;
+        const q = shorten(bar > 0 && sc ? key.slice(bar + 1) : key);
+        return sc && (sim?.scenarios.length ?? 0) > 1 ? `${sc.label}: ${q}` : q;
+      }
       if (kind !== "exercicio") return undefined;
       const ex = sim?.exercises?.find((e) => e.id === key);
       if (!ex) return undefined;
-      const t = ex.prompt.replace(/\{\w+\}/g, "…").replace(/\$[^$]*\$/g, "…");
-      return t.length > 70 ? `${t.slice(0, 68)}…` : t;
+      return shorten(ex.prompt.replace(/\{\w+\}/g, "…"));
     },
   };
 }
@@ -61,11 +88,11 @@ const shortName = (n: string) => {
 };
 
 function mapCsv(m: DifficultyMap): string {
-  const head = ["Tópico", "Questão", "Tipo", "Acerto (%)", "Respondidas", "Certas", "Em branco", ...m.students.map((s) => `${s.name} (${s.id})`)];
+  const head = ["Tópico", "Questão", "Tipo", "Acerto (%)", "Respondidas", "Certas", "Em branco", "Escolhas (previsões)", ...m.students.map((s) => `${s.name} (${s.id})`)];
   const kind = { exercicio: "exercício", previsao: "previsão", pratica: "prática" } as const;
   const lines = m.topics.flatMap((t) =>
     t.items.map((it) =>
-      [t.topic, it.label, kind[it.kind], it.total.rate === null ? "" : Math.round(it.total.rate * 100), it.total.attempts, it.total.correct, it.total.blank, ...m.students.map((s) => pct(it.cells[s.id]).replace("—", "").replace("%", ""))]
+      [t.topic, it.label, kind[it.kind], it.total.rate === null ? "" : Math.round(it.total.rate * 100), it.total.attempts, it.total.correct, it.total.blank, it.choices ? choicesText(it.choices) : "", ...m.students.map((s) => pct(it.cells[s.id]).replace("—", "").replace("%", ""))]
         .map((v) => csvField(v))
         .join(";"),
     ),
@@ -135,6 +162,11 @@ function DifficultyPanel({ subs }: { subs: Submission[] }) {
                     <th scope="row" style={{ textAlign: "left", fontWeight: 400, whiteSpace: "normal", minWidth: "12rem" }}>
                       {it.kind === "previsao" ? "Previsão: " : ""}
                       {it.label}
+                      {it.choices && (
+                        <small className="fl-muted" style={{ display: "block" }}>
+                          Escolhas: {choicesText(it.choices)}
+                        </small>
+                      )}
                     </th>
                     <td style={heat(it.total)} title={cellTitle(it.total)}>
                       {pct(it.total)}
@@ -172,12 +204,20 @@ export function TeacherPage({ query }: { query: URLSearchParams }) {
   const [lockedVals, setLockedVals] = useState<Record<string, number>>({});
   const [exercises, setExercises] = useState<string[]>([]);
   const [perExercise, setPerExercise] = useState(1);
+  /** Pesos editados pelo professor; null = sugeridos para a sim/cenário escolhidos. */
+  const [weights, setWeights] = useState<Weights | null>(null);
   const [link, setLink] = useState("");
   const [subs, setSubs] = useState<{ s: Submission; ok: boolean }[]>([]);
   const [msg, setMsg] = useState("");
 
   const simId = kind === "sim" ? target : practices.find((p) => p.id === target)?.sim ?? "";
   const sim = findSim(simId);
+  const practice = kind === "pratica" ? practices.find((p) => p.id === target) : undefined;
+  const mainScenario = sim?.scenarios.find((s) => s.id === (kind === "sim" ? scenario : practice?.scenario)) ?? sim?.scenarios[0];
+  const hasPredictions = Boolean(mainScenario?.predict?.length);
+  const w = weights ?? suggestedWeights(kind, { predictions: hasPredictions, exercises: (sim?.exercises?.length ?? 0) > 0 });
+  const shares = weightShares(w);
+  const setWeight = (k: keyof Weights, v: number) => setWeights({ ...w, [k]: clampWeight(v) });
   const base = useMemo(() => (sim ? withOverrides(sim, sim.scenarios.find((s) => s.id === scenario)?.params ?? {}) : {}), [sim, scenario]);
 
   const assignment: Assignment = {
@@ -193,6 +233,7 @@ export function TeacherPage({ query }: { query: URLSearchParams }) {
     perExercise,
     instructions: instructions || undefined,
     due: due || undefined,
+    weights: w,
   };
 
   if (!profile) return <ProfileForm askRole initial={{ name: "", matricula: "", role: "professor" }} />;
@@ -257,6 +298,7 @@ export function TeacherPage({ query }: { query: URLSearchParams }) {
                 setScenario("");
                 setLockedVals({});
                 setExercises([]);
+                setWeights(null);
               }}
             >
               <option value="sim">Simulação com exercícios</option>
@@ -273,6 +315,7 @@ export function TeacherPage({ query }: { query: URLSearchParams }) {
                 setScenario("");
                 setLockedVals({});
                 setExercises([]);
+                setWeights(null);
               }}
             >
               {kind === "sim"
@@ -291,7 +334,14 @@ export function TeacherPage({ query }: { query: URLSearchParams }) {
           {kind === "sim" && sim && sim.scenarios.length > 0 && (
             <label>
               Cenário inicial
-              <select style={fullWidth} value={scenario} onChange={(e) => setScenario(e.target.value)}>
+              <select
+                style={fullWidth}
+                value={scenario}
+                onChange={(e) => {
+                  setScenario(e.target.value);
+                  setWeights(null);
+                }}
+              >
                 <option value="">Primeiro cenário</option>
                 {sim.scenarios.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -359,6 +409,45 @@ export function TeacherPage({ query }: { query: URLSearchParams }) {
           </fieldset>
         )}
 
+        <fieldset>
+          <legend>Peso de cada parte na nota</legend>
+          {(sim?.exercises?.length ?? 0) > 0 && (
+            <label className="inline">
+              Exercícios
+              <input type="number" min={0} max={10} step={1} value={w.exercises} onChange={(e) => setWeight("exercises", Number(e.target.value))} />
+            </label>
+          )}
+          {kind === "pratica" && (
+            <label className="inline">
+              Prática (medidas e resultados)
+              <input type="number" min={0} max={10} step={1} value={w.practice} onChange={(e) => setWeight("practice", Number(e.target.value))} />
+            </label>
+          )}
+          {hasPredictions && (
+            <label className="inline">
+              Previsões (conta ter previsto, não acertar)
+              <input type="number" min={0} max={10} step={1} value={w.prediction} onChange={(e) => setWeight("prediction", Number(e.target.value))} />
+            </label>
+          )}
+          <p className={shares.total ? "fl-muted" : "fl-bad"} aria-live="polite">
+            {shares.total
+              ? `Soma dos pesos: ${String(shares.total).replace(".", ",")}. Na nota: ${[
+                  (sim?.exercises?.length ?? 0) > 0 && `exercícios ${shares.exercises}%`,
+                  kind === "pratica" && `prática ${shares.practice}%`,
+                  hasPredictions && `previsões ${shares.prediction}%`,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}.`
+              : "Todos os pesos estão em zero: a nota sairá sempre 0."}
+          </p>
+          {!hasPredictions && <p className="fl-muted">O cenário escolhido não tem perguntas de previsão.</p>}
+          {weights && (
+            <button type="button" onClick={() => setWeights(null)}>
+              Voltar aos pesos sugeridos
+            </button>
+          )}
+        </fieldset>
+
         <div className="fl-row">
           <button className="fl-primary" onClick={create}>
             Gerar link da atividade
@@ -407,6 +496,7 @@ export function TeacherPage({ query }: { query: URLSearchParams }) {
                   <th>Nome</th>
                   <th>Exercícios</th>
                   <th>Medidas</th>
+                  <th title="Feitas/cobradas (certas)">Previsões</th>
                   <th>Nota</th>
                   <th>Integridade</th>
                 </tr>
@@ -420,7 +510,8 @@ export function TeacherPage({ query }: { query: URLSearchParams }) {
                       {s.exercises.filter((e) => e.correct).length}/{s.exercises.length}
                     </td>
                     <td>{s.practice?.rows ?? "—"}</td>
-                    <td>{String(grade(assignment, s)).replace(".", ",")}</td>
+                    <td>{predictionSummary(s)}</td>
+                    <td>{String(grade(assignmentOf(s, assignment), s)).replace(".", ",")}</td>
                     <td className={ok ? "fl-ok" : "fl-bad"}>{ok ? "ok" : "arquivo alterado"}</td>
                   </tr>
                 ))}
@@ -428,7 +519,7 @@ export function TeacherPage({ query }: { query: URLSearchParams }) {
             </table>
           </div>
         )}
-        <p className="fl-muted">A nota usa os pesos padrão da atividade montada acima: confira se é a mesma atividade dos envios.</p>
+        <p className="fl-muted">A nota usa os pesos gravados na atividade de cada envio (atividades antigas, sem pesos, seguem o padrão de antes).</p>
         {subs.length > 0 && (
           <p className="fl-muted">
             Para o Moodle: em <strong>Notas → Importar → Arquivo CSV</strong>, escolha o separador vírgula e mapeie <strong>Endereço de email</strong> ou{" "}

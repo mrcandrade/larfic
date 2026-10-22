@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatBR, type Runner } from "@fisilab/core";
 import { Markdown, SimView } from "@fisilab/ui-kit";
-import { fetchClassScores, joinClassByCode, rankClass, submitChallengeScore, type ClassInfo, type ClassRankRow } from "@fisilab/platform";
+import { fetchClassScores, joinClassByCode, rankClass, submitChallengeAttempt, type ClassInfo, type ClassRankRow } from "@fisilab/platform";
 import { backend, freshSession, loadProfile } from "../account.ts";
 import { findSim } from "../catalog.ts";
 import {
@@ -25,6 +25,7 @@ import {
   type Challenge,
   type Level,
   type Metric,
+  type Attempt,
   type Outcome,
 } from "../challenges.ts";
 import "./lab.css";
@@ -315,7 +316,7 @@ function ClassRanking() {
             </button>
           </div>
           {rows && <RankTable rows={rows.map((r) => ({ key: r.aluno, name: r.nome || "(sem nome)", points: r.pontos, stars: r.estrelas, done: r.desafios, me: r.aluno === me }))} />}
-          <p className="lab-small lab-muted">Suas melhores pontuações são enviadas para a turma a cada avaliação.</p>
+          <p className="lab-small lab-muted">Cada avaliação é enviada à turma; o servidor refaz a conta com a sua montagem e guarda a melhor pontuação.</p>
         </>
       )}
       <p className="lab-status" role="status">
@@ -422,7 +423,7 @@ function ChallengePanel({ ch, runner, book, update }: { ch: Challenge; runner: R
       setResult(res);
       setBusy(false);
       update((b) => recordAttempt(b, ch.id, { points: pts, stars: st, seconds }));
-      void sendToClass(ch, res, book.current).then((sent) => sent && setResult((r) => (r === res ? { ...r, sent } : r)));
+      void sendToClass(ch, { params: values, build }, res, book.current).then((sent) => sent && setResult((r) => (r === res ? { ...r, sent } : r)));
     }, 30);
   };
 
@@ -483,13 +484,25 @@ function ChallengePanel({ ch, runner, book, update }: { ch: Challenge; runner: R
   );
 }
 
-async function sendToClass(ch: Challenge, r: Result, name: string): Promise<string | undefined> {
+/** Manda a tentativa (não a pontuação) para o servidor, que refaz a avaliação e grava no ranking da turma. */
+async function sendToClass(ch: Challenge, attempt: Attempt, r: Result, name: string): Promise<string | undefined> {
   const turma = loadClass();
-  if (!backend || !turma || !r.outcome.ok) return undefined;
+  if (!backend || !turma) return undefined;
   try {
     if (!(await freshSession())) return undefined;
-    await submitChallengeScore(backend, { turma: turma.id, nome: loadProfile()?.name || name, desafio: ch.id, pontos: r.points, estrelas: r.stars, tentativas: r.attempt, tempo_s: r.seconds });
-    return `Enviado para o ranking da turma ${turma.nome}.`;
+    const v = await submitChallengeAttempt(backend, {
+      turma: turma.id,
+      nome: loadProfile()?.name || name,
+      desafio: ch.id,
+      params: attempt.params,
+      build: attempt.build,
+      tentativas: r.attempt,
+      tempo_s: r.seconds,
+    });
+    if (!v.ok) return `Tentativa registrada na turma ${turma.nome} (sem pontos).`;
+    return v.pontos === r.points
+      ? `O servidor conferiu a avaliação: ${v.pontos} pontos no ranking da turma ${turma.nome}.`
+      : `O servidor refez a avaliação e registrou ${v.pontos} pontos (${v.estrelas} estrela(s)) no ranking da turma ${turma.nome}.`;
   } catch (e) {
     return `Não foi possível enviar para a turma: ${(e as Error).message}`;
   }

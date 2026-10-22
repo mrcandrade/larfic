@@ -10,6 +10,7 @@ import { Exercises } from "./Exercises.tsx";
 import { prefersReducedMotion, useTheme } from "./theme.ts";
 import { SHORTCUTS, focusKind, shouldAnnounce, shortcutFor, stageSummary, type ShortcutAction } from "./a11y.ts";
 import { progress } from "./progress.ts";
+import type { SubmissionPrediction } from "@fisilab/platform";
 
 const SPEEDS = [0.1, 0.25, 0.5, 1, 2, 5];
 
@@ -33,9 +34,14 @@ export interface SimViewProps {
   onPresentChange?(on: boolean): void;
   /** Começa rodando, a menos que o usuário prefira menos movimento (prefers-reduced-motion). */
   autoplay?: boolean;
+  /**
+   * Previsões de uma atividade: as já salvas (restauradas ao reabrir) e os avisos de cada escolha e
+   * de quando a resposta é revelada. Fora de uma atividade, as previsões só contam no progresso local.
+   */
+  predictions?: { saved: SubmissionPrediction[]; onRecord(p: SubmissionPrediction): void; onReveal(scenario: string): void };
 }
 
-export function SimView({ sim, initialParams, initialScenario, locked, embed, onParamsChange, sidebar, present, onPresentChange, autoplay }: SimViewProps) {
+export function SimView({ sim, initialParams, initialScenario, locked, embed, onParamsChange, sidebar, present, onPresentChange, autoplay, predictions }: SimViewProps) {
   const theme = useTheme();
   const firstScenario = sim.scenarios.find((s) => s.id === initialScenario) ?? sim.scenarios[0];
   const [scenarioId, setScenarioId] = useState(firstScenario?.id ?? "");
@@ -497,10 +503,19 @@ export function SimView({ sim, initialParams, initialScenario, locked, embed, on
               key={scenarioId}
               questions={scenario!.predict!}
               observed={observed}
-              onPredicted={() => {
+              onPredicted={(restored) => {
                 setPredicted(true);
-                progress.prediction(sim.id);
+                if (!restored) progress.prediction(sim.id);
               }}
+              saved={predictions && scenario!.predict!.map((_, i) => predictions.saved.find((p) => p.sim === sim.id && p.scenario === scenarioId && p.index === i))}
+              onChoice={
+                predictions &&
+                ((index, chosen) => {
+                  const q = scenario!.predict![index]!;
+                  predictions.onRecord({ sim: sim.id, scenario: scenarioId, index, question: q.question, chosen, option: q.options[chosen], correct: chosen === q.answer, at: new Date().toISOString() });
+                })
+              }
+              onReveal={predictions && (() => predictions.onReveal(scenarioId))}
             />
           )}
           {scenario && <Markdown text={scenario.guide} />}

@@ -56,22 +56,52 @@ export async function joinClassByCode(backend: Backend, code: string, fetchFn?: 
   return info;
 }
 
-/** Envia uma pontuação; o servidor guarda só a melhor de cada aluno por desafio. */
-export function submitChallengeScore(backend: Backend, row: Omit<ChallengeScoreRow, "aluno" | "atualizado_em">, fetchFn?: typeof fetch): Promise<unknown> {
-  return rpc(
-    backend,
-    "registrar_desafio",
-    {
-      p_turma: row.turma,
-      p_nome: row.nome.slice(0, 60),
-      p_desafio: row.desafio,
-      p_pontos: Math.max(0, Math.round(row.pontos)),
-      p_estrelas: Math.max(0, Math.min(3, Math.round(row.estrelas))),
-      p_tentativas: Math.max(1, Math.round(row.tentativas)),
-      p_tempo_s: Math.max(0, Math.round(row.tempo_s)),
-    },
-    fetchFn,
-  );
+/** Tentativa enviada ao servidor: o que o aluno fez, não a pontuação (o servidor refaz a avaliação). */
+export interface ChallengeAttempt {
+  turma: string;
+  nome: string;
+  desafio: string;
+  params: Record<string, number>;
+  build?: unknown;
+  tentativas: number;
+  tempo_s: number;
+}
+
+/** Resposta da Edge Function `desafio`: a pontuação conferida pelo servidor. */
+export interface VerifiedScore {
+  ok: boolean;
+  pontos: number;
+  estrelas: number;
+  tentativas: number;
+  mensagem: string;
+}
+
+/** Envia a tentativa à Edge Function `desafio`, que a avalia de novo e grava a melhor pontuação. */
+export async function submitChallengeAttempt(backend: Backend, a: ChallengeAttempt, fetchFn: typeof fetch = (...x) => fetch(...x)): Promise<VerifiedScore> {
+  const token = backend.session?.accessToken;
+  if (!token) throw new Error("Entre com seu e-mail para pontuar na turma.");
+  const r = await fetchFn(backend.fnUrl("desafio"), {
+    method: "POST",
+    headers: { apikey: backend.cfg.anonKey, authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      turma: a.turma,
+      nome: a.nome.slice(0, 60),
+      desafio: a.desafio,
+      params: a.params,
+      build: a.build,
+      tentativas: Math.max(1, Math.round(a.tentativas)),
+      tempo_s: Math.max(0, Math.round(a.tempo_s)),
+    }),
+  });
+  const text = await r.text();
+  let body: unknown = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    /* resposta que não é JSON */
+  }
+  if (!r.ok) throw new Error((body as { error?: string } | null)?.error ?? `HTTP ${r.status}`);
+  return body as VerifiedScore;
 }
 
 /** Linhas da turma (a política de RLS só devolve as de turmas em que o usuário está). */

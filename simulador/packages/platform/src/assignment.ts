@@ -120,9 +120,38 @@ export interface Submission {
   digest?: string;
 }
 
-/** Nota de 0 a 10 a partir dos pesos da atividade. */
+export type Weights = NonNullable<Assignment["weights"]>;
+
+/** Pesos de atividades sem `weights` (links antigos): a previsão não conta, como antes. */
+export function legacyWeights(kind: Assignment["kind"]): Weights {
+  return kind === "pratica" ? { exercises: 4, practice: 6, prediction: 0 } : { exercises: 10, practice: 0, prediction: 0 };
+}
+
+/**
+ * Pesos sugeridos para uma atividade nova: a previsão vale 10% quando o cenário tem perguntas de
+ * previsão; a prática só entra em atividades de prática; sem exercícios, o peso deles vai para o resto.
+ */
+export function suggestedWeights(kind: Assignment["kind"], has: { predictions: boolean; exercises: boolean }): Weights {
+  const pred = has.predictions ? 1 : 0;
+  if (kind === "pratica") return { exercises: has.exercises ? 4 - pred : 0, practice: has.exercises ? 6 : 10 - pred, prediction: pred };
+  return has.exercises ? { exercises: 10 - pred, practice: 0, prediction: pred } : { exercises: 0, practice: 0, prediction: pred ? 10 : 0 };
+}
+
+/** Peso válido: número finito entre 0 e 10 (o resto vira 0 ou 10). */
+export const clampWeight = (x: number) => (Number.isFinite(x) ? Math.min(10, Math.max(0, x)) : 0);
+
+/** Soma dos pesos e a fração de cada parte na nota (em %, arredondada), para mostrar ao professor. */
+export function weightShares(w: Weights): { total: number; exercises: number; practice: number; prediction: number } {
+  const e = clampWeight(w.exercises), p = clampWeight(w.practice), r = clampWeight(w.prediction);
+  const total = e + p + r;
+  const pct = (x: number) => (total ? Math.round((100 * x) / total) : 0);
+  return { total, exercises: pct(e), practice: pct(p), prediction: pct(r) };
+}
+
+/** Nota de 0 a 10 a partir dos pesos da atividade (relativos: só a proporção entre eles importa). */
 export function grade(a: Assignment, s: Submission): number {
-  const w = a.weights ?? (a.kind === "pratica" ? { exercises: 4, practice: 6, prediction: 0 } : { exercises: 10, practice: 0, prediction: 0 });
+  const raw = a.weights ?? legacyWeights(a.kind);
+  const w = { exercises: clampWeight(raw.exercises), practice: clampWeight(raw.practice), prediction: clampWeight(raw.prediction) };
   const total = w.exercises + w.practice + w.prediction || 1;
   const ex = s.exercises.length ? s.exercises.filter((e) => e.correct).length / s.exercises.length : 0;
   const preds = Array.isArray(s.predictions) ? s.predictions : [];
@@ -164,11 +193,22 @@ export function studentSeed(studentId: string, assignmentCode: string, exercise:
 
 /** Planilha da turma (CSV com ;) para o professor. */
 export function classCsv(a: Assignment, subs: Submission[]): string {
-  const head = ["Matrícula", "Nome", "Enviado em", "Exercícios certos", "Exercícios", "Medidas", "Nota"];
-  const lines = subs.map((s) =>
-    [s.student.id, s.student.name, s.submittedAt, s.exercises.filter((e) => e.correct).length, s.exercises.length, s.practice?.rows ?? "", String(grade(a, s)).replace(".", ",")].join(";"),
-  );
+  const gradeOf = (s: Submission) => grade(assignmentOf(s, a), s);
+  const head = ["Matrícula", "Nome", "Enviado em", "Exercícios certos", "Exercícios", "Medidas", "Previsões feitas", "Previsões certas", "Nota"];
+  const lines = subs.map((s) => {
+    const done = (Array.isArray(s.predictions) ? s.predictions : []).filter((p) => p.chosen >= 0);
+    return [s.student.id, s.student.name, s.submittedAt, s.exercises.filter((e) => e.correct).length, s.exercises.length, s.practice?.rows ?? "", done.length, done.filter((p) => p.correct).length, String(gradeOf(s)).replace(".", ",")].join(";");
+  });
   return [head.join(";"), ...lines].join("\n");
+}
+
+/** Atividade (com seus pesos) codificada no envio; `fallback` se o código não puder ser lido. */
+export function assignmentOf(s: Submission, fallback: Assignment): Assignment {
+  try {
+    return decodeAssignment(s.assignment);
+  } catch {
+    return fallback;
+  }
 }
 
 /** Mantém só o envio mais recente de cada aluno em cada atividade. */
@@ -271,6 +311,8 @@ export interface DifficultyItem {
   topic: string;
   cells: Record<string, DifficultyCell>;
   total: DifficultyCell;
+  /** Previsões: quantos alunos escolheram cada opção (texto da opção), para ver a concepção dominante. */
+  choices?: Record<string, number>;
 }
 
 export interface DifficultyTopic {
@@ -324,6 +366,11 @@ export function difficultyMap(subs: Submission[], describe: (s: Submission) => {
       const key = p.scenario ? `${p.scenario}|${p.question}` : p.question;
       const answered = typeof p.chosen === "number" && p.chosen >= 0;
       touch(d.topic, "previsao", key, lab("previsao", key, p.question), s.student.id, answered, answered && p.correct === true);
+      if (answered) {
+        const it = items.get(`${d.topic}|previsao|${key}`)!;
+        const opt = typeof p.option === "string" && p.option ? p.option : `Opção ${p.chosen + 1}`;
+        (it.choices ??= {})[opt] = (it.choices[opt] ?? 0) + 1;
+      }
     }
     for (const r of s.practice?.results ?? []) {
       if (r.compatible === undefined) continue;

@@ -1,4 +1,4 @@
-import { defineSim, draw, type Draw, type SimAction, type Theme } from "@fisilab/core";
+import { defineSim, draw, type Draw, type Params, type SimAction, type Theme } from "@fisilab/core";
 import { distToComp, makeComp, sameSegment, si, solveStep, stepValue, type CircuitState, type Comp, type Kind, type Pt, type Tool } from "./model.ts";
 import { PRESETS } from "./presets.ts";
 import { derivation } from "./derivation.ts";
@@ -30,9 +30,10 @@ const snap = (x: number, y: number): Pt => [Math.max(0, Math.min(W, Math.round(x
 
 const first = (s: CircuitState, kind: Kind) => s.comps.find((c) => c.kind === kind);
 
-function withSelected(s: CircuitState, fn: (c: Comp) => Comp): CircuitState {
+/** Altera o componente selecionado e resolve o circuito de novo, para medidas e brilho já valerem com a sim parada. */
+function withSelected(s: CircuitState, p: Params, fn: (c: Comp) => Comp): CircuitState {
   if (s.selected === null) return s;
-  return { ...s, comps: s.comps.map((c) => (c.id === s.selected ? fn(c) : c)) };
+  return solveStep({ ...s, comps: s.comps.map((c) => (c.id === s.selected ? fn(c) : c)) }, p, 1e-3, false);
 }
 
 const toolActions: SimAction<CircuitState>[] = TOOLS.map(({ tool, label }) => ({
@@ -286,22 +287,22 @@ Use **Selecionar** para ver correntes e tensões, fechar chaves e mudar valores.
     {
       id: "mais",
       label: "Valor +",
-      run: (s) => withSelected(s, (c) => (UNIT[c.kind] ? { ...c, value: stepValue(c.kind, c.value, 1) } : c)),
+      run: (s, p) => withSelected(s, p, (c) => (UNIT[c.kind] ? { ...c, value: stepValue(c.kind, c.value, 1) } : c)),
     },
     {
       id: "menos",
       label: "Valor −",
-      run: (s) => withSelected(s, (c) => (UNIT[c.kind] ? { ...c, value: stepValue(c.kind, c.value, -1) } : c)),
+      run: (s, p) => withSelected(s, p, (c) => (UNIT[c.kind] ? { ...c, value: stepValue(c.kind, c.value, -1) } : c)),
     },
     {
       id: "inverter",
       label: "Inverter",
-      run: (s) => withSelected(s, (c) => ({ ...c, a: c.b, b: c.a, i: -c.i, v: -c.v })),
+      run: (s, p) => withSelected(s, p, (c) => ({ ...c, a: c.b, b: c.a, i: -c.i, v: -c.v })),
     },
     {
       id: "chave",
       label: "Abrir/fechar chave",
-      run: (s) => withSelected(s, (c) => (c.kind === "chave" ? { ...c, closed: !c.closed } : c)),
+      run: (s, p) => withSelected(s, p, (c) => (c.kind === "chave" ? { ...c, closed: !c.closed } : c)),
     },
     {
       id: "limpar",
