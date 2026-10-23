@@ -1,0 +1,26 @@
+/* Gráficos de relatório, exportação e gerador de relatório (bancada). */
+.fl-plot-opts { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; align-items: center; font-size: 0.85rem; color: var(--muted); margin: 0.25rem 0; }
+.fl-plot-opts label { display: inline-flex; gap: 0.3rem; align-items: center; }
+.fl-export { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.fl-export > span { font-size: 0.85rem; color: var(--muted); }
+.fl-export button { font-size: 0.85rem; padding: 2px 10px; }
+.fl-chart-tools { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: center; justify-content: space-between; margin-top: 0.4rem; }
+.fl-chart-tools details > summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
+.fl-chart-tools details[open] > .fl-export { margin-top: 0.4rem; }
+.fl-residuals-title { font-size: 0.85rem; color: var(--muted); margin: 0.4rem 0 0; }
+
+.fl-report { display: grid; gap: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+.fl-report > summary { cursor: pointer; font-weight: 600; font-size: 1rem; }
+.fl-report-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 8px; }
+.fl-report-meta label, .fl-report-sec { display: grid; gap: 4px; font-size: 0.9rem; min-width: 0; }
+.fl-report-sec header { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; justify-content: space-between; }
+.fl-report-sec header strong { font-size: 0.95rem; }
+.fl-report-sec textarea { width: 100%; min-height: 4.5rem; resize: vertical; font-size: 0.9rem; line-height: 1.4; }
+.fl-report-auto { font-size: 0.85rem; color: var(--muted); border-left: 3px solid var(--border); padding: 2px 8px; margin: 0; }
+.fl-review { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.9rem; }
+.fl-review li { border-left: 3px solid var(--border); padding: 2px 8px; overflow-wrap: anywhere; }
+.fl-review li.erro { border-color: var(--bad); }
+.fl-review li.aviso { border-color: #c9a227; }
+.fl-review li.ok { border-color: var(--ok); }
+.fl-review b { margin-right: 0.3rem; }
+.fl-tutor-review { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 0.9rem; overflow-wrap: anywhere; }

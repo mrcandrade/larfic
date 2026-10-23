@@ -1,4 +1,5 @@
-import type { Params, Simulation, State } from "@fisilab/core";
+import { defineSim, draw, texNum, type Params, type State } from "@fisilab/core";
+import { derivation } from "./derivation.ts";
 
 /**
  * Lançamento oblíquo com arrasto quadrático.
@@ -29,24 +30,19 @@ export function vacuumTrajectory(p: Params): { range: number; hmax: number } {
   return { range: vx * tFlight, hmax: h0 + Math.max(0, (vy * vy) / (2 * g)) };
 }
 
-export const projetilArrasto: Simulation = {
+export const projetilArrasto = defineSim({
   id: "projetil-arrasto",
   title: "Projétil com arrasto",
   course: "FG I",
+  topic: "Cinemática 2D",
+  priority: "P1",
   summary:
     "Lançamento oblíquo com resistência do ar proporcional a v². Compare com o vácuo, veja a velocidade terminal e acompanhe a energia dissipada.",
+  derivation,
   equations: [
     String.raw`m\,\ddot{\vec r} = m\vec g - \tfrac12 \rho\, C_d A\, |\vec v|\,\vec v`,
     String.raw`v_t = \sqrt{\dfrac{2mg}{\rho C_d A}}`,
     String.raw`E_{mec}(t) + W_{arrasto}(t) = E_{mec}(0)`,
-  ],
-
-  stateVars: [
-    { key: "x", label: "x", unit: "m" },
-    { key: "y", label: "y", unit: "m" },
-    { key: "vx", label: "vₓ", unit: "m/s" },
-    { key: "vy", label: "v_y", unit: "m/s" },
-    { key: "wd", label: "Energia dissipada", unit: "J" },
   ],
 
   params: [
@@ -85,6 +81,7 @@ export const projetilArrasto: Simulation = {
   ],
 
   conserved: "Etot",
+  chart: { x: "x", y: "y" },
 
   scenarios: [
     {
@@ -144,80 +141,78 @@ Repita com ρ = 1,0 kg/m³ (estádio em altitude, como em Denver) e compare.`,
   viewport(p) {
     const { range, hmax } = vacuumTrajectory(p);
     const w = Math.max(range, hmax, 5) * 1.1;
-    return { width: w, height: Math.max(hmax * 1.15, w * 0.4) };
+    return { xMin: 0, xMax: w, yMin: 0, yMax: Math.max(hmax * 1.15, w * 0.4), unit: "m" };
   },
 
-  render(ctx, { state, params, trail, scale }) {
-    const px = 1 / scale;
+  liveEquations(s, p) {
+    const v = speed(s);
+    const k = dragK(p);
+    return [
+      String.raw`|\vec F_d| = \tfrac12 \rho C_d A v^2 = ${texNum(k * v * v)}\ \text{N}`,
+      String.raw`v_t = ${texNum(Math.sqrt((2 * (p.massa ?? 1) * (p.g ?? 9.81)) / Math.max(1e-12, 2 * k)))}\ \text{m/s}`,
+    ];
+  },
+
+  exercises: [
+    {
+      id: "alcance-vacuo",
+      prompt:
+        "Um projétil é lançado do chão com velocidade {v0} m/s a {angulo}° da horizontal, sem resistência do ar (g = 9,81 m/s²). Qual é o alcance horizontal?",
+      vary: { v0: [10, 40, 1], angulo: [15, 75, 0] },
+      fixed: { cd: 0, h0: 0, g: 9.81 },
+      answer: {
+        label: "Alcance",
+        unit: "m",
+        compute: (p) => vacuumTrajectory(p).range,
+      },
+      hint: "Sem arrasto, R = v₀² sen(2θ)/g.",
+    },
+    {
+      id: "velocidade-terminal",
+      prompt:
+        "Uma esfera de {massa} kg e diâmetro {diametro} m (Cd = {cd}) cai no ar (ρ = 1,225 kg/m³, g = 9,81 m/s²). Qual é a velocidade terminal?",
+      vary: { massa: [0.01, 0.5, 3], diametro: [0.03, 0.25, 3], cd: [0.3, 0.6, 2] },
+      fixed: { rho: 1.225, g: 9.81 },
+      answer: {
+        label: "v_t",
+        unit: "m/s",
+        compute: (p) => Math.sqrt((2 * (p.massa ?? 0) * (p.g ?? 0)) / (2 * dragK(p))),
+      },
+      hint: "No equilíbrio, mg = ½ρC_dAv².",
+    },
+  ],
+
+  render(ctx, frame) {
+    const { state, params, trail, theme } = frame;
+    const d = draw(ctx, frame);
     const x = state[X] ?? 0, y = state[Y] ?? 0, vx = state[VX] ?? 0, vy = state[VY] ?? 0;
 
-    // Chão
-    ctx.fillStyle = "rgba(120, 140, 110, 0.35)";
-    ctx.fillRect(-1e4, -1e4, 2e4, 1e4);
+    d.rect(-1e4, -1e4, 2e4, 1e4, { fill: theme.ground });
 
     // Trajetória no vácuo, tracejada, como referência
     const th = ((params.angulo ?? 0) * Math.PI) / 180;
     const v0 = params.v0 ?? 0, g = params.g ?? 9.81, h0 = params.h0 ?? 0;
     const { range } = vacuumTrajectory(params);
-    if (range > 0 && v0 * Math.cos(th) > 1e-9) {
-      ctx.setLineDash([6 * px, 6 * px]);
-      ctx.strokeStyle = "rgba(128, 128, 128, 0.7)";
-      ctx.lineWidth = 1.5 * px;
-      ctx.beginPath();
-      for (let i = 0; i <= 100; i++) {
-        const xi = (range * i) / 100;
-        const ti = xi / (v0 * Math.cos(th));
-        const yi = h0 + v0 * Math.sin(th) * ti - 0.5 * g * ti * ti;
-        if (i === 0) ctx.moveTo(xi, yi);
-        else ctx.lineTo(xi, yi);
-      }
-      ctx.stroke();
-      ctx.setLineDash([]);
+    const v0x = v0 * Math.cos(th);
+    if (range > 0 && v0x > 1e-9) {
+      d.plot((xi) => h0 + v0 * Math.sin(th) * (xi / v0x) - 0.5 * g * (xi / v0x) ** 2, 0, range, {
+        color: theme.muted,
+        dash: [6, 6],
+        alpha: 0.8,
+      });
     }
 
-    // Rastro com arrasto
-    ctx.strokeStyle = "#2f7de1";
-    ctx.lineWidth = 2.5 * px;
-    ctx.beginPath();
-    trail.forEach((s, i) => (i === 0 ? ctx.moveTo(s[X] ?? 0, s[Y] ?? 0) : ctx.lineTo(s[X] ?? 0, s[Y] ?? 0)));
-    ctx.lineTo(x, y);
-    ctx.stroke();
+    d.polyline([...trail.map((s): [number, number] => [s[X] ?? 0, s[Y] ?? 0]), [x, y]], { color: theme.accent, width: 2.5 });
 
-    // Vetores: velocidade (azul) e força de arrasto (vermelho), em pixels fixos por unidade
+    // Vetores: velocidade e força de arrasto (comprimento proporcional a F_d/peso)
     const v = Math.hypot(vx, vy);
     if (v > 1e-9) {
-      arrow(ctx, x, y, (vx / v) * 40 * px, (vy / v) * 40 * px, "#2f7de1", px);
-      const fd = dragK(params) * v * v;
-      const fg = (params.massa ?? 1) * g;
-      const len = Math.min(60, (fd / fg) * 40) * px;
-      if (len > 2 * px) arrow(ctx, x, y, (-vx / v) * len, (-vy / v) * len, "#d9534f", px);
+      d.arrowPx(x, y, vx, vy, 40, { color: theme.accent });
+      const ratio = (dragK(params) * v * v) / ((params.massa ?? 1) * g);
+      d.arrowPx(x, y, -vx, -vy, Math.min(60, ratio * 40), { color: theme.positive });
     }
-
-    // Projétil, desenhado com raio mínimo visível
-    ctx.fillStyle = "#f0a020";
-    ctx.beginPath();
-    ctx.arc(x, y, Math.max((params.diametro ?? 0) / 2, 6 * px), 0, 2 * Math.PI);
-    ctx.fill();
+    d.circle(x, y, (params.diametro ?? 0) / 2, { fill: theme.series[1], minPx: 6 });
   },
-};
-
-function arrow(ctx: CanvasRenderingContext2D, x: number, y: number, dx: number, dy: number, color: string, px: number) {
-  const len = Math.hypot(dx, dy);
-  const ux = dx / len, uy = dy / len;
-  const head = 8 * px;
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineWidth = 2 * px;
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x + dx, y + dy);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x + dx, y + dy);
-  ctx.lineTo(x + dx - head * (ux - 0.5 * uy), y + dy - head * (uy + 0.5 * ux));
-  ctx.lineTo(x + dx - head * (ux + 0.5 * uy), y + dy - head * (uy - 0.5 * ux));
-  ctx.closePath();
-  ctx.fill();
-}
+});
 
 export default projetilArrasto;

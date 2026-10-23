@@ -1,0 +1,58 @@
+/* Modo desafio. Usa os tokens do ui-kit (--bg, --panel, --text, --muted, --border, --accent, --ok, --bad). */
+.ch-page h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.ch-profile .lab-row select, .ch-profile .lab-row input { min-width: 0; max-width: 100%; }
+.ch-totals { margin: 0; }
+
+.ch-cards {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+}
+.ch-card {
+  display: grid; gap: 0.35rem; height: 100%; box-sizing: border-box; padding: 0.8rem 0.9rem;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text); text-decoration: none; min-width: 0;
+}
+.ch-card:hover, .ch-card:focus-visible { border-color: var(--accent); }
+.ch-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ch-card strong { overflow-wrap: anywhere; }
+.ch-card-sim { font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
+.ch-card-foot { display: flex; flex-wrap: wrap; gap: 0.25rem 0.6rem; align-items: center; margin-top: auto; }
+
+.ch-stars { letter-spacing: 0.08em; white-space: nowrap; color: var(--border); font-size: 1.05rem; line-height: 1; }
+.ch-stars .on { color: #c98a00; }
+:root[data-theme="dark"] .ch-stars .on { color: #f2c14e; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ch-stars .on { color: #f2c14e; }
+}
+@media (forced-colors: active) {
+  .ch-stars { color: GrayText; }
+  .ch-stars .on { color: CanvasText; }
+}
+
+.ch-ranks { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); align-items: start; }
+.ch-rank td:first-child, .ch-rank th:first-child { width: 2.5rem; }
+.ch-rank td, .ch-rank th { padding: 0.35rem 0.5rem; text-align: left; overflow-wrap: anywhere; }
+.ch-rank tr.ch-me td { font-weight: 600; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+.ch-screen { display: grid; gap: 1rem; min-width: 0; }
+.ch-screen > * { min-width: 0; }
+.ch-screen .crumbs { margin-bottom: 0; }
+.ch-brief { gap: 0.5rem; }
+.ch-brief-head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.ch-brief-head h1 { margin: 0; font-size: 1.35rem; overflow-wrap: anywhere; }
+.ch-brief p { margin: 0; }
+.ch-brief details summary { cursor: pointer; color: var(--accent); }
+
+.ch-panel { border-color: var(--accent); }
+.ch-panel p { margin: 0; }
+.ch-result { display: grid; gap: 0.5rem; }
+.ch-result:empty { display: none; }
+.ch-score { display: flex; gap: 0.5rem; align-items: center; font-size: 1.1rem; }
+.ch-score .ch-stars { font-size: 1.4rem; }
+.ch-metrics { margin: 0; display: grid; gap: 0.25rem; font-size: 0.9rem; }
+.ch-metrics > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 0.75rem; border-bottom: 1px dashed var(--border); padding-bottom: 0.15rem; }
+.ch-metrics dt { color: var(--muted); }
+.ch-metrics dd { margin: 0; font-variant-numeric: tabular-nums; }
+.ch-next { justify-content: space-between; }
+.ch-jump { justify-self: start; }
+@media (min-width: 901px) { .ch-jump { display: none; } }
