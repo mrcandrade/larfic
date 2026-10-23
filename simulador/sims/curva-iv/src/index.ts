@@ -195,6 +195,7 @@ export const curvaIv = defineSim<IVState>({
   sampleEvery: 10,
   maxSamples: 6000,
 
+  narrowSplit: () => 0.525,
   viewport: () => ({ xMin: 0, xMax: 30, yMin: 0, yMax: 17.2, unit: "" }),
 
   actions: [

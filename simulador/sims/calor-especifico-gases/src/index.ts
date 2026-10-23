@@ -173,6 +173,7 @@ A soma de rotação vai de $J = 0$ até $J_{\max} = \lceil\sqrt{60/x}\,\rceil + 
   sampleEvery: 6,
   tEnd: 600,
 
+  narrowSplit: () => 0.677,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 9 }),
 
   render(ctx, frame) {

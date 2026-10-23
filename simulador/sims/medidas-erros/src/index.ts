@@ -710,6 +710,7 @@ export const medidasErros = defineSim<ME>({
     { id: "centro", label: "Mira no centro", run: (s) => ({ ...s, mira: [0, 0] }) },
   ],
 
+  narrowSplit: () => 0.342,
   viewport(p) {
     const m = modo(p);
     if (m === 1) return { xMin: -2.5, xMax: 16.8, yMin: -5.4, yMax: 9.3 };

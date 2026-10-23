@@ -629,6 +629,7 @@ Obs.: para o elétron $\\vec\\mu$ aponta contra o spin; a porta "+" aqui é a de
     { id: "1000", label: "Enviar 1000 átomos (rápido)", run: (s, p) => fastForward(s, p, 1000) },
     { id: "zerar", label: "Zerar contagens", run: (s) => empty(s.seed) },
   ],
+  narrowSplit: () => 0.526,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

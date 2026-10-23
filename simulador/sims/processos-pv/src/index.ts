@@ -293,6 +293,7 @@ export const processosPv = defineSim<PVState>({
     },
   ],
 
+  narrowSplit: () => 0.317,
   viewport: () => ({ xMin: 0, xMax: 20, yMin: 0, yMax: 10 }),
 
   render(ctx, frame) {

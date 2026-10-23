@@ -689,6 +689,7 @@ Atravesse o labirinto de corredores controlando apenas $\\vec a$. Use os gráfic
     },
   ],
 
+  narrowSplit: () => 0.652,
   viewport(p) {
     const j = jogo(p);
     if (j === 0) return { xMin: -0.04, xMax: 1.64, yMin: -0.28, yMax: 1.04 };

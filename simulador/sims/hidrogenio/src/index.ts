@@ -557,6 +557,7 @@ export const hidrogenio = defineSim<HState>({
     { id: "cima", label: "Vista de cima (eixo z)", run: (s) => ({ ...s, yaw: 0, pitch: rad(88) }) },
     { id: "lado", label: "Vista de lado (plano xz)", run: (s) => ({ ...s, yaw: rad(-90), pitch: 0 }) },
   ],
+  narrowSplit: () => 0.562,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

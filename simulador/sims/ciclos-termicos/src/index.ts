@@ -186,6 +186,7 @@ A eficiência ideal só depende da razão de pressões. Varie $r_p$ e compare co
   sampleEvery: 2,
   stopWhen: (s) => 4 - (s[0] ?? 0),
 
+  narrowSplit: () => 0.389,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 9 }),
 
   render(ctx, frame) {
@@ -233,7 +234,7 @@ A eficiência ideal só depende da razão de pressões. Varie $r_p$ e compare co
     const qSign = Math.abs(qSeg) < 1e-9 ? 0 : Math.sign(qSeg);
     d.rect(cx0 - 0.2, 0.25, cx1 - cx0 + 0.4, 0.75, { fill: qSign > 0 ? "rgba(217,69,59,0.8)" : qSign < 0 ? "rgba(47,111,217,0.8)" : "rgba(120,130,145,0.8)" });
     d.text(
-      qSign > 0 ? `Reservatório quente (Q entra)` : qSign < 0 ? `Reservatório frio (Q sai)` : "Isolado: Q = 0",
+      qSign > 0 ? "Quente: Q entra" : qSign < 0 ? "Frio: Q sai" : "Isolado: Q = 0",
       (cx0 + cx1) / 2,
       0.62,
       { color: "#ffffff", size: 11, weight: "600" },

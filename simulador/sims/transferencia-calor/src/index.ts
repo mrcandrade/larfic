@@ -286,6 +286,7 @@ export const transferenciaCalor = defineSim<Heat>({
   sampleEvery: 4,
   maxSamples: 5000,
 
+  narrowSplit: () => 0.356,
   viewport: () => ({ xMin: 0, xMax: 15, yMin: -0.1, yMax: 9.4, unit: "" }),
 
   render(ctx, frame) {

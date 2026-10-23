@@ -53,6 +53,56 @@ export interface StageLayout {
   panes: StagePane[];
 }
 
+const SHAPE_OPS = ["fill", "stroke", "fillRect", "strokeRect", "clearRect", "drawImage", "putImageData"] as const;
+const TEXT_OPS = ["fillText", "strokeText"] as const;
+
+/**
+ * Chama `draw` deixando passar só as figuras, só os textos ou tudo. Nos textos, `accept` recebe o x do
+ * centro do texto em pixels do canvas e decide se ele é desenhado. As trocas são feitas no próprio objeto
+ * (sombreando os métodos do protótipo) e desfeitas no fim.
+ */
+export function renderOnly(ctx: CanvasRenderingContext2D, only: "shapes" | "text" | "all", accept: (deviceX: number) => boolean, draw: () => void) {
+  const c = ctx as unknown as Record<string, unknown>;
+  const touched: string[] = [];
+  const noop = () => undefined;
+  if (only === "shapes") for (const k of TEXT_OPS) (c[k] = noop), touched.push(k);
+  else {
+    if (only === "text") for (const k of SHAPE_OPS) (c[k] = noop), touched.push(k);
+    for (const k of TEXT_OPS) {
+      const orig = CanvasRenderingContext2D.prototype[k];
+      c[k] = (text: string, x: number, y: number, maxWidth?: number) => {
+        // Decide pelo centro do texto (não pela âncora), em pixels do canvas.
+        const m = ctx.getTransform();
+        const w = ctx.measureText(text).width * m.a;
+        const a = ctx.textAlign;
+        const shift = a === "center" ? 0 : a === "right" || a === "end" ? -w / 2 : w / 2;
+        const cx = m.a * x + m.c * y + m.e + shift;
+        if (!accept(cx)) return;
+        // Num painel estreito, texto largo passaria da borda do canvas: empurra-o para dentro.
+        // Mais largo que o canvas: comprime (maxWidth) e centraliza.
+        const W = ctx.canvas.width;
+        const wide = m.b === 0 && Math.abs(w) > W - 8;
+        const half = wide ? (W - 8) / 2 : Math.abs(w) / 2;
+        const anchor = m.a * x + m.c * y + m.e;
+        const center = wide ? anchor + Math.sign(shift) * half : cx;
+        const dx = m.b !== 0 ? 0 : wide ? W / 2 - center : center - half < 0 ? half - center : center + half > W ? W - half - center : 0;
+        if (dx !== 0) ctx.setTransform(m.a, m.b, m.c, m.d, m.e + dx, m.f);
+        const mw = wide ? (2 * half) / Math.abs(m.a) : undefined;
+        const lim = mw === undefined ? maxWidth : maxWidth === undefined ? mw : Math.min(mw, maxWidth);
+        if (lim === undefined) orig.call(ctx, text, x, y);
+        else orig.call(ctx, text, x, y, lim);
+        if (dx !== 0) ctx.setTransform(m);
+      };
+      touched.push(k);
+    }
+  }
+  try {
+    draw();
+  } finally {
+    for (const k of touched) delete c[k];
+  }
+}
+
 /** Abaixo desta largura (px) o palco empilha os painéis das cenas que definem `narrowSplit`. */
 export const NARROW_PX = 640;
 
@@ -134,23 +184,46 @@ export function Stage({ sim, runner, theme, onInteract, ref, maxHeight = MAX_H, 
     const stacked = L.panes.length > 1;
     if (vp.unit) drawAxes(ctx, vp, scale, L.panes[0]!.ox, cssH, theme);
 
+    const frame = {
+      state: runner.state,
+      params: runner.params,
+      t: runner.t,
+      trail: runner.samples.map((s) => s.state),
+      scale,
+      theme,
+    };
     for (const pane of L.panes) {
-      ctx.setTransform(dpr * scale, 0, 0, -dpr * scale, dpr * (pane.ox - pane.xMin * scale), dpr * (pane.oy + vp.yMax * scale));
-      ctx.save();
-      if (stacked) {
-        ctx.beginPath();
-        ctx.rect(pane.xMin, vp.yMin, pane.xMax - pane.xMin, vp.yMax - vp.yMin);
-        ctx.clip();
+      const toPane = () =>
+        ctx.setTransform(dpr * scale, 0, 0, -dpr * scale, dpr * (pane.ox - pane.xMin * scale), dpr * (pane.oy + vp.yMax * scale));
+      if (!stacked) {
+        toPane();
+        ctx.save();
+        try {
+          // Em tela estreita, textos que passariam da borda são trazidos para dentro.
+          if (cssW < NARROW_PX) renderOnly(ctx, "all", () => true, () => sim.render(ctx, frame));
+          else sim.render(ctx, frame);
+        } finally {
+          ctx.restore();
+        }
+        continue;
       }
+      // Empilhado: figuras recortadas na faixa; textos inteiros, cada um na faixa em que fica a sua âncora.
+      const x0 = dpr * pane.ox;
+      const x1 = dpr * (pane.ox + (pane.xMax - pane.xMin) * scale);
+      toPane();
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(pane.xMin, vp.yMin, pane.xMax - pane.xMin, vp.yMax - vp.yMin);
+      ctx.clip();
       try {
-        sim.render(ctx, {
-          state: runner.state,
-          params: runner.params,
-          t: runner.t,
-          trail: runner.samples.map((s) => s.state),
-          scale,
-          theme,
-        });
+        renderOnly(ctx, "shapes", () => true, () => sim.render(ctx, frame));
+      } finally {
+        ctx.restore();
+      }
+      toPane();
+      ctx.save();
+      try {
+        renderOnly(ctx, "text", (x) => x >= x0 - 1 && x <= x1 + 1, () => sim.render(ctx, frame));
       } finally {
         ctx.restore();
       }

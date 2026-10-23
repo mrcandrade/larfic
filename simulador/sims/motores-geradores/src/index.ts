@@ -849,6 +849,7 @@ export const motoresGeradores = defineSim<MGState>({
   dt: 1e-3,
   sampleEvery: 10,
 
+  narrowSplit: () => 0.438,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

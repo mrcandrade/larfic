@@ -713,6 +713,7 @@ export const consumoEnergia = defineSim<CState>({
     { id: "zerar", label: "Zerar cronômetro e voltas", run: (s) => ({ ...s, revs: 0, t0: s.clock, tLastRev: s.clock }) },
   ],
 
+  narrowSplit: () => 0.438,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 10, unit: "" }),
 
   render(ctx, frame) {

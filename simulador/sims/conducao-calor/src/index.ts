@@ -305,6 +305,7 @@ export const conducaoCalor = defineSim({
   dt: 0.02,
   sampleEvery: 5,
 
+  narrowSplit: () => 0.646,
   viewport: () => ({ xMin: -18, xMax: 122, yMin: -4, yMax: 66 }),
 
   render(ctx, frame) {

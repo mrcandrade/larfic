@@ -715,6 +715,7 @@ export const qubitDoisNiveis = defineSim<QState>({
     up: (s) => (s.drag ? { ...s, drag: null } : undefined),
     cursor: (_s, p, pt) => (mode(p) !== 3 && Math.hypot(pt.x - SC.x, pt.y - SC.y) < SC.R * 1.25 ? "grab" : undefined),
   },
+  narrowSplit: () => 0.481,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

@@ -271,6 +271,7 @@ export const corpoNegro = defineSim({
     cursor: (_s, p, pt) => (cursorAt(p, pt) ? "ew-resize" : undefined),
   },
 
+  narrowSplit: () => 0.25,
   viewport: () => ({ xMin: 0, xMax: 20, yMin: 0, yMax: 10 }),
 
   render(ctx, frame) {

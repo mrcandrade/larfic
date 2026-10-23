@@ -321,6 +321,7 @@ $$u = \\frac{u' + v}{1 + u'v/c^2} = \\frac{1{,}2}{1{,}36}\\,c \\approx 0{,}88c$$
     { id: "trocar", label: "Trocar A e B de lugar", run: (s) => ({ ...s, ev: [s.ev[1], s.ev[0]] }) },
   ],
 
+  narrowSplit: () => 0.505,
   viewport: () => ({ xMin: -4.8, xMax: 13.6, yMin: -2, yMax: 5.9 }),
 
   render(ctx, frame) {
