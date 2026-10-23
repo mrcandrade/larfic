@@ -39,8 +39,9 @@ Exemplo: um raio atinge um poste a $900$ m da origem, e o observador vê o clar�
 
 Armadilha: confundir o instante em que o evento é **visto** com o instante em que **ocorreu**. As coordenadas de um evento são as do relógio local, não a hora de chegada da luz ao observador.
 
-No experimento, arraste os eventos no diagrama de Minkowski e leia suas coordenadas $(x, ct)$; observe a linha de mundo da luz a $45^\circ$.`,
+No experimento, veja uma grade de relógios sincronizados em S registrar cada evento no lugar onde ele ocorre, enquanto a grade de S' marca outros tempos; arraste os eventos no diagrama de Minkowski e leia suas coordenadas $(x, ct)$, com a linha de mundo da luz a $45^\circ$.`,
       experiments: [
+        { kind: "sim", id: "relatividade", scenario: "relogios", note: "Leia o tempo de cada evento no relógio da grade que está no local do evento." },
         { kind: "sim", id: "relatividade", scenario: "simultaneidade", params: { beta: 0 }, note: "Com β = 0, arraste eventos e leia suas coordenadas no diagrama de Minkowski." },
       ],
     },
@@ -127,8 +128,9 @@ Exemplo: em S, um evento ocorre em $x = 900$ m e $t = 2{,}0\ \mu$s. Para S' a $v
 
 Armadilha: aplicar $\Delta t = \gamma\Delta t_0$ sem verificar se o intervalo é próprio. Na dúvida, use a transformação de Lorentz completa, que vale sempre.
 
-No experimento, arraste um evento e compare as coordenadas lidas nos eixos de S e de S'; confira os valores com as fórmulas e verifique que o intervalo não muda.`,
+No experimento, compare as leituras dos relógios de S e de S' para os mesmos eventos e confira na tabela os valores dados pela transformação de Lorentz; depois arraste um evento, compare as coordenadas lidas nos eixos de S e de S' e verifique que o intervalo não muda.`,
       experiments: [
+        { kind: "sim", id: "relatividade", scenario: "relogios", note: "Compare as coordenadas dos eventos A e B em S e em S' com as da transformação de Lorentz." },
         { kind: "sim", id: "relatividade", scenario: "simultaneidade", params: { eventos: 1 }, note: "Arraste os eventos e compare as coordenadas nos eixos de S e de S'." },
         { kind: "sim", id: "movimento-relativo", scenario: "barco", note: "Relembre a transformação de Galileu, o limite de baixa velocidade." },
       ],
@@ -172,8 +174,9 @@ O resultado foi confirmado de muitas formas, como na medida de Fizeau da velocid
 
 Armadilha: aplicar a fórmula a duas velocidades medidas no **mesmo** referencial. Se dois corpos se aproximam a $0{,}8c$ cada um em relação à Terra, a Terra vê a distância entre eles diminuir a $1{,}6c$, e isso não viola nada: nenhum objeto se move mais rápido que $c$. A velocidade de um **em relação ao outro** é que vale $1{,}6c/1{,}64 \approx 0{,}98c$.
 
-No experimento (não há montagem específica de composição de velocidades), aplique uma força constante a uma partícula e veja a velocidade se aproximar de $c$ sem nunca alcançá-la; compare com a composição galileana no movimento relativo.`,
+No experimento, componha a velocidade de um objeto medida em S' com a de S' em relação a S e compare a soma relativística com a galileana: o resultado nunca passa de $c$; depois aplique uma força constante a uma partícula e veja a velocidade se aproximar de $c$ sem nunca alcançá-la.`,
       experiments: [
+        { kind: "sim", id: "relatividade", scenario: "velocidades", note: "Varie u' e a velocidade de S' e compare a composição relativística com a soma simples." },
         { kind: "sim", id: "relatividade-dinamica", scenario: "energia", note: "Empurre a partícula indefinidamente e veja a velocidade nunca passar de c." },
         { kind: "sim", id: "movimento-relativo", scenario: "aviao", note: "Compare com a soma galileana de velocidades, válida para v ≪ c." },
       ],

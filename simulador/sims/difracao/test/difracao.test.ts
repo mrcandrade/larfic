@@ -7,7 +7,11 @@ import {
   RAYLEIGH,
   T_SCAN,
   airy,
+  besselJ0,
   besselJ1,
+  fresnelIntensity,
+  fresnelNumber,
+  phasorChain,
   difracao as sim,
   dipRatio,
   fft,
@@ -93,5 +97,37 @@ describe("Difração", () => {
     s = sim.actions!.find((a) => a.id === "borracha")!.run(s, p);
     s = sim.pointer!.down!(s, p, { x: 4.9, y: -0.6 })!;
     expect(s.grid.reduce((a, b) => a + b, 0)).toBe(0);
+  });
+
+  it("cadeia de fasores: resultante = sen β/β; fecha no 1º mínimo", () => {
+    for (const beta of [0, 0.7, 2, 4.4]) {
+      const ch = phasorChain(beta, 400);
+      const [ex, ey] = ch[ch.length - 1]!;
+      expect(Math.hypot(ex, ey)).toBeCloseTo(beta === 0 ? 1 : Math.abs(Math.sin(beta) / beta), 4);
+      expect(ey).toBeCloseTo(0, 12);
+    }
+    const ch = phasorChain(Math.PI, 24);
+    expect(Math.hypot(...ch[24]!)).toBeLessThan(1e-12);
+  });
+
+  it("Fresnel: J0 correto; mancha de Arago com I(0) = 1 atrás do disco; furo com I(0) = 4 sen²(πN_F/2)", () => {
+    expect(besselJ0(0)).toBeCloseTo(1, 8);
+    expect(besselJ0(2.404825557695773)).toBeCloseTo(0, 7);
+    expect(besselJ0(10)).toBeCloseTo(-0.2459357645, 7);
+    for (const [a, z] of [[1, 1], [0.5, 2], [2, 0.5]] as const) {
+      expect(fresnelIntensity(0, a, z, 633, true)).toBeCloseTo(1, 6);
+      const NF = fresnelNumber(a, z, 633);
+      expect(fresnelIntensity(0, a, z, 633, false)).toBeCloseTo(4 * Math.sin((Math.PI * NF) / 2) ** 2, 4);
+    }
+    // sombra: entre a mancha e a borda a intensidade é bem menor; longe, fora da sombra, tende a 1
+    expect(fresnelIntensity(0.6, 1, 1, 633, true)).toBeLessThan(0.2);
+    expect(fresnelIntensity(0.9, 1, 1, 633, true)).toBeLessThan(fresnelIntensity(0, 1, 1, 633, true));
+    // a mancha tem diâmetro ≈ 0,77 λz/a: no 1º zero de J0, r = 2,405 z/(k a)
+    const r0 = (2.405 * 1 * 633e-9) / (2 * Math.PI * 1e-3) * 1e3;
+    expect(fresnelIntensity(r0, 1, 1, 633, true)).toBeLessThan(0.05);
+    const p = withOverrides(sim, sim.scenarios.find((c) => c.id === "arago")!.params);
+    const r = new Runner(sim, p);
+    while (r.t < T_SCAN / 2 - 1e-9) r.stepOnce();
+    expect(r.value("I")).toBeCloseTo(1, 2);
   });
 });

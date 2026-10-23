@@ -8,6 +8,7 @@ import {
   flux3D,
   gauss as sim,
   lensVolume,
+  outwardFlux,
   type Source,
   type Surface,
 } from "../src/index.ts";
@@ -97,5 +98,18 @@ describe("Superfícies gaussianas e fluxo", () => {
     r.setState(s);
     expect(r.value("qint")).toBeCloseTo(1, 10);
     expect(r.value("Phi") / r.value("PhiT")).toBeCloseTo(1, 2);
+  });
+
+  it("ímã (dipolo magnético): fluxo de B nulo por qualquer superfície fechada, mesmo com o ímã fora do centro", () => {
+    const src: Source = { kind: "ima", x: 0, y: 0, m: 1 };
+    for (const s of [circ(0, 0, 0.3), circ(0.15, 0.05, 0.3), rect(0.1, -0.05, 0.25, 0.2), circ(0.6, 0.1, 0.2)]) {
+      const out = outwardFlux(src, s, 48);
+      expect(out).toBeGreaterThan(0);
+      expect(Math.abs(flux3D(src, s, 48)) / out).toBeLessThan(0.02);
+    }
+    expect(enclosedCharge(src, circ(0, 0, 0.3))).toBe(0);
+    const p = withOverrides(sim, sim.scenarios.find((c) => c.id === "fluxo-b")!.params);
+    const r = new Runner(sim, p);
+    expect(Math.abs(r.value("Phi"))).toBeLessThan(1e-9);
   });
 });

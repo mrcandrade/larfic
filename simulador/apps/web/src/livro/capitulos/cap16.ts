@@ -140,8 +140,9 @@ Para ondas que se espalham em três dimensões (som, luz), usa-se a **intensidad
 
 **Armadilha:** achar que a energia potencial do elemento é máxima no alto da crista, como numa partícula que sobe. Na corda, o que armazena energia é o estiramento, máximo no meio.
 
-No experimento, gere uma onda senoidal com a ponta absorvente e acompanhe a energia na corda; dobre a amplitude e veja quanto ela muda. Depois, com a fonte sonora, verifique a queda da intensidade com $1/r^2$.`,
+No experimento, gere uma onda senoidal com a ponta absorvente e veja, elemento por elemento, as energias cinética e potencial máximas juntas onde a corda passa por $y = 0$; compare a potência média medida na sonda com $\tfrac12\mu v\omega^2 y_m^2$ e dobre a amplitude para ver a potência quadruplicar. Depois, com a fonte sonora, verifique a queda da intensidade com $1/r^2$.`,
       experiments: [
+        { kind: "sim", id: "onda-corda", scenario: "energia-potencia", note: "Veja as energias cinética e potencial de cada elemento e compare a potência média medida com ½μvω²A²." },
         { kind: "sim", id: "onda-corda", scenario: "fixa", params: { fonte: 1, ponta: 2, T: 10, mu1: 0.1, f: 5, A: 0.2 }, note: "Acompanhe a energia na corda e compare ao dobrar a amplitude ou a frequência." },
         { kind: "sim", id: "som-intensidade", scenario: "distancia", note: "Afaste o ouvinte e confira que a intensidade cai com 1/r²." },
       ],
@@ -163,8 +164,9 @@ A equação é **linear**: se $y_1$ e $y_2$ são soluções, $y_1 + y_2$ também
 
 **Armadilha:** ler a equação como se dissesse que a aceleração é proporcional ao deslocamento (como no MHS). Ela é proporcional à **curvatura**.
 
-No experimento, veja a cadeia longa de osciladores acoplados virar um meio contínuo e compare ondas longas e curtas; na corda, observe que o pulso avança sem deformar.`,
+No experimento, siga um pulso na corda com as setas de aceleração de cada elemento e de $v^2\,\partial^2y/\partial x^2$ calculado pela forma da corda: elas coincidem em todo ponto; depois veja a cadeia longa de osciladores acoplados virar um meio contínuo.`,
       experiments: [
+        { kind: "sim", id: "onda-corda", scenario: "equacao-onda", note: "Compare a aceleração de cada elemento com v² vezes a curvatura da corda: são iguais, como diz a equação de onda." },
         { kind: "sim", id: "osciladores-acoplados", scenario: "cadeia", note: "Com muitas massas, veja a cadeia discreta se comportar como uma corda contínua e note a dispersão nas ondas curtas." },
         { kind: "sim", id: "onda-corda", scenario: "fixa", note: "Observe o pulso avançar sem mudar de forma, como prevê qualquer solução h(x − vt)." },
       ],
@@ -232,8 +234,9 @@ O método se estende: somam-se os fasores um após o outro, ponta com cauda. Ser
 
 **Armadilha:** somar amplitudes como números quando as ondas estão defasadas. 4 mm + 3 mm só dá 7 mm se as ondas estiverem em fase.
 
-No experimento, some dois MHS de mesma frequência com amplitudes diferentes, mude a fase e veja o fasor resultante; confira o comprimento dele pela lei dos cossenos.`,
+No experimento, some duas ondas progressivas de mesma frequência e amplitudes diferentes: os fasores giram juntos, a resultante tem comprimento dado pela lei dos cossenos e a onda resultante, desenhada embaixo, tem essa amplitude e a fase $\beta$; mude $\phi$ de 0 a 180°.`,
       experiments: [
+        { kind: "sim", id: "superposicao", scenario: "fasores", note: "Mude a diferença de fase φ e confira A′ e β pela soma dos fasores e na onda resultante." },
         { kind: "sim", id: "lissajous-fourier", scenario: "fasores", params: { fx: 1, fy: 1, A: 4, B: 3, fase: 90 }, note: "Some amplitudes 4 e 3 defasadas de 90° e confira a resultante 5 pela soma dos fasores." },
         { kind: "sim", id: "mhs", scenario: "circulo", params: { fasores: 1 }, note: "Reveja o fasor girante e sua projeção, a base do método." },
       ],

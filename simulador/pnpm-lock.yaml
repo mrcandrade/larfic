@@ -62,6 +62,9 @@ importers:
       '@fisilab/sim-braquistocrona':
         specifier: workspace:*
         version: link:../../sims/braquistocrona
+      '@fisilab/sim-calor-especifico-gases':
+        specifier: workspace:*
+        version: link:../../sims/calor-especifico-gases
       '@fisilab/sim-calorimetria':
         specifier: workspace:*
         version: link:../../sims/calorimetria
@@ -470,6 +473,9 @@ importers:
       '@fisilab/sim-tensao-superficial':
         specifier: workspace:*
         version: link:../../sims/tensao-superficial
+      '@fisilab/sim-termometro-gas':
+        specifier: workspace:*
+        version: link:../../sims/termometro-gas
       '@fisilab/sim-transferencia-calor':
         specifier: workspace:*
         version: link:../../sims/transferencia-calor
@@ -644,6 +650,12 @@ importers:
         version: link:../../packages/core
 
   sims/braquistocrona:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/calor-especifico-gases:
     dependencies:
       '@fisilab/core':
         specifier: workspace:*
@@ -1460,6 +1472,12 @@ importers:
         version: link:../../packages/core
 
   sims/tensao-superficial:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/termometro-gas:
     dependencies:
       '@fisilab/core':
         specifier: workspace:*

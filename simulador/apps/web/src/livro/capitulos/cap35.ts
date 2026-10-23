@@ -97,8 +97,9 @@ Exemplo: a luz de um LED com largura espectral de $30$ nm em torno de $600$ nm t
 
 Armadilha: dizer que só lasers interferem. Qualquer luz interfere consigo mesma, desde que a diferença de percurso seja menor que o comprimento de coerência.
 
-No experimento, troque o laser por luz branca e veja quantas franjas sobrevivem e como se colorem.`,
+No experimento, alargue a banda espectral da fonte no interferômetro de Michelson e veja as franjas perderem nitidez quando a diferença de caminho passa do comprimento de coerência, $\lambda^2/\Delta\lambda$; depois troque o laser por luz branca na fenda dupla e veja quantas franjas sobrevivem e como se colorem.`,
       experiments: [
+        { kind: "sim", id: "filmes-finos", scenario: "coerencia", note: "Varie a largura espectral e veja o contraste das franjas cair com a diferença de caminho." },
         { kind: "sim", id: "fenda-dupla", scenario: "branca", note: "Com luz branca, conte as franjas que sobrevivem e observe as cores." },
         { kind: "sim", id: "filmes-finos", scenario: "michelson", note: "No Michelson, afaste o espelho e veja até onde as franjas permanecem nítidas." },
       ],
@@ -147,8 +148,9 @@ Com espessura variável, cada espessura reforça uma cor: surgem faixas colorida
 
 Armadilha: esquecer a inversão de fase na reflexão e prever claro onde há escuro.
 
-No experimento, observe as cores da película de sabão enquanto ela afina; nos anéis de Newton, meça os raios e obtenha o raio de curvatura da lente.`,
+No experimento, deposite sobre o vidro um revestimento de espessura fixa e veja a refletância cair a quase zero só perto do comprimento de onda em que a espessura vale $\lambda/4n$; observe também as cores da película de sabão enquanto ela afina e, nos anéis de Newton, meça os raios e obtenha o raio de curvatura da lente.`,
       experiments: [
+        { kind: "sim", id: "filmes-finos", scenario: "antirreflexo", note: "Com o revestimento fixo, veja a refletância variar com a cor e ache o mínimo." },
         { kind: "sim", id: "filmes-finos", scenario: "bolha", note: "Acompanhe as cores da película enquanto ela afina até ficar escura." },
         { kind: "sim", id: "filmes-finos", scenario: "newton", note: "Meça o raio dos anéis de Newton e calcule a curvatura da lente." },
         { kind: "sim", id: "filmes-finos", scenario: "bolha", params: { nf: 1.38, ns: 1, e0: 200 }, note: "Monte um revestimento fino sobre vidro e procure a espessura antirreflexo." },

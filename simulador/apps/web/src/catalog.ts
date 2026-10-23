@@ -157,6 +157,8 @@ import { gravitacaoTerra } from "@fisilab/sim-gravitacao-terra";
 import { tabelaPeriodica } from "@fisilab/sim-tabela-periodica";
 import { particulasElementares } from "@fisilab/sim-particulas-elementares";
 import { cosmologia } from "@fisilab/sim-cosmologia";
+import { termometroGas } from "@fisilab/sim-termometro-gas";
+import { calorEspecificoGases } from "@fisilab/sim-calor-especifico-gases";
 import { planoInclinado } from "@fisilab/sim-plano-inclinado";
 import { plan, type PlannedSim } from "./plan.ts";
 import { practices } from "./practices.ts";
@@ -328,6 +330,8 @@ export const catalog: CatalogEntry[] = [
   { sim: tabelaPeriodica, covers: [] },
   { sim: particulasElementares, covers: [] },
   { sim: cosmologia, covers: [] },
+  { sim: termometroGas, covers: [] },
+  { sim: calorEspecificoGases, covers: [] },
 ];
 
 export const simulations = catalog.map((c) => c.sim);

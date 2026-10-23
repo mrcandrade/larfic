@@ -16,8 +16,9 @@ Exemplo de ordem de grandeza: luz de $500$ nm passando por uma fenda de $50\ \mu
 
 Armadilha: imaginar que a difração só acontece com fendas estreitas. Ela acontece sempre; só se torna perceptível quando a abertura não é muito maior que $\lambda$ ou quando se observa de perto a borda da sombra.
 
-No experimento, desenhe aberturas de formas diferentes e veja o padrão de difração de cada uma; na cuba de ondas, mande uma onda plana contra uma fenda e observe as franjas laterais.`,
+No experimento, ilumine um disco opaco e veja surgir a mancha clara no centro da sombra, prevista pela teoria ondulatória; depois desenhe aberturas de formas diferentes e veja o padrão de difração de cada uma; na cuba de ondas, mande uma onda plana contra uma fenda e observe as franjas laterais.`,
       experiments: [
+        { kind: "sim", id: "difracao", scenario: "arago", note: "Veja a mancha brilhante no centro da sombra de um disco e compare com um furo." },
         { kind: "sim", id: "difracao", scenario: "desenho", note: "Desenhe aberturas variadas e compare seus padrões de difração." },
         { kind: "sim", id: "cuba-ondas", scenario: "fenda", note: "Veja a onda se espalhar atrás de uma fenda, com mínimos laterais." },
       ],
@@ -56,8 +57,9 @@ Essa imagem mostra por que os máximos laterais são fracos: neles, a cadeia de 
 
 Armadilha: achar que os máximos secundários ficam exatamente a meio caminho entre os mínimos e são tão brilhantes quanto o central. Eles estão quase no meio, mas valem só alguns por cento do central.
 
-No experimento, mude a escala do gráfico para logarítmica e compare a altura dos máximos secundários com a do central; mova o detector e imagine a cadeia de fasores se enrolando.`,
+No experimento, ligue a cadeia de fasores e mova o detector: veja a cadeia se curvar e fechar um círculo nos mínimos; mude a escala do gráfico para logarítmica e compare a altura dos máximos secundários com a do central.`,
       experiments: [
+        { kind: "sim", id: "difracao", scenario: "fasores", note: "Mova o detector e veja a cadeia de fasores da fenda se enrolar." },
         { kind: "sim", id: "difracao", scenario: "fenda", note: "Compare a intensidade dos máximos laterais com a do central (cerca de 4,5%)." },
         { kind: "sim", id: "lissajous-fourier", note: "Some fasores defasados e veja a resultante depender da fase entre eles." },
       ],

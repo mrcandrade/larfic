@@ -27,6 +27,39 @@ function sceneInterface(p: Params): Scene {
   };
 }
 
+// ---------------------------------------------------------------- dioptro esférico
+/** Janela do dioptro (cm); vértice da superfície em x = 0, eixo ótico em y = 0. */
+const VP3 = { xMin: -40, xMax: 60, yMin: -22, yMax: 22 };
+
+/** Raio de curvatura do dioptro (cm), com sinal: R > 0 com o centro do lado de n₂ (superfície convexa para o objeto). */
+export const dioptR = (p: Params) => {
+  const R = num(p, "Rd", 10);
+  return (R >= 0 ? 1 : -1) * Math.max(2, Math.abs(R));
+};
+/** Meia-abertura da superfície (cm). */
+export const dioptH = (p: Params) => Math.min(0.85 * Math.abs(dioptR(p)), 16);
+/** Perfil da superfície: x do vértice em função de y. */
+export const sagX = (R: number, y: number) => R - Math.sign(R) * Math.sqrt(Math.max(0, R * R - y * y));
+
+/** Imagem paraxial de um objeto a uma distância p (cm, > 0 real) do vértice: n₁/p + n₂/i = (n₂ − n₁)/R. */
+export function dioptImage(n1: number, n2: number, R: number, pObj: number): { i: number; m: number } {
+  const den = (n2 - n1) / R - n1 / pObj;
+  const i = Math.abs(den) < 1e-12 ? Infinity : n2 / den;
+  return { i, m: Number.isFinite(i) ? -(n1 * i) / (n2 * pObj) : Infinity };
+}
+
+export function sceneDioptro(p: Params): Scene {
+  const n1 = num(p, "n1", 1);
+  const n2 = num(p, "n2", 1.5);
+  const R = dioptR(p);
+  const phi = Math.asin(Math.min(1, dioptH(p) / Math.abs(R)));
+  const mid = R > 0 ? Math.PI : 0;
+  return {
+    boundaries: [{ kind: "arc", c: [R, 0], r: Math.abs(R), a0: mid - phi, a1: mid + phi, tag: "dioptro" }],
+    nAt: ([x, y]) => (Math.abs(y) < Math.abs(R) ? (x > sagX(R, y) ? n2 : n1) : x > 0 ? n2 : n1),
+  };
+}
+
 // ---------------------------------------------------------------- fibra ótica
 /** Largura do núcleo e posição da face de entrada (unidades do palco, mm). */
 export const FIBER_W = 1;
@@ -197,7 +230,9 @@ export function analyze(s: RefState, p: Params): Analysis {
   const m = mode(p);
   const pol = Math.round(num(p, "pol")) as Pol;
   const out: Analysis = { segs: [], th1: 0, th2: 0, R: 0, T: 0, tir: false, hit: null, nA: 1, nB: 1, pout: 0, nrefl: 0, grad: null };
-  if (m === 2) {
+  if (m === 3) {
+    // Dioptro: os raios são traçados no desenho; aqui só a imagem paraxial (observáveis próprios).
+  } else if (m === 2) {
     out.grad = traceGradient(s.lx, s.ly, s.ang, num(p, "dT"), Math.max(0.01, num(p, "hc", 0.3)));
     out.th1 = s.ang / DEG;
   } else {
@@ -297,6 +332,17 @@ export const refracao = defineSim<RefState>({
     const a = analyze(s, p);
     const n1 = num(p, "n1", 1);
     const n2 = num(p, "n2", 1.5);
+    if (m === 3) {
+      const R = dioptR(p);
+      const po = -s.lx;
+      const { i, m: ml } = dioptImage(n1, n2, R, po);
+      return [
+        String.raw`\frac{n_1}{p} + \frac{n_2}{i} = \frac{n_2 - n_1}{R}:\quad \frac{${texNum(n1)}}{${texNum(po)}\ \text{cm}} + \frac{${texNum(n2)}}{i} = \frac{${texNum(n2 - n1)}}{${texNum(R)}\ \text{cm}}`,
+        Number.isFinite(i)
+          ? String.raw`i = ${texNum(i)}\ \text{cm}\ ${i > 0 ? String.raw`\text{(imagem real, no meio } n_2\text{)}` : String.raw`\text{(imagem virtual, do lado do objeto)}`} \qquad m = -\frac{n_1 i}{n_2 p} = ${texNum(ml)}`
+          : String.raw`\text{o denominador zera: a imagem vai para o infinito (raios paralelos no meio } n_2)`,
+      ];
+    }
     if (m === 2) {
       const g = a.grad!;
       const dT = num(p, "dT");
@@ -327,13 +373,14 @@ export const refracao = defineSim<RefState>({
       label: "Montagem",
       unit: "",
       min: 0,
-      max: 2,
+      max: 3,
       step: 1,
       default: 0,
       options: [
         { value: 0, label: "Interface entre dois meios" },
         { value: 1, label: "Fibra ótica" },
         { value: 2, label: "Miragem (índice variável)" },
+        { value: 3, label: "Dioptro esférico (uma superfície curva)" },
       ],
     },
     { key: "n1", label: "n₁ (meio de cima / núcleo da fibra)", unit: "", min: 1, max: 2.5, step: 0.01, default: 1, live: true },
@@ -357,6 +404,8 @@ export const refracao = defineSim<RefState>({
     { key: "Rb", label: "Raio da curva da fibra (0 = reta)", unit: "mm", min: 0, max: 6, step: 0.25, default: 0, live: true },
     { key: "dT", label: "Solo mais quente que o ar (ΔT)", unit: "K", min: -20, max: 40, step: 1, default: 30, live: true },
     { key: "hc", label: "Espessura da camada de ar aquecido", unit: "m", min: 0.05, max: 3, step: 0.05, default: 0.3, live: true },
+    { key: "Rd", label: "Raio de curvatura do dioptro R (+ = convexo para o objeto)", unit: "cm", min: -40, max: 40, step: 1, default: 10, live: true },
+    { key: "pd", label: "Distância inicial do objeto ao dioptro", unit: "cm", min: 2, max: 38, step: 1, default: 30 },
   ],
 
   observables: [
@@ -368,6 +417,8 @@ export const refracao = defineSim<RefState>({
     { key: "pout", label: "Potência na saída da fibra", unit: "%", value: (s, p) => (mode(p) === 1 ? analyze(s, p).pout * 100 : 0) },
     { key: "nrefl", label: "Reflexões na parede da fibra", unit: "", value: (s, p) => (mode(p) === 1 ? analyze(s, p).nrefl : 0) },
     { key: "ymin", label: "Altura mínima do raio central", unit: "m", value: (s, p) => (mode(p) === 2 ? analyze(s, p).grad!.ymin : 0) },
+    { key: "idio", label: "Dioptro: posição da imagem i (+ = real)", unit: "cm", value: (s, p) => (mode(p) === 3 ? dioptImage(num(p, "n1", 1), num(p, "n2", 1.5), dioptR(p), -s.lx).i : 0) },
+    { key: "mdio", label: "Dioptro: aumento lateral m", unit: "", value: (s, p) => (mode(p) === 3 ? dioptImage(num(p, "n1", 1), num(p, "n2", 1.5), dioptR(p), -s.lx).m : 0) },
   ],
   chart: { x: "th1", y: "th2" },
 
@@ -440,6 +491,27 @@ A escala vertical está exagerada 40 vezes: os ângulos reais são de décimos d
         },
       ],
     },
+    {
+      id: "dioptro",
+      label: "Dioptro esférico: imagem por uma superfície curva",
+      params: { modo: 3, n1: 1, n2: 1.5, Rd: 6, pd: 30 },
+      guide: `### Uma única superfície curva já forma imagem
+1. À esquerda, ar ($n_1 = 1$); à direita, vidro ($n_2 = 1{,}5$), separados por uma superfície esférica de raio $R = 6\\ \\text{cm}$ com centro C dentro do vidro. Os raios são traçados com a lei de Snell exata em cada ponto.
+2. Os raios que saem da ponta do objeto (azul) convergem **dentro do vidro**: a imagem é real e invertida. Para raios próximos do eixo:
+$$\\frac{n_1}{p} + \\frac{n_2}{i} = \\frac{n_2 - n_1}{R}, \\qquad m = -\\frac{n_1\\,i}{n_2\\,p}$$
+Confira: $1/30 + 1{,}5/i = 0{,}5/6$ dá $i = 30\\ \\text{cm}$ e $m = -2/3$.
+3. Arraste o objeto para perto ($p = 8\\ \\text{cm}$): agora $i < 0$ e a imagem é **virtual**, do lado do objeto (prolongamentos tracejados).
+4. Mude $R$ para $-6\\ \\text{cm}$ (superfície côncava vista do objeto): a imagem fica virtual para qualquer $p$.
+5. Troque os índices ($n_1 = 1{,}5$, $n_2 = 1$) para ver um objeto dentro de um aquário ou de uma esfera de vidro. A convenção de sinais: $R > 0$ quando o centro está do lado de onde a luz sai; $i > 0$ quando a imagem está desse lado.`,
+      predict: [
+        {
+          question: "Um objeto a 30 cm de uma superfície convexa de vidro (n = 1,5, R = 6 cm) forma imagem dentro do vidro. Aproximando o objeto para 8 cm, a imagem:",
+          options: ["fica real, mais longe", "fica real, mais perto", "torna-se virtual, do lado do objeto", "desaparece"],
+          answer: 2,
+          explanation: "O foco do lado do objeto fica em $p = n_1R/(n_2 - n_1) = 12\\ \\text{cm}$. Com o objeto mais perto que isso, $n_1/p$ supera $(n_2 - n_1)/R$, $i$ fica negativo e a imagem é virtual.",
+        },
+      ],
+    },
   ],
 
   exercises: [
@@ -481,6 +553,7 @@ A escala vertical está exagerada 40 vezes: os ângulos reais são de décimos d
       return { lx: FIBER_X0 - 1.3 * Math.cos(a), ly: -1.3 * Math.sin(a), ang: a, drag: null };
     }
     if (m === 2) return { lx: 20, ly: 1.7, ang: -0.15 * DEG, drag: null };
+    if (m === 3) return { lx: -num(p, "pd", 30), ly: 3, ang: 0, drag: null };
     return { lx: -1.3 * Math.sin(th), ly: 1.3 * Math.cos(th), ang: Math.atan2(-Math.cos(th), Math.sin(th)), drag: null };
   },
   step: (s) => s,
@@ -491,6 +564,7 @@ A escala vertical está exagerada 40 vezes: os ângulos reais são de décimos d
     const m = mode(p);
     if (m === 1) return { ...fiberVP(p), unit: "mm" };
     if (m === 2) return { xMin: -10, xMax: 410, yMin: -110, yMax: 300, unit: "" };
+    if (m === 3) return { ...VP3, unit: "cm" };
     return { ...VP0, unit: "cm" };
   },
 
@@ -498,6 +572,10 @@ A escala vertical está exagerada 40 vezes: os ângulos reais são de décimos d
     down(s, p, pt) {
       const m = mode(p);
       const u = vdir(s.ang);
+      if (m === 3) {
+        const onArrow = Math.abs(pt.x - s.lx) < 1.5 && pt.y >= Math.min(0, s.ly) - 1 && pt.y <= Math.max(0, s.ly) + 1;
+        return onArrow ? { ...s, drag: "laser" } : undefined;
+      }
       if (m === 2) {
         const sx = pt.x - s.lx;
         const sy = pt.y - s.ly * MIR_E;
@@ -521,6 +599,10 @@ A escala vertical está exagerada 40 vezes: os ângulos reais são de décimos d
     move(s, p, pt, dragging) {
       if (!dragging || !s.drag) return undefined;
       const m = mode(p);
+      if (m === 3) {
+        const ly = Math.max(-8, Math.min(8, pt.y));
+        return { ...s, lx: Math.max(-38, Math.min(-1, pt.x)), ly: Math.abs(ly) < 0.5 ? (ly < 0 ? -0.5 : 0.5) : ly };
+      }
       if (m === 2) {
         if (s.drag === "laser") return { ...s, lx: Math.max(0, Math.min(200, pt.x)), ly: Math.max(0.1, Math.min(6, pt.y / MIR_E)) };
         const dx = pt.x - s.lx;
@@ -541,6 +623,7 @@ A escala vertical está exagerada 40 vezes: os ângulos reais são de décimos d
     cursor(s, p, pt) {
       const m = mode(p);
       if (s.drag) return "grabbing";
+      if (m === 3) return Math.abs(pt.x - s.lx) < 1.5 && pt.y >= Math.min(0, s.ly) - 1 && pt.y <= Math.max(0, s.ly) + 1 ? "grab" : undefined;
       if (m === 2) {
         const hd = mirHandle(s);
         if (Math.hypot(pt.x - hd[0], pt.y - hd[1]) < 12) return "alias";
@@ -584,6 +667,7 @@ A escala vertical está exagerada 40 vezes: os ângulos reais são de décimos d
     ctx.clip();
     if (m === 0) renderInterface(d, s, p);
     else if (m === 1) renderFiber(d, s, p);
+    else if (m === 3) renderDioptro(d, s, p);
     else renderMirage(d, s, p);
     ctx.restore();
     void theme;
@@ -642,6 +726,78 @@ function renderInterface(d: Draw, s: RefState, p: Params) {
   }
   drawLaser(d, s.lx, s.ly, s.ang, LASER_L(0), theme.muted, theme.accent);
   d.text("arraste o laser para mover · o círculo para girar", vp.xMin + 0.08, vp.yMin + 0.1, { align: "left", baseline: "bottom", color: theme.muted, size: 11 });
+}
+
+function renderDioptro(d: Draw, s: RefState, p: Params) {
+  const { theme } = d;
+  const n1 = num(p, "n1", 1);
+  const n2 = num(p, "n2", 1.5);
+  const R = dioptR(p);
+  const H = dioptH(p);
+  const vp = VP3;
+  // Meio n₂ à direita da superfície
+  const prof: [number, number][] = [];
+  for (let k = 0; k <= 60; k++) {
+    const y = -H + (2 * H * k) / 60;
+    prof.push([sagX(R, y), y]);
+  }
+  const xEdge = sagX(R, H);
+  d.rect(vp.xMin, vp.yMin, vp.xMax - vp.xMin, vp.yMax - vp.yMin, tint(d, n1));
+  d.polyline([[vp.xMax, vp.yMin], [xEdge, vp.yMin], [xEdge, -H], ...prof, [xEdge, H], [xEdge, vp.yMax], [vp.xMax, vp.yMax]], { close: true, fill: theme.accent, color: "none", alpha: Math.min(0.32, 0.04 + 0.16 * (n2 - 1)) });
+  d.polyline(prof, { color: theme.text, width: 2 });
+  d.line(vp.xMin, 0, vp.xMax, 0, { color: theme.muted, width: 1, dash: [8, 5] });
+  d.dot(R, 0, 4, theme.text);
+  d.text("C", R, 0, { color: theme.text, size: 11, dy: 12 });
+  d.text("V", 0, 0, { color: theme.text, size: 11, dx: -8, dy: 12 });
+  d.text(`n₁ = ${fmt(n1, 2)}`, vp.xMin + 1, vp.yMax - 1.5, { align: "left", color: theme.muted, size: 12 });
+  d.text(`n₂ = ${fmt(n2, 2)}`, vp.xMax - 1, vp.yMax - 1.5, { align: "right", color: theme.muted, size: 12 });
+
+  const scene = sceneDioptro(p);
+  const po = -s.lx;
+  const img = dioptImage(n1, n2, R, po);
+  const colors = [theme.series[1] ?? theme.accent, theme.series[0] ?? theme.accent];
+  const sources: [number, number][] = [
+    [s.lx, 0],
+    [s.lx, s.ly],
+  ];
+  sources.forEach((o, k) => {
+    const n = 7;
+    for (let j = 0; j < n; j++) {
+      const y = -0.9 * H + (1.8 * H * j) / (n - 1);
+      const target: V = [sagX(R, y), y];
+      const dir: V = [target[0] - o[0], target[1] - o[1]];
+      const segs = trace(scene, o, dir, { maxDepth: 2, maxLen: 140 });
+      for (const g of segs) d.line(g.a[0], g.a[1], g.b[0], g.b[1], { color: colors[k]!, width: 1.4, alpha: k === 0 ? 0.85 : 0.55 });
+      // Prolongamentos para trás dos raios refratados (imagem virtual)
+      if (Number.isFinite(img.i) && img.i < 0) {
+        const out = segs.find((g) => g.depth === 1);
+        if (out) {
+          const u = vdir(Math.atan2(out.b[1] - out.a[1], out.b[0] - out.a[0]));
+          d.line(out.a[0], out.a[1], out.a[0] - u[0] * 120, out.a[1] - u[1] * 120, { color: colors[k]!, width: 1, dash: [3, 4], alpha: 0.5 });
+        }
+      }
+    }
+  });
+  // Objeto
+  d.arrow(s.lx, 0, 0, s.ly, { color: theme.text, width: 3, head: 9 });
+  d.text("objeto (arraste)", s.lx, s.ly, { color: theme.text, size: 11, dy: s.ly > 0 ? -12 : 14 });
+  // Imagem paraxial
+  if (Number.isFinite(img.i) && Math.abs(img.i) < 400) {
+    const hi = img.m * s.ly;
+    const real = img.i > 0;
+    if (img.i > vp.xMin && img.i < vp.xMax) {
+      d.arrow(img.i, 0, 0, hi, { color: theme.positive, width: 3, head: 9, dash: real ? undefined : [5, 4] });
+      d.text(real ? "imagem real" : "imagem virtual", img.i, hi, { color: theme.positive, size: 11, weight: "600", dy: hi > 0 ? -12 : 14 });
+    }
+  }
+  const iTxt = Number.isFinite(img.i) && Math.abs(img.i) < 1e4 ? `${fmt(img.i, 1)} cm` : "∞";
+  d.text(`p = ${fmt(po, 1)} cm   R = ${fmt(R, 1)} cm   i = ${iTxt}   m = ${Number.isFinite(img.m) ? fmt(img.m, 2) : "∞"}`, vp.xMin + 1, vp.yMin + 1.5, {
+    align: "left",
+    baseline: "bottom",
+    color: theme.text,
+    size: 12,
+    weight: "600",
+  });
 }
 
 function renderFiber(d: Draw, s: RefState, p: Params) {

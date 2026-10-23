@@ -19,8 +19,9 @@ Exemplo: uma bobina plana de $4{,}0$ cm² fica a $2{,}0$ cm do polo norte de um 
 
 Armadilha: imaginar que as linhas "terminam" no polo sul como as de $\vec E$ terminam numa carga negativa. Elas atravessam o ímã e fecham o laço.
 
-No experimento, mapeie com bússolas o campo de um ímã em barra e veja as linhas formarem laços; no solenoide, observe as linhas continuarem pelo interior da bobina.`,
+No experimento, envolva um ímã com uma superfície fechada e veja o fluxo magnético total dar zero, por mais que a superfície seja deformada ou deslocada; depois mapeie com bússolas o campo de um ímã em barra e veja as linhas formarem laços; no solenoide, observe as linhas continuarem pelo interior da bobina.`,
       experiments: [
+        { kind: "sim", id: "gauss", scenario: "fluxo-b", note: "Calcule o fluxo de B por uma superfície fechada em volta de um ímã: o total é zero." },
         { kind: "sim", id: "imas-bussola", scenario: "um-ima", note: "Mapeie as linhas de um ímã e veja que formam laços fechados." },
         { kind: "sim", id: "biot-savart", scenario: "solenoide", params: { N: 40, L: 10 }, note: "No corte lateral, siga as linhas que atravessam o solenoide e voltam por fora." },
       ],

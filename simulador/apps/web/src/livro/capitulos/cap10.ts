@@ -43,8 +43,9 @@ Vetores angulares serão essenciais no capítulo 11, com o produto vetorial $\ve
 
 **Armadilha:** esperar que um ponto do corpo se mova na direção de $\vec\omega$.
 
-No experimento, use o produto vetorial com a mão direita animada: escolha dois vetores no plano horizontal e veja o resultado apontar ao longo do eixo perpendicular, como $\vec\omega$ numa rotação.`,
+No experimento, gire um corpo 90° em torno de $x$ e depois 90° em torno de $y$, e compare com a ordem inversa: as orientações finais diferem; reduza os ângulos para poucos graus e veja a diferença sumir com o produto dos ângulos. Depois use o produto vetorial com a mão direita animada para ver $\vec\omega$ ao longo do eixo.`,
       experiments: [
+        { kind: "sim", id: "vetores-3d", scenario: "rotacoes-finitas", note: "Compare as duas ordens das rotações de 90°; depois use 5° e 1° e veja a diferença cair com αβ." },
         { kind: "sim", id: "vetores-3d", scenario: "vetorial", note: "Veja a regra da mão direita: o vetor resultante aponta ao longo do eixo perpendicular ao plano." },
         { kind: "sim", id: "momento-angular", scenario: "inverter", note: "Os vetores ω da roda e da cadeira aparecem em 3D, ao longo dos eixos de rotação." },
       ],

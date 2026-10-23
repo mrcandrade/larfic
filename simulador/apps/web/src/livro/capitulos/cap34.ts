@@ -117,8 +117,9 @@ Uma lente é formada por duas dessas superfícies; aplicando a equação duas ve
 
 Armadilha: usar a convenção dos espelhos, contando como reais as imagens do mesmo lado do objeto. Na refração, a imagem real está do outro lado.
 
-No experimento, use a lente espessa, que tem duas superfícies esféricas: mude o raio das faces, a espessura e o índice e veja como a refração em cada face desloca o ponto de convergência.`,
+No experimento, ponha um objeto diante de uma única superfície esférica, siga os raios refratados e confira a posição da imagem com $n_1/p + n_2/i = (n_2 - n_1)/r$; mude o sinal de $r$ e veja a imagem passar a virtual; depois, na lente espessa, varie o raio das faces, a espessura e o índice.`,
       experiments: [
+        { kind: "sim", id: "refracao", scenario: "dioptro", note: "Arraste o objeto diante de um dioptro esférico e compare a imagem traçada com a equação." },
         { kind: "sim", id: "lentes", params: { montagem: 7 }, note: "Na lente espessa, varie o raio das faces e o índice e acompanhe a refração em cada superfície." },
         { kind: "sim", id: "principio-fermat", scenario: "lamina", note: "Veja a imagem deslocada por uma superfície plana, o caso r → ∞." },
       ],

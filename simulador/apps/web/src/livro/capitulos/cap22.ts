@@ -120,8 +120,9 @@ O mesmo raciocínio está por trás do experimento de Millikan (seção 21-2): a
 
 Armadilha: a direção da aceleração é a do campo (para $q > 0$), mas a trajetória só segue as linhas de campo se a partícula partir do repouso num campo de linhas retas.
 
-No experimento, ajuste a tensão entre as placas até segurar uma gota parada; depois, no hóquei elétrico, posicione cargas para que o campo leve o disco ao gol.`,
+No experimento, desligue o campo magnético do tubo e veja o feixe de elétrons descrever uma parábola entre as placas; ajuste também a tensão entre as placas de Millikan até segurar uma gota parada e, no hóquei elétrico, posicione cargas para que o campo leve o disco ao gol.`,
       experiments: [
+        { kind: "sim", id: "razao-em", scenario: "parabola-e", note: "Só com o campo elétrico, confira que o desvio do feixe cresce com o quadrado da distância percorrida." },
         { kind: "sim", id: "millikan", scenario: "equilibrio", note: "Ajuste o campo entre as placas até a força elétrica equilibrar o peso da gota." },
         { kind: "sim", id: "jogos-fisica", scenario: "hoquei", note: "Posicione cargas fixas para que o campo conduza o disco carregado ao gol." },
         { kind: "desafio", id: "hoquei-uma-carga", note: "Faça o gol usando uma única carga." },

@@ -7,6 +7,7 @@ import {
   blobPath,
   circlePath,
   enclosedCurrent,
+  forcePerLength,
   lineIntegral,
   squarePath,
   winding,
@@ -79,5 +80,20 @@ describe("Lei de Ampère", () => {
     s = sim.pointer!.up!(s, p, { x: 3, y: 0 })!;
     expect(s.path.length).toBeGreaterThan(20);
     expect(lineIntegral(s.path, s.wires) / (MU0 * 5)).toBeCloseTo(1, 6);
+  });
+
+  it("dois fios paralelos: F/L = μ₀I₁I₂/(2πd), atração no mesmo sentido, repulsão em sentidos opostos", () => {
+    const p = withOverrides(sim, sim.scenarios.find((c) => c.id === "dois-fios")!.params);
+    const s = sim.init(p);
+    const f1 = forcePerLength(s.wires, 0);
+    const f2 = forcePerLength(s.wires, 1);
+    const teo = (MU0 * 10 * 10) / (2 * Math.PI * 0.04);
+    expect(f1[0]).toBeCloseTo(teo, 12);
+    expect(f1[1]).toBeCloseTo(0, 15);
+    expect(f2[0]).toBeCloseTo(-teo, 12);
+    const op = sim.init(withOverrides(sim, { montagem: 5, I: 10 }));
+    expect(forcePerLength(op.wires, 0)[0]).toBeCloseTo(-teo, 12);
+    // o círculo amperiano em torno do fio 1 envolve só ele
+    expect(lineIntegral(s.path, s.wires)).toBeCloseTo(MU0 * 10, 9);
   });
 });

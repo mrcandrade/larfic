@@ -174,8 +174,9 @@ Um livro sobre a mesa: a Terra puxa o livro para baixo ($m\vec g$), e o livro pu
 
 **Armadilha:** achar que o corpo mais pesado, mais rápido ou "mais forte" empurra com mais força. Na interação, as forças são sempre iguais; o que muda são os efeitos, pela segunda lei.
 
-No experimento, provoque uma colisão entre carrinhos de massas muito diferentes e compare as variações de velocidade: o produto massa × variação de velocidade é igual e oposto nos dois, sinal de forças iguais e opostas durante o mesmo intervalo.`,
+No experimento, faça colidir carrinhos de 4 kg e 1 kg com para-choques de mola: durante o contato aparecem as duas forças do par, uma em cada carrinho, sempre com o mesmo módulo; depois compare as variações de velocidade, muito diferentes, e os $m\Delta v$, iguais e opostos.`,
       experiments: [
+        { kind: "sim", id: "colisoes", scenario: "acao-reacao", note: "Veja F₁₂ e F₂₁ desenhadas cada uma no carrinho em que age: mesmo módulo a cada instante, apesar das massas 4 : 1." },
         { kind: "concepcao", id: "terceira-lei-massas", note: "Confronte a ideia de que o corpo mais pesado empurra com mais força." },
         { kind: "sim", id: "colisoes", scenario: "gruda", params: { m1: 4, m2: 1, v1: 2, v2: -2 }, note: "Compare m·Δv nos dois carrinhos: iguais e opostos, embora as massas difiram quatro vezes." },
       ],

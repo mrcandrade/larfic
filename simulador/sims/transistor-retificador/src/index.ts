@@ -17,8 +17,10 @@ import {
   type CEParams,
   type RectParams,
 } from "./physics.ts";
+import { defaultNMOS, drainCurrent, mosQPoint } from "./mosfet.ts";
 
 export * from "./physics.ts";
+export * from "./mosfet.ts";
 
 export interface TRState {
   /** Tensão na carga do retificador (V) e corrente nos diodos (A). */
@@ -38,7 +40,7 @@ export interface TRState {
   drag: null | "probe" | "lamp";
 }
 
-export const MODOS = ["Curvas I_C × V_CE", "Transistor como chave", "Amplificador emissor-comum", "Retificador de meia onda", "Retificador em ponte (onda completa)", "Sensores: NTC e LDR"];
+export const MODOS = ["Curvas I_C × V_CE", "Transistor como chave", "Amplificador emissor-comum", "Retificador de meia onda", "Retificador em ponte (onda completa)", "Sensores: NTC e LDR", "MOSFET de canal n: curvas I_D × V_DS"];
 const VIEW = { xMin: -17, xMax: 17, yMin: -9.5, yMax: 9.5 };
 export const modo = (p: Params) => clamp(Math.round(num(p, "modo")), 0, MODOS.length - 1);
 
@@ -208,6 +210,77 @@ function drawCurves(d: Draw, p: Params, s: TRState) {
   const icp = icCurve(q, Q.ib, pv) * 1e3;
   d.dot(pl.X(pv), pl.Y(icp), 4, th.accent);
   d.text(`cursor: V_CE = ${fmt(pv)} V → I_C = ${fmt(icp)} mA (arraste)`, CURVE_BOX.x1, CURVE_BOX.y1 + 0.5, { size: 11, align: "right", color: th.accent });
+}
+
+// ------------------------------------------------------------ desenho: MOSFET
+const MOS_MODE = 6;
+export const mosOf = (p: Params) => mosQPoint(defaultNMOS(), num(p, "VGS", 3), num(p, "VCC", 12), num(p, "RC", 2200));
+
+function drawMosfet(d: Draw, p: Params) {
+  const th = d.theme;
+  const sc = schematic(d);
+  const m = defaultNMOS();
+  const vgs = num(p, "VGS", 3);
+  const vdd = num(p, "VCC", 12);
+  const rd = num(p, "RC", 2200);
+  const Q = mosOf(p);
+  // símbolo: porta isolada (duas barras paralelas) e canal
+  const cx = -8.5;
+  const gx = cx - 0.7;
+  const chx = cx - 0.35;
+  d.line(gx, -0.8, gx, 0.8, { color: th.text, width: 2.4 });
+  d.line(chx, -1, chx, 1, { color: th.text, width: 2.4, dash: [5, 3] });
+  const G: [number, number] = [cx - 2.2, 0];
+  const D: [number, number] = [cx + 0.45, 1.8];
+  const S: [number, number] = [cx + 0.45, -1.8];
+  sc.wire([G, [gx, 0]]);
+  sc.wire([[chx, 0.75], [D[0], 0.75], D]);
+  sc.wire([[chx, -0.75], [S[0], -0.75], S]);
+  d.arrow(D[0], 0, chx - D[0] + 0.1, 0, { color: th.text, width: 1.6, head: 7 });
+  sc.wire([[chx, 0], [D[0], 0], [D[0], -0.75]]);
+  d.text("G", G[0], G[1], { size: 11, dy: -9 });
+  d.text("D", D[0], D[1], { size: 11, dx: 10 });
+  d.text("S", S[0], S[1], { size: 11, dx: 10 });
+  // circuito
+  sc.wire([G, [-12.5, 0], [-12.5, -1.2]]);
+  d.circle(-12.5, -2.4, 0.95, { stroke: th.text, width: 1.8, fill: th.dark ? "#141a24" : "#ffffff" });
+  d.text("+", -12.5, -2.4, { size: 12, weight: "700", dy: -7 });
+  d.text("−", -12.5, -2.4, { size: 12, weight: "700", dy: 7 });
+  d.text(`V_GS = ${fmt(vgs)} V`, -13.7, -2.4, { size: 11, align: "right" });
+  sc.wire([[-12.5, -3.6], [-12.5, -6], [S[0], -6]]);
+  sc.wire([S, [S[0], -6]]);
+  sc.ground(S[0], -6);
+  sc.resistor(D, [D[0], 6], `R_D = ${fmt(rd / 1000)} kΩ`);
+  sc.wire([[D[0], 6], [-5, 6]]);
+  d.text(`+V_DD = ${fmt(vdd)} V`, -5, 6, { align: "left", dx: 4, size: 12, weight: "600" });
+  d.arrow(D[0] + 0.5, 3.4, 0, -1, { color: th.series[0]!, width: 1.5 });
+  d.text(`I_D = ${fmt(Q.id * 1e3)} mA`, D[0] + 0.8, 3.2, { size: 11, color: th.series[0]!, align: "left", weight: "600" });
+  d.text(`V_DS = ${fmt(Q.vds)} V`, D[0] + 0.8, -2.8, { size: 11, align: "left" });
+  d.text(`I_G = 0 (porta isolada pelo óxido)`, -16.5, -7.6, { size: 12, align: "left" });
+  const col = Q.reg === "saturação" ? th.series[2]! : Q.reg === "triodo" ? th.series[1]! : th.muted;
+  d.text(`Região: ${Q.reg}  (V_t = ${fmt(m.Vt)} V)`, -16.5, -8.5, { size: 12, align: "left", weight: "700", color: col });
+  d.text("MOSFET de canal n (enriquecimento)", -16.5, 8.7, { size: 14, weight: "700", align: "left" });
+
+  // curvas
+  const vmax = vdd * 1.1;
+  const family = [2, 2.5, 3, 3.5, 4, 4.5, 5];
+  const imax = Math.max(vdd / rd, drainCurrent(m, Math.max(5, vgs), vmax)) * 1.15 * 1e3;
+  const pl = panel(d, CURVE_BOX, { min: 0, max: vmax }, { min: 0, max: imax });
+  pl.frame({ xlabel: "V_DS (V)", ylabel: "I_D (mA)" });
+  for (const vg of family) {
+    pl.plot((v) => drainCurrent(m, vg, v) * 1e3, 0, vmax, { color: th.muted, width: 1.2, n: 90 });
+    const yEnd = drainCurrent(m, vg, vmax) * 1e3;
+    if (yEnd < imax) d.text(`${fmt(vg)} V`, CURVE_BOX.x1, pl.Y(yEnd), { size: 9, color: th.muted, align: "right", dx: -3, dy: -7 });
+  }
+  // fronteira triodo/saturação: V_DS = V_GS − V_t
+  pl.plot((v) => drainCurrent(m, v + m.Vt, v) * 1e3, 0, vmax, { color: th.series[3] ?? th.accent, width: 1.4, dash: [3, 3], n: 90 });
+  d.text("triodo", pl.X(0.3), CURVE_BOX.y1 - 0.4, { size: 10, color: th.series[1]!, align: "left" });
+  d.text("saturação", pl.X(vmax * 0.6), CURVE_BOX.y1 - 0.4, { size: 10, color: th.series[2]!, align: "left" });
+  pl.plot((v) => drainCurrent(m, vgs, v) * 1e3, 0, vmax, { color: th.series[1]!, width: 2.4, n: 120 });
+  pl.line([[0, (vdd / rd) * 1e3], [vdd, 0]], { color: th.series[0]!, width: 2, dash: [7, 4] });
+  d.text("reta de carga", pl.X(vdd * 0.55), pl.Y((vdd * 0.45 * 1e3) / rd), { size: 10, color: th.series[0]!, align: "left", dx: 6, dy: -6 });
+  d.dot(pl.X(Q.vds), pl.Y(Q.id * 1e3), 6, th.series[1]!);
+  d.text("Q", pl.X(Q.vds), pl.Y(Q.id * 1e3), { size: 12, weight: "700", dx: 9, dy: -9, color: th.series[1]! });
 }
 
 // ------------------------------------------------------------ desenho: chave
@@ -538,6 +611,15 @@ export const transistorRetificador = defineSim<TRState>({
         String.raw`f_r = ${texNum(rp.f * (rp.bridge ? 2 : 1))}\ \text{Hz}`,
       ];
     }
+    if (m === MOS_MODE) {
+      const mm = defaultNMOS();
+      const Q = mosOf(p);
+      const vov = num(p, "VGS", 3) - mm.Vt;
+      return [
+        String.raw`V_{ov} = V_{GS} - V_t = ${texNum(vov)}\ \text{V} \qquad \text{saturação: } I_D = \tfrac{k}{2}V_{ov}^2(1 + \lambda V_{DS}) \qquad \text{triodo: } I_D = k\left(V_{ov}V_{DS} - \tfrac12 V_{DS}^2\right)`,
+        String.raw`k = ${texNum(mm.k * 1e3)}\ \text{mA/V}^2 \quad I_D = ${texNum(Q.id * 1e3)}\ \text{mA},\ V_{DS} = ${texNum(Q.vds)}\ \text{V}\ (\text{${Q.reg}})`,
+      ];
+    }
     const S = sensorOf(p, s);
     return [
       String.raw`R_{NTC}(${texNum(S.T)}\,^\circ\text{C}) = ${texNum(S.Rn / 1000)}\ \text{k}\Omega \Rightarrow V = ${texNum(S.Vn)}\ \text{V}`,
@@ -564,6 +646,7 @@ export const transistorRetificador = defineSim<TRState>({
     { key: "E1", label: "Lâmpada: iluminância a 1 m", unit: "lux", min: 1, max: 1000, step: 1, default: 100, log: true, live: true },
     { key: "Rfix", label: "Resistor fixo dos divisores", unit: "kΩ", min: 1, max: 100, step: 0.1, default: 10, log: true, live: true },
     { key: "Vcc", label: "Alimentação dos divisores", unit: "V", min: 1, max: 12, step: 0.1, default: 5, live: true },
+    { key: "VGS", label: "Tensão porta–fonte V_GS (MOSFET)", unit: "V", min: 0, max: 6, step: 0.05, default: 3, live: true },
     { key: "Vref", label: "Limiar do comparador V_ref", unit: "V", min: 0.1, max: 12, step: 0.05, default: 2.5, live: true },
   ],
   observables: [
@@ -581,6 +664,8 @@ export const transistorRetificador = defineSim<TRState>({
     { key: "Vntc", label: "Saída do divisor do NTC", unit: "V", value: (s, p) => sensorOf(p, s).Vn },
     { key: "E", label: "Iluminância no LDR", unit: "lux", value: (s, p) => lux(p, s) },
     { key: "Rldr", label: "Resistência do LDR", unit: "kΩ", value: (s, p) => sensorOf(p, s).Rl / 1000 },
+    { key: "ID", label: "Corrente de dreno I_D (MOSFET)", unit: "mA", value: (_s, p) => (modo(p) === MOS_MODE ? mosOf(p).id * 1e3 : 0) },
+    { key: "VDS", label: "Tensão dreno–fonte V_DS (MOSFET)", unit: "V", value: (_s, p) => (modo(p) === MOS_MODE ? mosOf(p).vds : 0) },
     { key: "Vldr", label: "Saída do divisor do LDR", unit: "V", value: (s, p) => sensorOf(p, s).Vl },
   ],
   chart: { x: "t", y: "vo" },
@@ -601,6 +686,25 @@ export const transistorRetificador = defineSim<TRState>({
           options: ["Dobra também", "Fica igual", "Cai à metade", "Quadruplica"],
           answer: 0,
           explanation: "Na região ativa $I_C \\approx \\beta I_B$: a corrente de coletor é proporcional à de base. Isso só vale enquanto o ponto Q não chega à saturação.",
+        },
+      ],
+    },
+    {
+      id: "mosfet",
+      label: "MOSFET: tensão na porta controla a corrente",
+      params: { modo: 6, VGS: 3, VCC: 12, RC: 2200 },
+      guide: `### Transistor de efeito de campo
+1. A porta é isolada do canal por uma camada de óxido: não entra corrente nela. Quem controla $I_D$ é a **tensão** $V_{GS}$, que cria (ou não) um canal de elétrons entre fonte e dreno.
+2. Leve $V_{GS}$ abaixo de $V_t = 1{,}5$ V: não há canal e $I_D = 0$ (**corte**).
+3. Acima do limiar, com $V_{DS} > V_{GS} - V_t$, a curva é quase horizontal (**saturação**): $I_D \\approx \\tfrac{k}{2}(V_{GS} - V_t)^2$ não depende de $V_{DS}$.
+4. A linha pontilhada separa a saturação do **triodo** (à esquerda), onde o canal age como um resistor controlado por $V_{GS}$.
+5. Aumente $V_{GS}$ até o ponto Q cruzar a linha pontilhada: com o MOSFET bem "ligado", $V_{DS}$ cai a poucos volts. É assim que ele funciona como chave nos circuitos digitais.`,
+      predict: [
+        {
+          question: "Na saturação, se a sobretensão V_GS − V_t dobrar, a corrente de dreno:",
+          options: ["dobra", "quadruplica", "fica igual", "cai à metade"],
+          answer: 1,
+          explanation: "Na saturação $I_D \\propto (V_{GS} - V_t)^2$: dobrar a sobretensão multiplica a corrente por 4. No bipolar, ao contrário, $I_C$ é proporcional a $I_B$.",
         },
       ],
     },
@@ -726,6 +830,8 @@ export const transistorRetificador = defineSim<TRState>({
       case 3:
       case 4:
         return drawRect(d, p, s, t);
+      case MOS_MODE:
+        return drawMosfet(d, p);
       default:
         return drawSensors(d, p, s);
     }

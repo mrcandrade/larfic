@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
 import {
+  gpsClock,
+  lightDeflectionArcsec,
+  tallBody,
   gravitacaoTerra as sim,
   G,
   GM,
@@ -146,5 +149,34 @@ describe("Gravitação: superposição, interior da Terra e equivalência", () =
     const eq = sim.exercises!.find((e) => e.id === "equador")!;
     const pe = withOverrides(sim, { ...eq.fixed, m0: 70, dia: 24 });
     expect(eq.answer.compute(pe)).toBeCloseTo(new Runner(sim, pe).value("Pap"), 10);
+  });
+});
+
+describe("Gravitação: corpo alto, desvio da luz e GPS", () => {
+  it("corpo alto: CG abaixo do CM por ≈ L²/(6R); peso relativo R/(R + L)", () => {
+    const q1 = tallBody(1000);
+    expect(q1.diff).toBeCloseTo(1e6 / (6 * RE), 4);
+    const q = tallBody(2e6);
+    expect(q.hcg).toBeLessThan(q.hcm);
+    expect(q.hcg).toBeCloseTo((RE * (RE + 2e6) * Math.log(1 + 2e6 / RE)) / 2e6 - RE, 3);
+    expect(q.Frel).toBeCloseTo(RE / (RE + 2e6), 12);
+    const r = new Runner(sim, withOverrides(sim, { modo: 5, Lh: 1 }));
+    expect(r.value("dcg")).toBeCloseTo(0.0262, 3);
+  });
+
+  it("luz rente ao Sol: 1,75″; GPS: +45,7 µs/dia gravitacional, −7,2 cinemático, saldo ≈ 38,5", () => {
+    expect(lightDeflectionArcsec(1)).toBeCloseTo(1.75, 2);
+    expect(lightDeflectionArcsec(2)).toBeCloseTo(lightDeflectionArcsec(1) / 2, 12);
+    const g = gpsClock(20200e3);
+    expect(g.grav).toBeCloseTo(45.7, 0);
+    expect(g.vel).toBeCloseTo(-7.2, 0);
+    expect(g.net).toBeCloseTo(38.5, 0);
+    expect(g.erroKm).toBeGreaterThan(10);
+    // em órbita baixa o efeito cinemático vence
+    expect(gpsClock(400e3).net).toBeLessThan(0);
+    const r = new Runner(sim, withOverrides(sim, { modo: 6, h: 20200 }));
+    for (let i = 0; i < 200; i++) r.stepOnce(); // 1 s de relógio = 1 h
+    expect(r.value("gpsAcc")).toBeCloseTo((g.net * r.state.tau) / 86400, 9);
+    expect(r.state.tau).toBeCloseTo(3600, 6);
   });
 });

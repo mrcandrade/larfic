@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
-import { finiteWellLevels, infiniteWellE, meanX, oscillatorE, pocoQuantico as sim, solutionFor } from "../src/index.ts";
+import { boxLevels, dotEnergy, photonNm, finiteWellLevels, infiniteWellE, meanX, oscillatorE, pocoQuantico as sim, solutionFor } from "../src/index.ts";
 
 const sol = (o: Record<string, number>) => {
   const p = withOverrides(sim, o);
@@ -60,5 +60,28 @@ describe("Poço quântico (Schrödinger 1D)", () => {
     expect(s.drawn.filter((v) => v > 0).length).toBeGreaterThan(3);
     expect(solutionFor(p, s).E[0]).not.toBe(flat);
     expect(E0).toBeGreaterThan(0);
+  });
+  it("caixa 2D/3D: degenerescências do quadrado e do cubo", () => {
+    const sq = boxLevels([2, 2], 6);
+    expect(sq[0]!.E).toBeCloseTo((Math.PI ** 2 / 8) * 2, 10);
+    expect(sq[1]!.states.length).toBe(2);
+    expect(sq[1]!.E / sq[0]!.E).toBeCloseTo(2.5, 10);
+    const ret = boxLevels([2, 3], 6);
+    expect(ret.every((l) => l.states.length === 1)).toBe(true);
+    const cubo = boxLevels([1, 1, 1], 6);
+    expect(cubo.map((l) => l.states.length)).toEqual([1, 3, 3, 3, 1, 6]);
+    const r = new Runner(sim, withOverrides(sim, { modo: 5, dim: 3, L: 1, Ly: 1, Lz: 1 }));
+    expect(r.value("g2")).toBe(3);
+    expect(r.value("r21")).toBeCloseTo(2, 10);
+  });
+
+  it("pontos quânticos: menor raio emite mais azul", () => {
+    expect(photonNm(dotEnergy(2.5))).toBeGreaterThan(530);
+    expect(photonNm(dotEnergy(2.5))).toBeLessThan(580);
+    expect(dotEnergy(1.5)).toBeGreaterThan(dotEnergy(3));
+    expect(dotEnergy(30)).toBeCloseTo(1.74, 1);
+    const r = new Runner(sim, withOverrides(sim, { modo: 6, Rdot: 2 }));
+    expect(r.value("lamDot")).toBeLessThan(photonNm(dotEnergy(4)));
+    expect(r.value("E1")).toBe(0);
   });
 });

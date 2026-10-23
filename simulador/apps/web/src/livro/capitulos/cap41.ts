@@ -230,8 +230,9 @@ Exemplo: com $\beta = 200$ e $I_B = 20$ µA, $I_C = 4{,}0$ mA. Num resistor de c
 
 Armadilha: pensar que o transistor "cria" energia ao amplificar. A potência do sinal de saída vem da fonte de alimentação; o sinal de entrada apenas controla quanto dessa potência passa.
 
-O simulador mostra o transistor bipolar; o MOSFET segue a mesma lógica de controle (porta no lugar da base, tensão no lugar de corrente). No experimento, levante as curvas $I_C \times V_{CE}$, trace a reta de carga e veja o amplificador emissor-comum no osciloscópio.`,
+O simulador tem o transistor bipolar e o MOSFET de canal n. No experimento, varie $V_{GS}$ e veja a corrente de dreno passar do corte ao triodo e à saturação, com $I_D \propto (V_{GS} - V_t)^2$; depois levante as curvas $I_C \times V_{CE}$ do bipolar, trace a reta de carga e veja o amplificador emissor-comum no osciloscópio.`,
       experiments: [
+        { kind: "sim", id: "transistor-retificador", scenario: "mosfet", note: "Varie V_GS e veja I_D nas regiões de corte, triodo e saturação." },
         { kind: "sim", id: "transistor-retificador", scenario: "curvas", note: "Levante as curvas I_C × V_CE e escolha o ponto de operação na reta de carga." },
         { kind: "sim", id: "transistor-retificador", scenario: "amplificador", note: "Amplifique um sinal pequeno e meça o ganho e a distorção no osciloscópio." },
       ],

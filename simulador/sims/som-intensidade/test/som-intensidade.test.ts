@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
-import { C_SOM, GAIN_MAX, RHO, intensity, level, pressureAmp, somIntensidade as sim, threshold, toneFor } from "../src/index.ts";
+import { C_SOM, GAIN_MAX, I0, RHO, duasCaixas, intensity, level, levelDuas, pressureAmp, somIntensidade as sim, somIntensidade, threshold, toneFor } from "../src/index.ts";
 
 const P = (over: Record<string, number>) => withOverrides(sim, over);
 
@@ -48,5 +48,38 @@ describe("som: intensidade e decibéis", () => {
     for (let i = 0; i < 50; i++) r.stepOnce();
     expect(r.value("beta")).toBeCloseTo(level(r.params), 12);
     expect(r.value("lambda")).toBeCloseTo(C_SOM / 2000, 12);
+  });
+});
+
+describe("Som: interferência de duas caixas", () => {
+  const P = (o: Record<string, number>) => withOverrides(somIntensidade, { modo: 1, P: 0.01, f: 343, d: 1.5, D: 4, yL: 0, ...o });
+  it("no eixo, ΔL = 0: intensidade 4 vezes a de uma caixa (+6 dB)", () => {
+    const q = duasCaixas(P({}));
+    expect(q.dL).toBeCloseTo(0, 12);
+    expect(q.I / q.I1).toBeCloseTo(4, 12);
+    expect(levelDuas(P({})) - 10 * Math.log10(q.I1 / I0)).toBeCloseTo(10 * Math.log10(4), 10);
+  });
+  it("mínimo onde ΔL = λ/2: intensidade quase nula; ΔL = λ dá novo máximo", () => {
+    // procura o primeiro y > 0 com ΔL = λ/2 por bissecção
+    const find = (target: number) => {
+      let a = 0, b = 5;
+      for (let i = 0; i < 60; i++) {
+        const m = (a + b) / 2;
+        if (duasCaixas(P({ yL: m })).dL < target) a = m;
+        else b = m;
+      }
+      return a;
+    };
+    const y1 = find(0.5);
+    const q1 = duasCaixas(P({ yL: y1 }));
+    expect(Math.cos(q1.phi)).toBeCloseTo(-1, 9);
+    expect(q1.I / (q1.I1 + q1.I2)).toBeLessThan(0.01);
+    const q2 = duasCaixas(P({ yL: find(1) }));
+    expect(q2.I / (q2.I1 + q2.I2)).toBeGreaterThan(1.95); // amplitudes um pouco diferentes (L₁ ≠ L₂)
+  });
+  it("o som do alto-falante acompanha o nível total com as duas caixas", () => {
+    const on = toneFor(P({ som: 1 }));
+    const off = toneFor(P({ som: 1, yL: 0.88 }));
+    expect(on.gain).toBeGreaterThan(off.gain);
   });
 });

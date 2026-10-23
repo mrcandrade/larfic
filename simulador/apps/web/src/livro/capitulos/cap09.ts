@@ -124,8 +124,9 @@ Um fluxo de projéteis (granizo num telhado, água de uma mangueira numa parede)
 
 **Armadilha:** achar que um corpo que bate e volta sofre a mesma força que um corpo que bate e para. O $\Delta v$ do ricochete é maior.
 
-No experimento, compare as velocidades de cada carrinho antes e depois e calcule a variação de momento de cada um: os impulsos são iguais e opostos. Varie o coeficiente de restituição para ver o impulso crescer quando o choque fica mais elástico.`,
+No experimento, os carrinhos têm para-choques de mola e o choque dura um tempo finito: acompanhe a curva $F(t)$, leia a área sombreada (o impulso) e compare com $m_2\Delta v_2$; depois deixe as molas quatro vezes mais rígidas e veja o pico dobrar e a duração cair à metade com a mesma área. Varie também o coeficiente de restituição para ver o impulso crescer quando o choque fica mais elástico.`,
       experiments: [
+        { kind: "sim", id: "colisoes", scenario: "forca-contato", note: "Leia a área sob F(t) (impulso), Δt e a força média, e confira J = m₂Δv₂." },
         { kind: "sim", id: "colisoes", scenario: "troca", note: "Calcule Δp de cada carrinho: os impulsos recebidos são iguais e opostos." },
         { kind: "sim", id: "trilho-de-ar", scenario: "elastica", note: "Meça o impulso que cada carrinho recebe da mola de choque a partir das velocidades nas fotoportas." },
         { kind: "concepcao", id: "terceira-lei-massas", note: "Na colisão, o corpo pesado e o leve recebem impulsos de mesmo módulo." },

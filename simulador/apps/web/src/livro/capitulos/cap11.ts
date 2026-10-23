@@ -98,8 +98,9 @@ Na descida, a energia potencial vira principalmente energia cinética de **rota�
 
 **Armadilha:** achar que a tração no fio é igual ao peso. Ela é um pouco menor, $T = Mg - Ma$; a diferença é o que acelera o ioiô.
 
-No experimento, a roda de Maxwell é um ioiô de dois fios: cronometre a descida, calcule a aceleração e compare com a fórmula; depois engrosse o eixo e veja a roda descer mais depressa.`,
+No experimento, solte o ioiô (0,2 kg, eixo de 4 mm), confira $a = g/51$ e a tração um pouco menor que o peso, veja a razão entre as energias de rotação e de translação e acompanhe a subida depois que o fio se desenrola; depois engrosse o eixo e veja o ioiô descer mais depressa.`,
       experiments: [
+        { kind: "sim", id: "roda-maxwell", scenario: "ioio", note: "Confira a = g/(1 + I/MR₀²) e T = Mg/(1 + MR₀²/I) nos observáveis e veja o ioiô subir de volta." },
         { kind: "sim", id: "roda-maxwell", scenario: "medir-I", note: "A roda de Maxwell é um ioiô: meça a aceleração de descida e compare com g/(1 + I/MR₀²)." },
         { kind: "sim", id: "roda-maxwell", scenario: "eixo", note: "Com o eixo mais grosso, a roda desce mais depressa e gira menos." },
         { kind: "sim", id: "roda-maxwell", scenario: "energia", note: "Veja que quase toda a energia vai para a rotação, e acompanhe o retorno na subida." },

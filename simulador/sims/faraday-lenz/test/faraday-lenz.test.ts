@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
-import { dFluxExact, dFluxDx, faradayLenz as sim, fluxExact, fluxNumeric } from "../src/index.ts";
+import { RS, dFluxExact, dFluxDx, faradayLenz as sim, fluxExact, fluxNumeric, inducedE } from "../src/index.ts";
 
 const rel = (a: number, b: number) => Math.abs(a - b) / Math.abs(b);
 
@@ -69,5 +69,24 @@ describe("Lei de Faraday e Lenz", () => {
     while (r.t < 2) r.stepOnce();
     expect(r.state.x).toBeCloseTo(-2, 4);
     expect(Math.abs(r.value("emf"))).toBeLessThan(1e-9);
+  });
+
+  it("solenoide: E induzido circular, ∝ r dentro e ∝ 1/r fora; circulação = −dΦ/dt", () => {
+    const p = withOverrides(sim, sim.scenarios.find((c) => c.id === "e-induzido")!.params);
+    const t = 0.1;
+    const dB = 0.2 * Math.PI * Math.cos(Math.PI * t);
+    expect(inducedE(p, t, 2)).toBeCloseTo(-(0.02 / 2) * dB, 12);
+    expect(inducedE(p, t, 4) / inducedE(p, t, 2)).toBeCloseTo(2, 12);
+    expect(inducedE(p, t, 10) / inducedE(p, t, 5)).toBeCloseTo(0.5, 12);
+    // continuidade em r = R e circulação igual ao fluxo envolvido
+    for (const r of [3, 5, 8]) {
+      const circ = inducedE(p, t, r) * 2 * Math.PI * (r / 100);
+      const A = Math.PI * (Math.min(r, RS) / 100) ** 2;
+      expect(circ).toBeCloseTo(-dB * A, 12);
+    }
+    const r = new Runner(sim, p);
+    for (let i = 0; i < 100; i++) r.stepOnce();
+    const A = Math.PI * 0.03 ** 2;
+    expect(r.value("emf")).toBeCloseTo(-0.2 * Math.PI * Math.cos(Math.PI * r.t) * A, 6);
   });
 });

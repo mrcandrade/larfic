@@ -10,10 +10,12 @@ import {
   fresnelR,
   fringesBetween,
   gasNm1,
-  michelsonI,
+  coherenceLength,
+  michelsonIc,
   michelsonOPD,
   minBrightThickness,
   newtonGap,
+  visibility,
 } from "./fisica.ts";
 
 export * from "./fisica.ts";
@@ -23,6 +25,7 @@ export const MICHELSON = 0;
 export const CUNHA = 1;
 export const BOLHA = 2;
 export const NEWTON = 3;
+export const AR = 4;
 
 /** Comprimento real da cunha (mm) e tempo de drenagem da película (s). */
 export const L_WEDGE = 50;
@@ -75,6 +78,7 @@ export function indices(p: Params): [number, number, number] {
   const nf = num(p, "nf", 1.33);
   if (mode(p) === CUNHA) return [N_GLASS, 1, N_GLASS];
   if (mode(p) === NEWTON) return [N_GLASS, 1, N_GLASS];
+  if (mode(p) === AR) return [1, nf, N_GLASS];
   return [1, nf, Math.round(num(p, "ns")) === 1 ? N_GLASS : 1];
 }
 
@@ -90,6 +94,8 @@ export function probeThickness(s: FilmesState, p: Params, t: number): number {
       return bubbleThickness(s.probe, p, t);
     case NEWTON:
       return s.lift;
+    case AR:
+      return num(p, "eAR", 100);
     default:
       return 0;
   }
@@ -99,7 +105,7 @@ export function probeThickness(s: FilmesState, p: Params, t: number): number {
 export function intensity(s: FilmesState, p: Params, t: number): number {
   if (mode(p) === MICHELSON) {
     const opd = opdOf(s, p);
-    return michelsonI(opd, 0, 0, lam(p));
+    return michelsonIc(opd, 0, 0, lam(p), num(p, "dlam", 0));
   }
   const [n1, n2, n3] = indices(p);
   return filmReflectance(n1, n2, n3, probeThickness(s, p, t), lam(p)) / filmRmax(n1, n2, n3);
@@ -149,6 +155,10 @@ export const filmesFinos = defineSim<FilmesState>({
       ];
       if (N > 0 && Math.abs(s.x - s.ref.x) > 1e-6)
         out.push(String.raw`\lambda \approx \frac{2\,\Delta x}{N} = ${texNum(lambdaMeasured(s, p))}\ \text{nm}`);
+      if (num(p, "dlam", 0) > 0)
+        out.push(
+          String.raw`\ell_c = \frac{\lambda^2}{\Delta\lambda} = ${texNum(coherenceLength(lam(p), num(p, "dlam", 0)) * 1e3)}\ \text{mm},\quad \Delta = ${texNum(opdOf(s, p) * 1e3)}\ \text{mm} \Rightarrow V = ${texNum(visibility(opdOf(s, p), lam(p), num(p, "dlam", 0)), 3)}`,
+        );
       if (N > 0 && Math.abs(s.p - s.ref.p) > 0.5)
         out.push(String.raw`(n-1)_{1\,\text{atm}} \approx \frac{N\lambda}{2L_c}\frac{p_{\text{atm}}}{\Delta p} = ${texNum(nm1Measured(s, p))}`);
       return out;
@@ -161,6 +171,10 @@ export const filmesFinos = defineSim<FilmesState>({
       String.raw`e = ${texNum(e)}\ \text{nm},\quad \frac{2n_2e}{\lambda} = ${texNum((2 * n2 * e) / lam(p))},\quad R/R_{\max} = ${texNum(intensity(s, p, t), 3)}`,
     ];
     if (m === NEWTON) out.push(String.raw`r_1 = \sqrt{\lambda R} = ${texNum(darkRingRadius(1, lam(p), num(p, "R", 2)))}\ \text{mm}`);
+    if (m === AR)
+      out.push(
+        String.raw`R(\lambda) = ${texNum(100 * filmReflectance(n1, n2, n3, e, lam(p)), 3)}\,\% \ \text{(vidro nu: } ${texNum(100 * fresnelR(1, N_GLASS) ** 2, 3)}\,\%) \qquad \lambda_{\min} = 4n_2e = ${texNum(4 * n2 * e)}\ \text{nm}`,
+      );
     if (m === CUNHA) out.push(String.raw`\Delta x = \frac{\lambda L}{2 e_{\max}} = ${texNum(wedgeSpacing(s, p))}\ \text{mm}`);
     return out;
   },
@@ -171,7 +185,7 @@ export const filmesFinos = defineSim<FilmesState>({
       label: "Experimento",
       unit: "",
       min: 0,
-      max: 3,
+      max: 4,
       step: 1,
       default: 0,
       options: [
@@ -179,6 +193,7 @@ export const filmesFinos = defineSim<FilmesState>({
         { value: CUNHA, label: "Cunha de ar entre lâminas" },
         { value: BOLHA, label: "Película de sabão (drenando)" },
         { value: NEWTON, label: "Anéis de Newton" },
+        { value: AR, label: "Camada antirreflexo (espessura fixa)" },
       ],
     },
     {
@@ -226,6 +241,8 @@ export const filmesFinos = defineSim<FilmesState>({
     { key: "e0", label: "Espessura inicial da película (base)", unit: "nm", min: 200, max: 3000, step: 10, default: 1500 },
     { key: "emax", label: "Espessura da cunha no calço", unit: "µm", min: 1, max: 20, step: 0.5, default: 5 },
     { key: "R", label: "Raio de curvatura da lente R", unit: "m", min: 0.5, max: 10, step: 0.1, default: 2 },
+    { key: "dlam", label: "Largura espectral da fonte Δλ (Michelson; 0 = laser ideal)", unit: "nm", min: 0, max: 20, step: 0.1, default: 0, live: true },
+    { key: "eAR", label: "Espessura da camada antirreflexo", unit: "nm", min: 0, max: 400, step: 1, default: 100, live: true },
   ],
 
   observables: [
@@ -236,6 +253,9 @@ export const filmesFinos = defineSim<FilmesState>({
     { key: "lamMed", label: "λ medido (2Δx/N)", unit: "nm", value: (s, p) => lambdaMeasured(s, p) },
     { key: "nm1", label: "(n − 1) medido a 1 atm", unit: "", value: (s, p) => nm1Measured(s, p) },
     { key: "e", label: "Espessura na sonda (ar no centro, Newton)", unit: "nm", value: (s, p, t) => probeThickness(s, p, t) },
+    { key: "V", label: "Visibilidade das franjas (Michelson)", unit: "", value: (s, p) => (mode(p) === MICHELSON ? visibility(opdOf(s, p), lam(p), num(p, "dlam", 0)) : 0) },
+    { key: "Rar", label: "Refletância com a camada (em λ)", unit: "%", value: (_s, p) => 100 * filmReflectance(1, num(p, "nf", 1.33), N_GLASS, num(p, "eAR", 100), lam(p)) },
+    { key: "Rvidro", label: "Refletância do vidro sem camada", unit: "%", value: () => 100 * fresnelR(1, N_GLASS) ** 2 },
     {
       key: "r1",
       label: "Raio do 1º anel escuro visível",
@@ -317,6 +337,46 @@ export const filmesFinos = defineSim<FilmesState>({
 3. O centro é escuro. Por quê, se ali a espessura é zero?
 4. **Arraste a lente para cima** (ou ligue o motor): os anéis encolhem e somem no centro, um a cada λ/2 de elevação.
 5. Troque para luz branca: só os primeiros anéis ficam nítidos.`,
+    },
+    {
+      id: "coerencia",
+      label: "Comprimento de coerência",
+      params: { exp: MICHELSON, lambda: 633, dlam: 0.5, d0: 0.1, motor: 0.3 },
+      guide: `### Até onde a luz interfere consigo mesma?
+1. A fonte não é um laser ideal: tem largura espectral $\\Delta\\lambda = 0{,}5\\ \\text{nm}$. Cada trem de onda dura pouco, e seu comprimento é o **comprimento de coerência**
+$$\\ell_c \\approx \\frac{\\lambda^2}{\\Delta\\lambda} = \\frac{(633\\ \\text{nm})^2}{0{,}5\\ \\text{nm}} \\approx 0{,}8\\ \\text{mm}$$
+2. Com $d_0 = 0{,}1\\ \\text{mm}$ a diferença de caminho é $\\Delta = 2d_0 = 0{,}2\\ \\text{mm} < \\ell_c$: os anéis são nítidos (visibilidade ≈ 0,8).
+3. Aumente $d_0$ para 0,3 mm e depois 0,5 mm. Quando $\\Delta$ passa de $\\ell_c$, as duas cópias do trem de onda chegam ao anteparo sem relação de fase fixa: o contraste some e o anteparo fica uniformemente iluminado.
+4. Ponha $\\Delta\\lambda = 0$ (laser ideal): os anéis voltam para qualquer $d_0$. Com $\\Delta\\lambda = 20\\ \\text{nm}$ (um LED), $\\ell_c \\approx 20\\ \\mu\\text{m}$ e não se veem franjas.
+5. É por isso que bolhas de sabão mostram cores (filme de menos de 1 µm) e uma janela de vidro de 3 mm não: a espessura passa do comprimento de coerência da luz branca.`,
+      predict: [
+        {
+          question: "Uma fonte de λ = 600 nm e Δλ = 6 nm ilumina um Michelson. As franjas desaparecem quando a diferença de caminho passa de cerca de:",
+          options: ["600 nm", "6 µm", "60 µm", "6 mm"],
+          answer: 2,
+          explanation: "$\\ell_c \\approx \\lambda^2/\\Delta\\lambda = (600\\ \\text{nm})^2/(6\\ \\text{nm}) = 60\\ \\mu\\text{m}$.",
+        },
+      ],
+    },
+    {
+      id: "antirreflexo",
+      label: "Camada antirreflexo de espessura fixa",
+      params: { exp: AR, luz: 1, nf: 1.38, eAR: 100, lambda: 550 },
+      guide: `### Uma lente que reflete menos
+1. Uma camada de fluoreto de magnésio ($n_2 = 1{,}38$) de **100 nm** cobre o vidro ($n_3 = 1{,}52$). As duas reflexões (ar–camada e camada–vidro) invertem a fase, então elas se cancelam quando
+$$2n_2e = \\frac{\\lambda}{2} \\quad\\Rightarrow\\quad \\lambda_{\\min} = 4n_2e = 552\\ \\text{nm}$$
+2. No gráfico, a curva de $R(\\lambda)$ tem o mínimo no verde-amarelo, onde o olho é mais sensível, bem abaixo dos 4,3 % do vidro nu. Não chega a zero porque as duas reflexões não têm a mesma amplitude ($n_2 \\neq \\sqrt{n_3}$).
+3. A espessura é fixa, mas a luz é branca: nas pontas do espectro (azul e vermelho) o cancelamento é parcial. Por isso o reflexo residual de lentes tratadas é arroxeado (amostras de cor embaixo).
+4. Mude $e$ para 150 nm: o mínimo vai para o vermelho. Com $e = 200\\ \\text{nm}$ ($= \\lambda/2n_2$ para 552 nm) a camada fica "invisível" nesse λ: $R$ volta ao do vidro nu.
+5. Ponha $n_2 = 1{,}23 \\approx \\sqrt{1{,}52}$ e $e = 112\\ \\text{nm}$: agora o mínimo chega a zero.`,
+      predict: [
+        {
+          question: "Uma camada de MgF₂ (n = 1,38) de 100 nm sobre vidro reflete menos em qual cor?",
+          options: ["violeta (≈ 400 nm)", "verde-amarelo (≈ 550 nm)", "vermelho (≈ 700 nm)", "reflete igual em todas"],
+          answer: 1,
+          explanation: "As duas reflexões invertem a fase; o cancelamento pede $2n_2e = \\lambda/2$, ou seja $\\lambda = 4 \\times 1{,}38 \\times 100 \\approx 552\\ \\text{nm}$.",
+        },
+      ],
     },
   ],
 
@@ -441,6 +501,8 @@ export const filmesFinos = defineSim<FilmesState>({
         return renderWedge(d, theme, s, p);
       case BOLHA:
         return renderBubble(d, theme, s, p, t);
+      case AR:
+        return renderAR(d, theme, p);
       default:
         return renderNewton(d, theme, s, p);
     }
@@ -503,7 +565,15 @@ function renderMichelson(d: Draw, theme: Theme, s: FilmesState, p: Params) {
   const d0 = num(p, "d0", 0.5) * 1e-3 + s.x * 1e-6;
   const thetaMax = 3 * Math.sqrt((L * 1e-9) / Math.max(1e-6, d0));
   const opd = opdOf(s, p);
-  ringDisk(d, RING.x, RING.y, RING.r, (u) => monoColor(L, michelsonI(opd, d0, u * thetaMax, L)));
+  const dl = num(p, "dlam", 0);
+  ringDisk(d, RING.x, RING.y, RING.r, (u) => monoColor(L, michelsonIc(opd, d0, u * thetaMax, L, dl)));
+  if (dl > 0)
+    d.text(
+      `fonte com Δλ = ${fmt(dl)} nm: ℓc = λ²/Δλ = ${fmt(coherenceLength(L, dl) * 1e3)} mm · Δ = ${fmt(opd * 1e3)} mm · visibilidade ${fmt(visibility(opd, L, dl), 2)}`,
+      0.4,
+      -6.0,
+      { color: theme.accent, size: 11, align: "left" },
+    );
   d.circle(RING.x, RING.y, RING.r, { stroke: theme.muted, width: 1 });
   d.text("vista do anteparo", RING.x, RING.y + RING.r + 0.4, { color: theme.muted, size: 11 });
   d.text(`θ até ${fmt(thetaMax * 1e3, 2)} mrad`, RING.x, RING.y - RING.r - 0.4, { color: theme.muted, size: 10 });
@@ -619,6 +689,55 @@ function renderBubble(d: Draw, theme: Theme, s: FilmesState, p: Params, t: numbe
     size: 11,
     align: "left",
   });
+}
+
+/** Camada antirreflexo: lente com uma camada de espessura fixa e o espectro refletido. */
+function renderAR(d: Draw, theme: Theme, p: Params) {
+  const nf = num(p, "nf", 1.33);
+  const e = num(p, "eAR", 100);
+  const L = lam(p);
+  const Rg = fresnelR(1, N_GLASS) ** 2;
+  const R = (nm: number) => filmReflectance(1, nf, N_GLASS, e, nm);
+  // Vista lateral ampliada: ar | camada | vidro
+  const yTop = 2.2;
+  const hc = 0.4 + Math.min(2.4, e / 120);
+  d.rect(0.5, -5.5, 7, yTop - hc + 5.5, { fill: theme.accent, alpha: 0.25, stroke: theme.text, width: 1 });
+  d.rect(0.5, yTop - hc, 7, hc, { fill: theme.series[2]!, alpha: 0.35, stroke: theme.text, width: 1 });
+  d.text(`camada: n₂ = ${fmt(nf)}, e = ${fmt(e)} nm`, 4, yTop + 0.4, { color: theme.text, size: 11 });
+  d.text(`vidro n₃ = ${N_GLASS.toString().replace(".", ",")}`, 4, -4.8, { color: theme.muted, size: 11 });
+  d.text("ar n₁ = 1", 4, 5.6, { color: theme.muted, size: 11 });
+  const col = cssRGB(wavelengthRGB(L), 0.8);
+  d.line(1.5, 5, 3, yTop, { color: col, width: 2.5 });
+  d.line(3, yTop, 4.2, 5, { color: col, width: 2, alpha: 0.8 });
+  d.line(3, yTop, 3.4, yTop - hc, { color: col, width: 2, alpha: 0.8 });
+  d.line(3.4, yTop - hc, 3.8, yTop, { color: col, width: 2, alpha: 0.8, dash: [4, 3] });
+  d.line(3.8, yTop, 5, 5, { color: col, width: 2, alpha: 0.8, dash: [4, 3] });
+  d.text("1", 4.35, 4.6, { color: theme.text, size: 11 });
+  d.text("2", 5.15, 4.6, { color: theme.text, size: 11 });
+  d.text("as duas reflexões invertem a fase: cancelam se 2n₂e = λ/2", 4, -6.4, { color: theme.muted, size: 10 });
+  // Gráfico R(λ)
+  const G = { x0: 9.5, x1: 19.5, y0: -4.5, y1: 4.5 };
+  const Rtop = 0.1;
+  const gx = (nm: number) => G.x0 + ((nm - 400) / 300) * (G.x1 - G.x0);
+  const gy = (r: number) => G.y0 + (Math.min(r, Rtop) / Rtop) * (G.y1 - G.y0);
+  d.rect(G.x0, G.y0, G.x1 - G.x0, G.y1 - G.y0, { stroke: theme.grid, width: 1 });
+  for (let nm = 400; nm < 700; nm += 5) d.rect(gx(nm), G.y0 - 0.5, gx(nm + 5) - gx(nm) + 0.01, 0.35, { fill: cssRGB(wavelengthRGB(nm + 2.5)) });
+  for (const r of [0.02, 0.04, 0.06, 0.08]) {
+    d.line(G.x0, gy(r), G.x1, gy(r), { color: theme.grid, width: 1, alpha: 0.6 });
+    d.text(`${Math.round(r * 100)} %`, G.x0 - 0.15, gy(r), { color: theme.muted, size: 9, align: "right" });
+  }
+  d.line(G.x0, gy(Rg), G.x1, gy(Rg), { color: theme.muted, width: 2, dash: [6, 4] });
+  d.text("vidro sem camada", G.x1, gy(Rg) + 0.35, { color: theme.muted, size: 10, align: "right" });
+  d.plot((x) => gy(R(400 + ((x - G.x0) / (G.x1 - G.x0)) * 300)), G.x0, G.x1, { color: theme.series[0]!, width: 2.5 });
+  d.dot(gx(L), gy(R(L)), 5, theme.accent);
+  d.text(`R(${fmt(L)} nm) = ${fmt(100 * R(L), 2)} %`, G.x0 + 0.2, G.y1 - 0.4, { color: theme.text, size: 11, align: "left", weight: "600" });
+  d.text("refletância × λ (nm)", G.x0 + 0.2, G.y1 + 0.4, { color: theme.text, size: 11, align: "left" });
+  // Cor do reflexo (luz branca), com e sem camada, na mesma escala
+  const k = 1 / (2 * Rg);
+  d.rect(10, -6.6, 1.2, 0.8, { fill: cssRGB(spectrumColor(() => Rg * k)), stroke: theme.text, width: 1 });
+  d.text("reflexo sem camada", 11.4, -6.2, { color: theme.muted, size: 10, align: "left" });
+  d.rect(15, -6.6, 1.2, 0.8, { fill: cssRGB(spectrumColor((nm) => R(nm) * k)), stroke: theme.text, width: 1 });
+  d.text("com camada", 16.4, -6.2, { color: theme.muted, size: 10, align: "left" });
 }
 
 function renderNewton(d: Draw, theme: Theme, s: FilmesState, p: Params) {

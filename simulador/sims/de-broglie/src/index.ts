@@ -26,20 +26,31 @@ export interface DBState {
   last: (Hit & { age: number }) | null;
 }
 
+/** Fótons em vez de elétrons (luz muito fraca, um fóton por vez). */
+export const photons = (p: Params) => Math.round(num(p, "particula")) === 1;
+/**
+ * Metros por unidade da tela: µm para elétrons; mm para fótons. Com luz, as fendas
+ * são 100 vezes maiores (d e a em centenas de µm), para as franjas caberem na tela.
+ */
+export const unitM = (p: Params) => (photons(p) ? 1e-3 : 1e-6);
+const unitLabel = (p: Params) => (photons(p) ? "mm" : "µm");
+const slitScale = (p: Params) => (photons(p) ? 1e-4 : 1e-6);
+
 export const slitsOf = (p: Params): Slits => ({
-  lambda: wavelength(num(p, "V", 50) * 1e3),
-  d: num(p, "d", 1.5) * 1e-6,
-  a: num(p, "a", 0.3) * 1e-6,
+  lambda: photons(p) ? num(p, "lambdaF", 633) * 1e-9 : wavelength(num(p, "V", 50) * 1e3),
+  d: num(p, "d", 1.5) * slitScale(p),
+  a: num(p, "a", 0.3) * slitScale(p),
   L: num(p, "L", 1),
   single: Math.round(num(p, "arranjo")) === 1,
 });
 const detecting = (p: Params) => Math.round(num(p, "detector")) === 1 && Math.round(num(p, "arranjo")) === 0;
-const dyUm = (p: Params) => fringe(slitsOf(p)) * 1e6;
+const dyUm = (p: Params) => fringe(slitsOf(p)) / unitM(p);
 
 /** Densidade normalizada (por µm) na tela para os parâmetros atuais. */
 export function density(p: Params): (yUm: number) => number {
   const s = slitsOf(p);
-  const f = detecting(p) ? (y: number) => incoherent(y * 1e-6, s) : (y: number) => coherent(y * 1e-6, s);
+  const u = unitM(p);
+  const f = detecting(p) ? (y: number) => incoherent(y * u, s) : (y: number) => coherent(y * u, s);
   const n = 4000;
   const h = (2 * W_UM) / n;
   let tot = f(-W_UM) + f(W_UM);
@@ -53,7 +64,7 @@ export function fire(s: DBState, p: Params): DBState {
   const rand = rng(424_242 + s.n * 7919);
   const sl = slitsOf(p);
   const slit = detecting(p) ? (rand() < 0.5 ? 0 : 1) : -1;
-  const y = sampleHit(rand, sl, W_UM * 1e-6, slit) * 1e6;
+  const y = sampleHit(rand, sl, W_UM * unitM(p), slit) / unitM(p);
   const z = 2 * rand() - 1;
   const hist = s.hist.slice();
   const i = Math.max(0, Math.min(NB - 1, Math.floor(((y + W_UM) / (2 * W_UM)) * NB)));
@@ -78,6 +89,13 @@ export const deBroglie = defineSim<DBState>({
   ],
   liveEquations(s, p) {
     const V = num(p, "V", 50) * 1e3;
+    if (photons(p)) {
+      const lf = num(p, "lambdaF", 633);
+      return [
+        String.raw`E_{\text{fóton}} = \frac{hc}{\lambda} = ${texNum((1239.84 / lf))}\ \text{eV},\quad p = \frac{h}{\lambda} = ${texNum(6.62607015e-34 / (lf * 1e-9))}\ \text{kg·m/s}`,
+        String.raw`\Delta y = \frac{\lambda L}{d} = ${texNum(dyUm(p))}\ \text{mm} \ (d = ${texNum(num(p, "d", 1.5) * 100)}\ \mu\text{m}) \qquad N = ${s.n}\ \text{fótons}`,
+      ];
+    }
     return [
       String.raw`\lambda = \frac{h}{p} = \frac{6{,}626\times10^{-34}}{${texNum(momentum(V))}} = ${texNum(wavelength(V) * 1e12)}\ \text{pm} \quad (\text{não relativístico: } ${texNum(wavelengthClassic(V) * 1e12)}\ \text{pm})`,
       String.raw`\Delta y = \frac{\lambda L}{d} = ${texNum(dyUm(p))}\ \mu\text{m} \qquad N = ${s.n}`,
@@ -115,13 +133,27 @@ export const deBroglie = defineSim<DBState>({
     { key: "d", label: "Separação entre fendas d", unit: "µm", min: 0.5, max: 4, step: 0.05, default: 1.5 },
     { key: "a", label: "Largura de cada fenda a", unit: "µm", min: 0.1, max: 1, step: 0.01, default: 0.3 },
     { key: "L", label: "Distância até a tela L", unit: "m", min: 0.2, max: 2, step: 0.05, default: 1 },
-    { key: "taxa", label: "Elétrons por segundo", unit: "1/s", min: 1, max: 2000, step: 1, default: 40, log: true, live: true },
+    { key: "taxa", label: "Partículas por segundo", unit: "1/s", min: 1, max: 2000, step: 1, default: 40, log: true, live: true },
+    {
+      key: "particula",
+      label: "Partícula",
+      unit: "",
+      min: 0,
+      max: 1,
+      step: 1,
+      default: 0,
+      options: [
+        { value: 0, label: "Elétrons (tela em µm)" },
+        { value: 1, label: "Fótons de luz muito fraca (fendas × 100, tela em mm)" },
+      ],
+    },
+    { key: "lambdaF", label: "Comprimento de onda da luz (fótons)", unit: "nm", min: 400, max: 700, step: 1, default: 633 },
   ],
 
   observables: [
     { key: "N", label: "Elétrons detectados", unit: "", value: (s) => s.n },
     { key: "lambda", label: "Comprimento de onda λ", unit: "pm", value: (_s, p) => wavelength(num(p, "V", 50) * 1e3) * 1e12 },
-    { key: "dy", label: "Espaçamento Δy previsto", unit: "µm", value: (_s, p) => dyUm(p) },
+    { key: "dy", label: "Espaçamento Δy previsto (µm; mm com fótons)", unit: "", value: (_s, p) => dyUm(p) },
     { key: "vis", label: "Visibilidade das franjas (medida)", unit: "", value: (s, p) => visibility(s.hist, W_UM, dyUm(p)) },
   ],
   chart: { x: "N", y: "vis" },
@@ -171,6 +203,25 @@ export const deBroglie = defineSim<DBState>({
 1. O detector registra a fenda de cada elétron (cores diferentes). Agora $P(y) = \\tfrac12(|\\psi_1|^2 + |\\psi_2|^2)$.
 2. Acumule alguns milhares de elétrons e compare a visibilidade medida com a do cenário sem detector.
 3. Repare que a curva só tem o envelope de difração de uma fenda.`,
+    },
+    {
+      id: "fotons",
+      label: "Fótons um a um: a luz como onda de probabilidade",
+      params: { particula: 1, lambdaF: 633, arranjo: 0, detector: 0, d: 1.5, a: 0.3, L: 1, taxa: 5 },
+      guide: `### Taylor (1909): luz tão fraca que só há um fóton por vez
+1. Um laser muito atenuado ilumina duas fendas ($d = 150\\ \\mu\\text{m}$, $a = 30\\ \\mu\\text{m}$). Com 5 fótons por segundo, quase nunca há dois fótons no aparelho ao mesmo tempo.
+2. Cada fóton chega à tela como um **ponto** (é absorvido inteiro, com energia $hf$), num lugar imprevisível.
+3. Aumente a taxa ou use **Disparar 1000**: os pontos se acumulam nas franjas de Young, $\\Delta y = \\lambda L/d \\approx 4{,}2\\ \\text{mm}$.
+4. Interpretação: a onda eletromagnética clássica dá a **probabilidade** de detectar o fóton em cada ponto ($\\propto E^2$). A onda passa pelas duas fendas; o fóton é detectado num só lugar.
+5. Ligue o detector de caminho: as franjas somem, como com os elétrons. Volte para **elétrons** e compare: o mesmo comportamento, com $\\lambda = h/p$.`,
+      predict: [
+        {
+          question: "Com uma luz tão fraca que só um fóton por vez atravessa as fendas, depois de muito tempo a tela mostra:",
+          options: ["duas faixas, uma atrás de cada fenda", "franjas de interferência", "nada, porque um fóton não interfere"],
+          answer: 1,
+          explanation: "Cada fóton tem uma onda de probabilidade que passa pelas duas fendas; a probabilidade de chegada tem franjas, e o acúmulo de muitos fótons isolados as revela.",
+        },
+      ],
     },
   ],
 
@@ -238,8 +289,8 @@ function renderApparatus(d: Draw, theme: Theme, s: DBState, p: Params) {
   const single = Math.round(num(p, "arranjo")) === 1;
   // Canhão
   d.rect(0.3, yc - 0.45, 1.5, 0.9, { fill: theme.grid, stroke: theme.text, width: 1.2 });
-  d.text("canhão", 1.05, yc - 0.75, { size: 10, color: theme.muted });
-  d.text(`${fmt(num(p, "V", 50))} kV`, 1.05, yc, { size: 10, weight: "600" });
+  d.text(photons(p) ? "laser atenuado" : "canhão", 1.05, yc - 0.75, { size: 10, color: theme.muted });
+  d.text(photons(p) ? `${fmt(num(p, "lambdaF", 633))} nm` : `${fmt(num(p, "V", 50))} kV`, 1.05, yc, { size: 10, weight: "600" });
   // Anteparo com fendas (fora de escala)
   const gaps = single ? [yc] : [yc + 0.55, yc - 0.55];
   const segs: [number, number][] = [[7.7, 11.8]];
@@ -285,13 +336,15 @@ function renderApparatus(d: Draw, theme: Theme, s: DBState, p: Params) {
   // Painel de leitura
   const sl = slitsOf(p);
   const V = num(p, "V", 50) * 1e3;
-  const rows = [
-    `λ = h/p = ${fmt(sl.lambda * 1e12)} pm`,
-    `p = ${fmt(momentum(V))} kg·m/s`,
-    `Δy = λL/d = ${fmt(dyUm(p))} µm`,
-    `N = ${s.n} elétrons`,
-    `visibilidade medida: ${fmt(visibility(s.hist, W_UM, dyUm(p)), 2)}`,
-  ];
+  const rows = photons(p)
+    ? [
+        `λ = ${fmt(sl.lambda * 1e9)} nm (fóton de ${fmt(1239.84 / (sl.lambda * 1e9))} eV)`,
+        `d = ${fmt(sl.d * 1e6)} µm, a = ${fmt(sl.a * 1e6)} µm`,
+        `Δy = λL/d = ${fmt(dyUm(p))} mm`,
+        `N = ${s.n} fótons`,
+      ]
+    : [`λ = h/p = ${fmt(sl.lambda * 1e12)} pm`, `p = ${fmt(momentum(V))} kg·m/s`, `Δy = λL/d = ${fmt(dyUm(p))} µm`, `N = ${s.n} elétrons`];
+  rows.push(`visibilidade medida: ${fmt(visibility(s.hist, W_UM, dyUm(p)), 2)}`);
   rows.forEach((r, i) => d.text(r, 13.0, 11.5 - i * 0.6, { align: "left", size: 12, weight: i === 0 ? "600" : "400" }));
   d.text("(anteparo fora de escala)", 13.0, 11.5 - rows.length * 0.6, { align: "left", size: 10, color: theme.muted });
 }
@@ -312,7 +365,7 @@ function renderScreen(d: Draw, theme: Theme, s: DBState, p: Params) {
   const expectedMax = Math.max(1, s.n) * binW * f(0) * 1.02;
   const peak = Math.max(...s.hist, 1);
   const P = panel(d, { x0: 0.8, y0: 0.8, x1: 19.4, y1: 3.6 }, { min: -W_UM, max: W_UM }, { min: 0, max: Math.max(peak, s.n > 0 ? expectedMax : 1) * 1.1 });
-  P.frame({ xlabel: "y (µm)", ylabel: "contagens por faixa" });
+  P.frame({ xlabel: `y (${unitLabel(p)})`, ylabel: "contagens por faixa" });
   s.hist.forEach((c, i) => {
     if (c <= 0) return;
     const x0 = P.X(-W_UM + i * binW);

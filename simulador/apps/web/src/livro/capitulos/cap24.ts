@@ -112,8 +112,9 @@ Para geometrias com simetria, também se pode integrar o campo já conhecido (se
 
 Armadilha: esquecer que $r$ na integral é a distância do **elemento** ao ponto P, e não uma coordenada fixa; ela varia ao longo da distribuição.
 
-No experimento, veja o potencial entre o condutor interno de um cabo coaxial e a malha cair de forma logarítmica e meça $V$ em dois raios; no anel, compare o campo nulo no centro com o potencial, que ali é máximo.`,
+No experimento, divida um anel, um disco ou um fio carregado em elementos e veja a soma dos $dV = k\,dq/r$ convergir para o valor exato da integral; no cabo coaxial, veja o potencial entre o condutor interno e a malha cair de forma logarítmica e meça $V$ em dois raios.`,
       experiments: [
+        { kind: "sim", id: "coulomb", scenario: "potencial-continuo", note: "Aumente o número de elementos e compare a soma dos potenciais com a integral exata." },
         { kind: "sim", id: "potencial", scenario: "coaxial", note: "Meça V a duas distâncias do centro do cabo coaxial e confira a variação logarítmica." },
         { kind: "sim", id: "coulomb", scenario: "anel", note: "Some as contribuições dos elementos de um anel carregado, como na integral do potencial." },
       ],
@@ -154,8 +155,9 @@ Ao liberar uma das cargas, a energia potencial do sistema se converte em cinéti
 
 Armadilha: contar cada par duas vezes (somar "a energia de $q_1$ por causa de $q_2$" e também "a de $q_2$ por causa de $q_1$"). Outra: atribuir a energia a uma carga só, quando ela pertence ao par.
 
-No experimento, monte as três cargas e confira as forças entre os pares; com a carga de teste entre as placas, acompanhe como sua energia potencial muda quando ela é deslocada.`,
+No experimento, monte três cargas e veja a energia de cada par, $kq_iq_j/r_{ij}$, somar-se na energia do sistema; arraste uma carga e acompanhe o sinal de $U$; com a carga de teste entre as placas, veja como sua energia potencial muda quando ela é deslocada.`,
       experiments: [
+        { kind: "sim", id: "coulomb", scenario: "energia-sistema", note: "Some as energias dos três pares e veja U mudar ao arrastar as cargas." },
         { kind: "sim", id: "coulomb", scenario: "superposicao", note: "Monte três cargas, identifique os três pares e estime a energia de cada um a partir das distâncias." },
         { kind: "sim", id: "potencial", scenario: "placas", note: "Desloque a carga de teste e veja o trabalho do campo virar variação de energia potencial." },
         { kind: "sim", id: "jogos-fisica", scenario: "hoquei", note: "Use a repulsão entre cargas para dar energia cinética ao disco." },

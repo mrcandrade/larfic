@@ -85,8 +85,9 @@ Exemplo: numa tela onde o máximo central recebe intensidade $I_0$ e um ponto la
 
 Armadilha: imaginar que os fótons "interferem uns com os outros", como se precisassem estar juntos. Mesmo enviados um de cada vez, separados por longos intervalos, o padrão aparece: cada fóton interfere apenas consigo.
 
-No experimento, dispare partículas uma a uma na fenda dupla e veja os pontos isolados formarem as franjas; depois ligue o detector de caminho e veja-as sumirem. O mesmo vale para fótons e para elétrons (seção 38-6).`,
+No experimento, mande fótons um a um pela fenda dupla e veja os pontos isolados formarem as franjas da luz; depois ligue o detector de caminho e veja-as sumirem. O mesmo vale para elétrons (seção 38-6).`,
       experiments: [
+        { kind: "sim", id: "de-broglie", scenario: "fotons", note: "Fótons chegam um de cada vez e, somados, reproduzem as franjas de interferência." },
         { kind: "sim", id: "de-broglie", scenario: "um-a-um", note: "Veja impactos isolados, um de cada vez, construírem o padrão de franjas." },
         { kind: "sim", id: "de-broglie", scenario: "detector", note: "Descubra por qual fenda cada partícula passa e veja as franjas desaparecerem." },
         { kind: "sim", id: "fenda-dupla", scenario: "classico", note: "Compare com a intensidade da onda clássica, que dá a densidade de probabilidade." },

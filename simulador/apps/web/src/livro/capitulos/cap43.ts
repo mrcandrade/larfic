@@ -110,8 +110,9 @@ Os produtos de fissão ficaram quase imóveis na rocha por dois bilhões de anos
 
 Armadilha: achar que a natureza não pode produzir uma reação em cadeia. As condições físicas são as mesmas de um reator; só a composição isotópica do urânio mudou com o tempo.
 
-No experimento, monte o núcleo com urânio a $3{,}7\%$ e água como moderador e veja a cadeia se sustentar; depois baixe o enriquecimento para o valor de hoje e veja $k$ cair abaixo de 1 para qualquer tamanho.`,
+No experimento, volte dois bilhões de anos no tempo, leia o enriquecimento calculado pelas duas meias-vidas e veja $k_\infty$ com água passar de 1; traga o tempo até hoje e veja-o cair abaixo de 1. Depois, monte o núcleo do reator com urânio a $3{,}7\%$ e água e veja a cadeia se sustentar.`,
       experiments: [
+        { kind: "sim", id: "nuclear", scenario: "oklo", note: "Calcule o enriquecimento de 2 bilhões de anos atrás pelas meias-vidas do U-235 e do U-238 e veja que, com água, o minério era crítico." },
         { kind: "sim", id: "nuclear", scenario: "cadeia", params: { enr: 3.7, moderador: 2, R: 100 }, note: "Com o urânio de dois bilhões de anos atrás e água, veja a cadeia se sustentar." },
         { kind: "sim", id: "nuclear", scenario: "cadeia", params: { enr: 0.7, moderador: 2, R: 100 }, note: "Com o urânio natural de hoje e água, confirme que k fica abaixo de 1." },
         { kind: "sim", id: "decaimento", scenario: "simples", note: "Lembre por que o isótopo de meia-vida mais curta fica mais raro com o tempo." },
@@ -199,8 +200,9 @@ Em ambos os casos, $80\%$ da energia sai com os nêutrons de $14$ MeV, que atrav
 
 Armadilha: achar que um reator de fusão pode "explodir" como uma bomba. Há muito pouco combustível no plasma a cada instante, e qualquer falha o esfria e apaga a reação.
 
-No experimento, aumente a temperatura do plasma e veja a taxa de fusões crescer; depois prenda uma partícula carregada numa garrafa magnética e veja-a ir e voltar entre as regiões de campo forte.`,
+No experimento, coloque o seu plasma no diagrama de Lawson: varie a densidade, a temperatura e o tempo de confinamento, leia o ganho $Q$ e compare com o JET e com a meta do ITER; troque para densidade de $10^{31}$ m⁻³ e $\tau = 10^{-10}$ s para ver o caso inercial. Depois, prenda uma partícula carregada numa garrafa magnética e veja-a ir e voltar entre as regiões de campo forte.`,
       experiments: [
+        { kind: "sim", id: "nuclear", scenario: "lawson", note: "Ponha seu plasma no diagrama nτ × T, ache a ignição e compare com JET e ITER." },
         { kind: "sim", id: "nuclear", scenario: "fusao", params: { kT: 20 }, note: "Aqueça o plasma e veja o número de fusões D–T crescer." },
         { kind: "sim", id: "particula-campo-b", scenario: "garrafa", note: "Prenda uma partícula carregada numa garrafa magnética, a ideia do confinamento magnético." },
       ],

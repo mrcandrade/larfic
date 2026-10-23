@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
-import { FONTE, L1, PONTA, XP1, coefR, coefT, grid, ondaCorda as sim } from "../src/index.ts";
+import { FONTE, L1, PONTA, XP1, accelCurv, coefR, coefT, grid, localEnergy, ondaCorda as sim, pMed, potMedia, powerAt } from "../src/index.ts";
 
 const run = (over: Record<string, number>, tMax: number) => {
   const r = new Runner(sim, withOverrides(sim, over));
@@ -78,5 +78,42 @@ describe("onda em corda", () => {
     }
     expect(xs.length).toBeGreaterThan(1);
     expect(xs[1]! - xs[0]!).toBeCloseTo(g.v1 / 5, 2);
+  });
+});
+
+describe("Onda em corda: energia, potência e equação de onda", () => {
+  const sen = { fonte: FONTE.seno, ponta: PONTA.absorvente, razao: 1, T: 10, mu1: 0.1, A: 0.15, f: 4, analise: 1 };
+
+  it("onda progressiva: energias cinética e potencial iguais em cada elemento e potência nunca negativa", () => {
+    const r = run(sen, 1.5); // a onda já passou da sonda 1 (2,5 m a 10 m/s)
+    const g = grid(r.params);
+    let minP = Infinity;
+    for (let k = 0; k < 200; k++) {
+      r.stepOnce();
+      const e = localEnergy(r.state, r.params, g.i1);
+      // diferenças finitas (velocidade atrasada meio passo): concordância de ~2% do pico ½μω²A²
+      expect(Math.abs(e.k - e.u)).toBeLessThan(0.03 * 0.5 * 0.1 * (8 * Math.PI) ** 2 * 0.0225);
+      minP = Math.min(minP, powerAt(r.state, r.params, g.i1));
+    }
+    expect(minP).toBeGreaterThan(-0.05);
+  });
+
+  it("potência média medida → ½ μ v ω² A²", () => {
+    const r = run(sen, 6);
+    const Pt = potMedia(r.params);
+    expect(Pt).toBeCloseTo(0.5 * 0.1 * 10 * (8 * Math.PI) ** 2 * 0.0225, 9);
+    expect(pMed(r.state, r.params) / Pt).toBeCloseTo(1, 1);
+  });
+
+  it("equação de onda: aceleração de cada elemento = v²·∂²y/∂x²", () => {
+    const r = run({ fonte: FONTE.gauss, ponta: PONTA.absorvente, razao: 1, analise: 2 }, 0.35);
+    const g = grid(r.params);
+    let maxA = 0;
+    for (let i = 5; i < g.J; i += 7) {
+      const q = accelCurv(r.state, r.params, i);
+      expect(q.a).toBeCloseTo(q.vc, 6);
+      maxA = Math.max(maxA, Math.abs(q.a));
+    }
+    expect(maxA).toBeGreaterThan(1);
   });
 });

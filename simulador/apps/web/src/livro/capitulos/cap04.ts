@@ -175,8 +175,9 @@ Em colisões é comum analisar o movimento no referencial do **centro de massa**
 
 **Armadilha:** aplicar a regra a referenciais **acelerados**. Se B acelera, $a_{PA} \ne a_{PB}$ e aparecem acelerações que nenhum corpo explica (veja os referenciais não inerciais).
 
-No experimento, assista à mesma colisão no referencial do laboratório e no do centro de massa e confira que as velocidades diferem por uma constante; depois veja o carro que acelera e perceba que, aí, as acelerações deixam de coincidir.`,
+No experimento, acompanhe o passageiro que anda para trás num trem a 10 m/s e confira, nos dois referenciais, que $v_{PA} = v_{PB} + v_{BA}$ dá 8 m/s para a frente; depois acelere o trem e perceba que, aí, as acelerações deixam de coincidir.`,
       experiments: [
+        { kind: "sim", id: "movimento-relativo", scenario: "trem", note: "Passageiro a −2 m/s no trem a 10 m/s: leia a velocidade no solo e no trem e confira u = u′ + V." },
         { kind: "sim", id: "colisoes", scenario: "cm", note: "Compare velocidades no laboratório e no centro de massa: diferem sempre pela velocidade do CM." },
         { kind: "sim", id: "movimento-relativo", scenario: "nao-inercial", note: "Veja que, com o referencial acelerando, as acelerações medidas deixam de coincidir." },
       ],

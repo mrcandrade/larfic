@@ -119,8 +119,9 @@ Certos materiais, resfriados abaixo de uma **temperatura crítica** $T_c$, perde
 
 Armadilha: dizer que "resistência maior sempre aquece mais". Com corrente fixa ($i^2R$), sim; com tensão fixa ($V^2/R$), o contrário.
 
-No experimento, compare a potência do chuveiro no verão e no inverno; depois veja a resistividade do silício cair com a temperatura enquanto a do metal sobe.`,
+No experimento, resfrie um supercondutor abaixo de $T_c$ e veja a resistividade cair a zero e os elétrons seguirem sem colisões; compare também a potência do chuveiro no verão e no inverno e veja a resistividade do silício cair com a temperatura enquanto a do metal sobe.`,
       experiments: [
+        { kind: "sim", id: "drude", scenario: "supercondutor", note: "Abaixe a temperatura do YBCO abaixo de 92 K e veja a resistividade desaparecer." },
         { kind: "sim", id: "consumo-energia", scenario: "chuveiro", note: "Compare potência, corrente e resistência do chuveiro nas posições verão e inverno." },
         { kind: "sim", id: "drude", scenario: "temperatura", params: { material: 2 }, note: "Veja a resistividade do silício cair com a temperatura, ao contrário do metal." },
         { kind: "sim", id: "semicondutores", scenario: "materiais", note: "Compare as bandas de um metal, de um semicondutor e de um isolante." },

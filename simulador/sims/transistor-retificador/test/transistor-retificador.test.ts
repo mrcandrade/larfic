@@ -6,7 +6,11 @@ import {
   ceBias,
   ceGainTheory,
   defaultBJT,
+  defaultNMOS,
   divider,
+  drainCurrent,
+  mosQPoint,
+  mosRegion,
   icCurve,
   ldrR,
   ntcR,
@@ -142,5 +146,23 @@ describe("Transistor, retificador, termistor e LDR", () => {
     const sens = (rf: number) => Math.abs(divider(5, 10e3 * 1.001, rf) - divider(5, 10e3, rf));
     expect(sens(10e3)).toBeGreaterThan(sens(5e3));
     expect(sens(10e3)).toBeGreaterThan(sens(20e3));
+  });
+  it("MOSFET: corte, triodo e saturação com lei quadrática", () => {
+    const m = defaultNMOS();
+    expect(drainCurrent(m, 1, 5)).toBe(0);
+    expect(mosRegion(m, 1, 5)).toBe("corte");
+    const sat = (vgs: number) => drainCurrent({ ...m, lambda: 0 }, vgs, 10);
+    expect(sat(m.Vt + 2) / sat(m.Vt + 1)).toBeCloseTo(4, 10);
+    expect(mosRegion(m, 4, 1)).toBe("triodo");
+    // continuidade na fronteira V_DS = V_ov
+    const vov = 2;
+    expect(drainCurrent(m, m.Vt + vov, vov - 1e-9)).toBeCloseTo(drainCurrent(m, m.Vt + vov, vov), 9);
+    // ponto Q sobre a reta de carga
+    const q = mosQPoint(m, 3, 12, 2200);
+    expect(q.vds).toBeCloseTo(12 - 2200 * q.id, 6);
+    expect(q.reg).toBe("saturação");
+    expect(mosQPoint(m, 5, 12, 2200).reg).toBe("triodo");
+    const r = new Runner(sim, withOverrides(sim, { modo: 6, VGS: 3, VCC: 12, RC: 2200 }));
+    expect(r.value("ID")).toBeCloseTo(q.id * 1e3, 6);
   });
 });

@@ -27,6 +27,9 @@ export function lorentz(e: Evento, beta: number): Evento {
   return { x: g * (e.x - beta * e.ct), ct: g * (e.ct - beta * e.x) };
 }
 
+/** Composição relativística de velocidades (em unidades de c): u = (u' + v)/(1 + u'v). */
+export const addVel = (uP: number, v: number) => (uP + v) / (1 + uP * v);
+
 /** Intervalo s² = (cΔt)² − Δx² (invariante). */
 export const interval = (a: Evento, b: Evento) => (b.ct - a.ct) ** 2 - (b.x - a.x) ** 2;
 
@@ -46,6 +49,8 @@ export const PRESETS: [Evento, Evento][] = [
 ];
 
 const beta = (p: Params) => clamp(num(p, "beta", 0.6), -0.99, 0.99);
+const painel = (p: Params) => Math.round(num(p, "painel"));
+const uLinha = (p: Params) => clamp(num(p, "u", 0.5), -0.99, 0.99);
 
 // Caixa do diagrama
 const BOX = { x0: -4.2, x1: 4.2, y0: -1.2, y1: 5.2 };
@@ -114,6 +119,9 @@ export const relatividade = defineSim<RelState>({
       String.raw`A' = (${texNum(a.x)}\,\text{al},\ ${texNum(a.ct)}\,\text{anos}),\quad B' = (${texNum(bb.x)}\,\text{al},\ ${texNum(bb.ct)}\,\text{anos})`,
       String.raw`\Delta t = ${texNum(B.ct - A.ct)}\ \text{anos},\quad \Delta t' = ${texNum(bb.ct - a.ct)}\ \text{anos},\quad s^2 = ${texNum(interval(A, B))}\ \text{al}^2`,
       String.raw`t = ${texNum(s.T)}\ \text{anos} \Rightarrow \tau = t/\gamma = ${texNum(s.T / g)}\ \text{anos};\quad L = L_0/\gamma = ${texNum(num(p, "L0", 2) / g)}\ \text{al}`,
+      ...(painel(p) === 2
+        ? [String.raw`u = \frac{u' + v}{1 + u'v/c^2} = \frac{${texNum(uLinha(p))} + ${texNum(b)}}{1 + (${texNum(uLinha(p))})(${texNum(b)})}\,c = ${texNum(addVel(uLinha(p), b), 4)}\,c \quad (\text{Galileu: } ${texNum(uLinha(p) + b)}\,c)`]
+        : []),
     ];
   },
 
@@ -134,6 +142,22 @@ export const relatividade = defineSim<RelState>({
         { value: 2, label: "Separação tipo espaço" },
       ],
     },
+    {
+      key: "painel",
+      label: "Painel ao lado do diagrama",
+      unit: "",
+      min: 0,
+      max: 2,
+      step: 1,
+      default: 0,
+      live: true,
+      options: [
+        { value: 0, label: "Relógios de luz e régua" },
+        { value: 1, label: "Grade de relógios sincronizados (S e S')" },
+        { value: 2, label: "Composição de velocidades" },
+      ],
+    },
+    { key: "u", label: "Velocidade do objeto em S' (u'/c)", unit: "", min: -0.95, max: 0.95, step: 0.01, default: 0.5, live: true },
   ],
 
   observables: [
@@ -149,6 +173,10 @@ export const relatividade = defineSim<RelState>({
       unit: "al²",
       value: (s, p) => interval(lorentz(s.ev[0], beta(p)), lorentz(s.ev[1], beta(p))),
     },
+    { key: "xA", label: "x' do evento A", unit: "al", value: (s, p) => lorentz(s.ev[0], beta(p)).x },
+    { key: "tA", label: "ct' do evento A", unit: "anos", value: (s, p) => lorentz(s.ev[0], beta(p)).ct },
+    { key: "uRel", label: "Velocidade do objeto em S (relativística)", unit: "c", value: (_s, p) => addVel(uLinha(p), beta(p)) },
+    { key: "uGal", label: "Velocidade do objeto em S (Galileu, errada)", unit: "c", value: (_s, p) => uLinha(p) + beta(p) },
   ],
   conserved: "s2",
   chart: { x: "T", y: "tau" },
@@ -199,6 +227,47 @@ export const relatividade = defineSim<RelState>({
 2. Em S, medir o comprimento é marcar as duas pontas **no mesmo $t$** (segmento horizontal): dá $L_0/\\gamma$.
 3. Em S', as pontas são marcadas no mesmo $t'$ (segmento ao longo de $x'$): dá $L_0$.
 4. Com β = 0,866, γ ≈ 2. Confira $L = 1$ al nas medidas. A contração depende de qual par de eventos cada observador chama de "simultâneo".`,
+    },
+    {
+      id: "relogios",
+      label: "Grade de relógios e transformação de eventos",
+      params: { beta: 0.6, eventos: 0, painel: 1 },
+      guide: `### Quem mede onde e quando
+1. Um referencial é uma grade de réguas com um relógio parado em cada ponto. Para datar um evento usa-se **o relógio que está no local do evento**, nunca a luz que chega até um observador distante.
+2. Os relógios de S (linha de cima) foram sincronizados em S (por exemplo, com sinais de luz enviados do meio de cada par): todos marcam o mesmo $t$.
+3. Rode. Os relógios de S' (linha de baixo) andam a $\\beta = 0{,}6$ e, vistos de S, **não** marcam a mesma hora: o de trás está adiantado. Cada um mostra $t' = \\gamma(t - \\beta x/c)$; sincronizados em S' não significa sincronizados em S.
+4. Os eventos A e B do diagrama são transformados pela **transformação de Lorentz**:
+$$x' = \\gamma(x - \\beta\\,ct), \\qquad ct' = \\gamma(ct - \\beta x)$$
+Confira na tabela: A = (−1 al; 2 anos) vira $x' = 1{,}25(-1 - 1{,}2) = -2{,}75$ al e $ct' = 1{,}25(2 + 0{,}6) = 3{,}25$ anos.
+5. Arraste os eventos e mude β. Para $\\beta \\ll 1$, $x' \\approx x - vt$ e $t' \\approx t$: volta a transformação de Galileu.`,
+      predict: [
+        {
+          question: "Vistos de S, os relógios de S' (sincronizados em S', que andam para a direita) marcam:",
+          options: ["todos a mesma hora", "mais tarde os que estão mais à frente", "mais tarde os que estão mais atrás", "zero"],
+          answer: 2,
+          explanation: "$t' = \\gamma(t - \\beta x/c)$: no mesmo $t$, um relógio com $x$ menor (mais atrás) marca $t'$ maior. O relógio de trás está adiantado — a relatividade da simultaneidade.",
+        },
+      ],
+    },
+    {
+      id: "velocidades",
+      label: "Composição relativística de velocidades",
+      params: { beta: 0.6, eventos: 1, painel: 2, u: 0.6 },
+      guide: `### 0,6c + 0,6c não dá 1,2c
+1. Uma nave (S') passa pela Terra (S) a $v = 0{,}6c$ e dispara à frente uma sonda a $u' = 0{,}6c$ em relação à nave.
+2. Galileu somaria: $u = u' + v = 1{,}2c$, mais rápido que a luz. Pela transformação de Lorentz,
+$$u = \\frac{u' + v}{1 + u'v/c^2} = \\frac{1{,}2}{1{,}36}\\,c \\approx 0{,}88c$$
+3. No diagrama, a linha verde é a linha de mundo da sonda: fica sempre dentro do cone de luz.
+4. Ponha $u' = 0{,}95$ e $v = 0{,}95$: $u \\approx 0{,}9987c$. Para a luz ($u' \\to c$), $u = c$ para qualquer $v$ — o segundo postulado.
+5. Com velocidades pequenas (0,01 e 0,01) a correção $u'v/c^2$ some e a regra de Galileu volta. Teste $u' < 0$ (sonda disparada para trás).`,
+      predict: [
+        {
+          question: "Uma nave a 0,6c em relação à Terra dispara uma sonda a 0,6c para a frente (em relação à nave). Para a Terra, a sonda anda a:",
+          options: ["1,2c", "c", "cerca de 0,88c", "0,6c"],
+          answer: 2,
+          explanation: "$u = (0{,}6 + 0{,}6)/(1 + 0{,}36)\\,c \\approx 0{,}882c$.",
+        },
+      ],
     },
   ],
 
@@ -258,7 +327,9 @@ export const relatividade = defineSim<RelState>({
     const d = draw(ctx, frame);
     const { state: s, params: p, theme } = frame;
     renderDiagram(d, theme, s, p);
-    renderPanel(d, theme, s, p);
+    if (painel(p) === 1) renderClockGrid(d, theme, s, p);
+    else if (painel(p) === 2) renderVelocities(d, theme, s, p);
+    else renderPanel(d, theme, s, p);
   },
 });
 
@@ -357,6 +428,14 @@ function renderDiagram(d: Draw, theme: Theme, s: RelState, p: Params) {
     d.text(`t = ${fmt(s.T)} anos`, BOX.x0 + 0.1, s.T + 0.2, { color: theme.accent, size: 10, align: "left" });
   }
 
+  // Linha de mundo do objeto (painel de velocidades): x = u t em S
+  if (painel(p) === 2) {
+    const u = addVel(uLinha(p), b);
+    cline(d, -6 * u, -6, 6 * u, 6, { color: theme.series[2]!, width: 2.5 });
+    const tt = Math.min(4.6, 4 / Math.max(Math.abs(u), 1e-6));
+    d.text(`objeto: u = ${fmt(u, 3)}c`, u * tt + 0.15, tt, { color: theme.series[2]!, size: 10, weight: "600", align: "left" });
+  }
+
   // Eventos A e B com as linhas de simultaneidade de S'
   const names = ["A", "B"];
   s.ev.forEach((e, i) => {
@@ -382,6 +461,97 @@ function renderDiagram(d: Draw, theme: Theme, s: RelState, p: Params) {
     -1.75,
     { color: theme.text, size: 11, align: "left" },
   );
+}
+
+/** Mostrador de relógio: um ponteiro dá uma volta a cada 4 anos; leitura escrita embaixo. */
+function clockFace(d: Draw, theme: Theme, x: number, y: number, t: number, color: string) {
+  const r = 0.36;
+  d.circle(x, y, r, { fill: theme.dark ? "#141a22" : "#ffffff", stroke: color, width: 1.5 });
+  const a = Math.PI / 2 - (2 * Math.PI * t) / 4;
+  d.line(x, y, x + 0.8 * r * Math.cos(a), y + 0.8 * r * Math.sin(a), { color, width: 2 });
+  d.text(fmt(t, 2), x, y - r - 0.22, { color, size: 9 });
+}
+
+/** Grade de relógios: os de S sincronizados em S; os de S' passam marcando t' = γ(t − βx/c). */
+function renderClockGrid(d: Draw, theme: Theme, s: RelState, p: Params) {
+  const b = beta(p);
+  const g = gammaOf(b);
+  const k = 1.1;
+  const cx = (PAN.x0 + PAN.x1) / 2;
+  const X = (x: number) => cx + x * k;
+  const primed = theme.series[1]!;
+  const T = s.T;
+  d.text(`Grade de relógios vista de S no instante t = ${fmt(T)} anos`, PAN.x0, 5.6, { color: theme.text, size: 12, weight: "600", align: "left" });
+  // Relógios de S, fixos e sincronizados (todos marcam t)
+  d.line(X(-3.5), 4.3, X(3.5), 4.3, { color: theme.grid, width: 1 });
+  for (let x = -3; x <= 3; x++) {
+    clockFace(d, theme, X(x), 4.3, T, theme.text);
+    d.text(`${x}`.replace("-", "−"), X(x), 4.3 + 0.55, { color: theme.muted, size: 9 });
+  }
+  d.text("S (x em al)", X(-3.5) - 0.1, 4.3, { color: theme.text, size: 10, align: "right" });
+  // Relógios de S' (um a cada 1 al em x'), andando com β; leitura t' = γ(t − βx)
+  d.line(X(-3.5), 2.5, X(3.5), 2.5, { color: primed, width: 1, alpha: 0.4 });
+  for (let xp = -12; xp <= 12; xp++) {
+    const x = xp / g + b * T;
+    if (Math.abs(x) > 3.5) continue;
+    clockFace(d, theme, X(x), 2.5, g * (T - b * x), primed);
+    d.text(`x'=${xp}`.replace("-", "−"), X(x), 2.5 + 0.55, { color: primed, size: 9 });
+  }
+  d.text("S'", X(-3.5) - 0.1, 2.5, { color: primed, size: 10, align: "right" });
+  d.arrowPx(X(0), 1.75, Math.sign(b) || 1, 0, 14 + 40 * Math.abs(b), { color: primed, width: 2 });
+  d.text(`os de S' marcam horas diferentes ao longo da linha: t' = γ(t − βx/c), γ = ${fmt(g, 4)}`, PAN.x0, 1.35, { color: theme.muted, size: 10, align: "left" });
+  // Transformação de Lorentz dos eventos
+  const names = ["A", "B"];
+  const rows = s.ev.map((e, i) => {
+    const q = lorentz(e, b);
+    return `${names[i]}: S (x = ${fmt(e.x)} al, ct = ${fmt(e.ct)} anos) → S' (x' = ${fmt(q.x)} al, ct' = ${fmt(q.ct)} anos)`;
+  });
+  const [A, B] = s.ev;
+  const Ap = lorentz(A, b);
+  const Bp = lorentz(B, b);
+  rows.push(`Δx = ${fmt(B.x - A.x)}, cΔt = ${fmt(B.ct - A.ct)}  →  Δx' = ${fmt(Bp.x - Ap.x)}, cΔt' = ${fmt(Bp.ct - Ap.ct)}`);
+  rows.forEach((r, i) => d.text(r, PAN.x0, 0.5 - i * 0.55, { color: i < 2 ? theme.series[i === 0 ? 0 : 3]! : theme.text, size: 10, align: "left" }));
+}
+
+/** Composição de velocidades: objeto com u' em S', que anda a v em S. */
+function renderVelocities(d: Draw, theme: Theme, _s: RelState, p: Params) {
+  const v = beta(p);
+  const uP = uLinha(p);
+  const u = addVel(uP, v);
+  const gal = uP + v;
+  const primed = theme.series[1]!;
+  const obj = theme.series[2]!;
+  const x0 = PAN.x0;
+  const w = 3.6; // c ocupa 3,6 unidades
+  const X = (b: number) => x0 + 4 + b * w;
+  d.text("Composição de velocidades (unidades de c)", x0, 5.6, { color: theme.text, size: 12, weight: "600", align: "left" });
+  const bar = (y: number, val: number, label: string, color: string) => {
+    d.line(X(0), y, X(val), y, { color, width: 6, alpha: 0.85 });
+    d.text(label, x0, y, { color, size: 10, align: "left" });
+    d.text(fmt(val, 3), X(val) + (val >= 0 ? 0.15 : -0.15), y, { color, size: 10, align: val >= 0 ? "left" : "right" });
+  };
+  for (const c of [-1, 1]) {
+    d.line(X(c), 1.3, X(c), 5.1, { color: theme.series[5]!, width: 1.5, dash: [4, 3] });
+    d.text(c > 0 ? "c" : "−c", X(c), 5.25, { color: theme.series[5]!, size: 10 });
+  }
+  d.line(X(0), 1.3, X(0), 5.1, { color: theme.grid, width: 1 });
+  bar(4.6, v, "S' em S: v", primed);
+  bar(3.9, uP, "objeto em S': u'", obj);
+  bar(3.2, gal, "Galileu: u' + v", theme.muted);
+  bar(2.5, u, "Einstein: u", theme.accent);
+  d.text("u = (u' + v)/(1 + u'v/c²) nunca passa de c", x0, 1.75, { color: theme.muted, size: 10, align: "left" });
+  // Gráfico u(u') para o v atual
+  const G = { x0: x0 + 1.2, x1: PAN.x1 - 0.3, y0: -1.75, y1: 0.95 };
+  const gx = (q: number) => (G.x0 + G.x1) / 2 + ((G.x1 - G.x0) / 2) * q;
+  const gy = (q: number) => (G.y0 + G.y1) / 2 + ((G.y1 - G.y0) / 2) * clamp(q, -1.4, 1.4) / 1.4;
+  d.rect(G.x0, G.y0, G.x1 - G.x0, G.y1 - G.y0, { stroke: theme.grid, width: 1 });
+  d.line(G.x0, gy(1), G.x1, gy(1), { color: theme.series[5]!, width: 1, dash: [3, 3] });
+  d.line(G.x0, gy(-1), G.x1, gy(-1), { color: theme.series[5]!, width: 1, dash: [3, 3] });
+  d.plot((x) => gy(((x - (G.x0 + G.x1) / 2) / ((G.x1 - G.x0) / 2)) + v), G.x0, G.x1, { color: theme.muted, width: 1.2, dash: [5, 4] });
+  d.plot((x) => gy(addVel((x - (G.x0 + G.x1) / 2) / ((G.x1 - G.x0) / 2), v)), G.x0, G.x1, { color: theme.accent, width: 2 });
+  d.dot(gx(uP), gy(u), 4, theme.accent);
+  d.text("u", G.x0 - 0.15, G.y1 - 0.1, { color: theme.muted, size: 10, align: "right" });
+  d.text("u' de −c a c", G.x1, G.y0 - 0.25, { color: theme.muted, size: 9, align: "right" });
 }
 
 /** Onda triangular de 0 a 1 a 0 com período 1. */

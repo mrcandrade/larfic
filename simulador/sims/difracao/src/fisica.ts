@@ -194,3 +194,77 @@ export function presetAperture(shape: Shape): number[] {
     }
   return g;
 }
+
+// ---------- Difração de Fresnel por disco e furo circulares ----------
+
+/** Bessel J0 (aproximação racional de Numerical Recipes, erro ~1e-8). */
+export function besselJ0(x: number): number {
+  const ax = Math.abs(x);
+  if (ax < 8) {
+    const y = x * x;
+    const a1 = 57568490574.0 + y * (-13362590354.0 + y * (651619640.7 + y * (-11214424.18 + y * (77392.33017 + y * -184.9052456))));
+    const a2 = 57568490411.0 + y * (1029532985.0 + y * (9494680.718 + y * (59272.64853 + y * (267.8532712 + y))));
+    return a1 / a2;
+  }
+  const z = 8 / ax;
+  const y = z * z;
+  const xx = ax - 0.785398164;
+  const p1 = 1 + y * (-0.1098628627e-2 + y * (0.2734510407e-4 + y * (-0.2073370639e-5 + y * 0.2093887211e-6)));
+  const p2 = -0.1562499995e-1 + y * (0.1430488765e-3 + y * (-0.6911147651e-5 + y * (0.7621095161e-6 - y * 0.934935152e-7)));
+  return Math.sqrt(0.636619772 / ax) * (Math.cos(xx) * p1 - z * Math.sin(xx) * p2);
+}
+
+/** Número de Fresnel N_F = a²/(λz) (a em mm, z em m). */
+export const fresnelNumber = (aMm: number, zM: number, lambdaNm: number) => (aMm * 1e-3) ** 2 / (lambdaNm * 1e-9 * zM);
+
+/**
+ * Campo (re, im) na tela, a r (mm) do eixo, atrás de um furo circular de raio a (mm), iluminado por onda plana
+ * de amplitude 1, na aproximação de Fresnel: U = −(ik/z) e^{ikr²/2z} ∫₀^a e^{ikρ²/2z} J₀(kρr/z) ρ dρ.
+ * O disco opaco é o complemento (Babinet): U_disco = 1 − U_furo.
+ */
+export function fresnelHole(rMm: number, aMm: number, zM: number, lambdaNm: number, n = 600): [number, number] {
+  const k = (2 * Math.PI) / (lambdaNm * 1e-9);
+  const a = aMm * 1e-3;
+  const r = rMm * 1e-3;
+  // Simpson em u = ρ²: ρ dρ = du/2, fase k u/2z
+  const U = a * a;
+  const h = U / n;
+  let sr = 0;
+  let si = 0;
+  for (let i = 0; i <= n; i++) {
+    const u = i * h;
+    const w = i === 0 || i === n ? 1 : i % 2 ? 4 : 2;
+    const ph = (k * u) / (2 * zM);
+    const j = besselJ0((k * Math.sqrt(u) * r) / zM);
+    sr += w * Math.cos(ph) * j;
+    si += w * Math.sin(ph) * j;
+  }
+  const Ir = (sr * h) / 3 / 2;
+  const Ii = (si * h) / 3 / 2;
+  // −(ik/z)(Ir + i Ii) = (k/z)(Ii − i Ir), vezes e^{ikr²/2z}
+  const ar = (k / zM) * Ii;
+  const ai = -(k / zM) * Ir;
+  const q = (k * r * r) / (2 * zM);
+  return [ar * Math.cos(q) - ai * Math.sin(q), ar * Math.sin(q) + ai * Math.cos(q)];
+}
+
+/** Intensidade relativa (onda livre = 1) atrás de um disco opaco (disco = true) ou de um furo circular. */
+export function fresnelIntensity(rMm: number, aMm: number, zM: number, lambdaNm: number, disco: boolean): number {
+  const [hr, hi] = fresnelHole(rMm, aMm, zM, lambdaNm);
+  return disco ? (1 - hr) ** 2 + hi * hi : hr * hr + hi * hi;
+}
+
+/** Cadeia de fasores da fenda simples: N fasores de comprimento 1/N, cada um defasado de 2β/N do anterior. */
+export function phasorChain(beta: number, N: number): [number, number][] {
+  const pts: [number, number][] = [[0, 0]];
+  const dphi = (2 * beta) / N;
+  let x = 0;
+  let y = 0;
+  for (let k = 0; k < N; k++) {
+    const ang = -beta + dphi * (k + 0.5);
+    x += Math.cos(ang) / N;
+    y += Math.sin(ang) / N;
+    pts.push([x, y]);
+  }
+  return pts;
+}

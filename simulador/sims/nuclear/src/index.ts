@@ -28,7 +28,26 @@ import {
   type ChainState,
 } from "./physics.ts";
 
+import {
+  TEMA_BETA,
+  TEMA_CAMADAS,
+  TEMA_OKLO,
+  drawBeta,
+  drawLawson,
+  drawOklo,
+  drawShell,
+  emptyBeta,
+  extraExercises,
+  extraLiveEquations,
+  extraParams,
+  extraScenarios,
+  stepBeta,
+  type BetaHist,
+} from "./topicos-draw.ts";
+
 export * from "./physics.ts";
+export * from "./topicos.ts";
+export * from "./topicos-draw.ts";
 
 export interface NucState {
   /** Relógio da animação (s). */
@@ -39,6 +58,8 @@ export interface NucState {
   fusions: number;
   fusedCycle: number;
   seed: number;
+  /** Tema 4: histograma das energias dos elétrons beta. */
+  beta: BetaHist;
 }
 
 const VIEW = { xMin: -17, xMax: 17, yMin: -9.5, yMax: 9.5 };
@@ -439,6 +460,7 @@ export const nuclear = defineSim<NucState>({
         String.raw`k_\infty = ${texNum(c.kInf)} \qquad k_\text{ef}(R = ${texNum(radius(p))}\ \text{cm}) = ${texNum(kEff(c, radius(p)))} \qquad k_\text{medido} = ${texNum(measuredK(s.chain))}`,
       ];
     }
+    if (tm >= TEMA_BETA) return extraLiveEquations(tm, s.beta, p);
     const E = num(p, "E", 15);
     return [String.raw`P(E = ${texNum(E)}\ \text{keV}) = e^{-\sqrt{${texNum(gamowEnergyKeV(), 4)}/${texNum(E)}}} = ${texNum(tunnelP(E))}`];
   },
@@ -448,7 +470,7 @@ export const nuclear = defineSim<NucState>({
       label: "Tema",
       unit: "",
       min: 0,
-      max: 3,
+      max: 7,
       step: 1,
       default: 0,
       live: true,
@@ -457,6 +479,10 @@ export const nuclear = defineSim<NucState>({
         { value: 1, label: "Fissão do U-235" },
         { value: 2, label: "Reação em cadeia" },
         { value: 3, label: "Fusão D–T e barreira coulombiana" },
+        { value: 4, label: "Espectro beta e o neutrino" },
+        { value: 5, label: "Modelo de camadas" },
+        { value: 6, label: "Reator natural de Oklo" },
+        { value: 7, label: "Fusão controlada: critério de Lawson" },
       ],
     },
     { key: "A", label: "Número de massa A", unit: "", min: 2, max: 250, step: 1, default: 56, live: true },
@@ -491,6 +517,7 @@ export const nuclear = defineSim<NucState>({
     { key: "barras", label: "Inserção das barras de controle", unit: "", min: 0, max: 1, step: 0.01, default: 0, live: true },
     { key: "E", label: "Energia da colisão D–T", unit: "keV", min: 1, max: 1000, step: 1, default: 15, log: true, live: true },
     { key: "kT", label: "Temperatura do plasma kT", unit: "keV", min: 1, max: 100, step: 0.5, default: 10, log: true, live: true },
+    ...extraParams,
   ],
   observables: [
     { key: "BA", label: "B/A (fórmula)", unit: "MeV", value: (_s, p) => semfB(massNum(p), stableZ(massNum(p))) / massNum(p) },
@@ -502,6 +529,7 @@ export const nuclear = defineSim<NucState>({
     { key: "Rc", label: "Raio crítico", unit: "cm", value: (_s, p) => (Number.isFinite(coreFor(p).Rc) ? coreFor(p).Rc : 0) },
     { key: "P", label: "Probabilidade de tunelamento", unit: "", value: (_s, p) => tunnelP(num(p, "E", 15)) },
     { key: "fusoes", label: "Fusões D–T", unit: "", value: (s) => s.fusions },
+    { key: "Kmed", label: "Energia média do elétron beta", unit: "keV", value: (s) => (s.beta.count ? s.beta.sum / s.beta.count : 0) },
   ],
   chart: { x: "t", y: "logN" },
   scenarios: [
@@ -570,6 +598,7 @@ export const nuclear = defineSim<NucState>({
         },
       ],
     },
+    ...extraScenarios,
   ],
   exercises: [
     {
@@ -589,12 +618,14 @@ export const nuclear = defineSim<NucState>({
       answer: { label: "R_c", unit: "cm", compute: (p) => (Math.PI * Math.sqrt(num(p, "M2x", 20))) / Math.sqrt(num(p, "kinfx", 2) - 1) },
       hint: "k = k∞/(1 + M²B²) = 1 com B = π/R.",
     },
+    ...extraExercises,
   ],
-  init: (p) => ({ clock: 0, chain: initChain(radius(p)), attempts: 0, fusions: 0, fusedCycle: -1, seed: 777 }),
+  init: (p) => ({ clock: 0, chain: initChain(radius(p)), attempts: 0, fusions: 0, fusedCycle: -1, seed: 777, beta: emptyBeta() }),
   step(s, p, _t, dt) {
     const tm = theme(p);
     const ns: NucState = { ...s, clock: s.clock + dt };
     if (tm === 2) ns.chain = stepChain(s.chain, coreFor(p), radius(p));
+    if (tm === TEMA_BETA) ns.beta = stepBeta(s.beta, p);
     if (tm === 3) {
       const st = { seed: s.seed };
       const n = COLLISION_RATE * dt;
@@ -628,8 +659,20 @@ export const nuclear = defineSim<NucState>({
       case 2:
         drawChain(d, s, p);
         break;
-      default:
+      case TEMA_BETA:
+        drawBeta(d, s.beta, p);
+        break;
+      case TEMA_CAMADAS:
+        drawShell(d, p);
+        break;
+      case TEMA_OKLO:
+        drawOklo(d, p);
+        break;
+      case 3:
         drawFusion(d, s, p);
+        break;
+      default:
+        drawLawson(d, p);
     }
   },
 });

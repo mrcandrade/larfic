@@ -45,6 +45,17 @@ export interface Component {
 }
 
 const isPacket = (p: Params) => Math.round(num(p, "modo")) === 1;
+/** Modo 2: duas ondas progressivas de mesma frequência, defasadas de φ, somadas por fasores. */
+export const isPhasor = (p: Params) => Math.round(num(p, "modo")) === 2;
+/** Frequência angular usada no modo de fasores (0,5 Hz, para acompanhar a rotação). */
+export const W_FASOR = Math.PI;
+
+/** Resultante de y₁ = A₁ sen(kx − ωt) e y₂ = A₂ sen(kx − ωt + φ): y = A′ sen(kx − ωt + β). */
+export function phasorSum(A1: number, A2: number, phiRad: number): { A: number; beta: number } {
+  const X = A1 + A2 * Math.cos(phiRad), Y = A2 * Math.sin(phiRad);
+  return { A: Math.hypot(X, Y), beta: Math.atan2(Y, X) };
+}
+const phasorOf = (p: Params) => phasorSum(num(p, "A1", 1), num(p, "A2", 0.7), (num(p, "phi", 60) * Math.PI) / 180);
 
 /** Componentes da soma: duas ondas (batimento) ou N ondas com pesos gaussianos (pacote). */
 export function components(p: Params): Component[] {
@@ -125,6 +136,53 @@ const TP = { x0: 11.2, x1: 20, y0: -4.3, y1: -0.7 }; // y(x_s, t)
 const fmt = (v: number, d = 3) => (Number.isFinite(v) ? Number(v.toPrecision(d)).toString().replace(".", ",") : "—");
 const mod = (a: number, b: number) => ((a % b) + b) % b;
 
+/** Modo de fasores: as duas ondas e a soma ao longo de x, e o diagrama de fasores girando. */
+function renderPhasors(d: ReturnType<typeof draw>, p: Params, t: number, theme: ReturnType<typeof draw>["theme"]) {
+  const A1 = num(p, "A1", 1), A2 = num(p, "A2", 0.7), ph = (num(p, "phi", 60) * Math.PI) / 180;
+  const k = k0Of(p), w = W_FASOR;
+  const r = phasorOf(p);
+  const sc = 2.2 / Math.max(2, A1 + A2);
+  const c1 = theme.series[0]!, c2 = theme.series[1]!, cr = theme.accent;
+  // ondas ao longo de x (0 a 12 m), cada uma na sua faixa e a soma embaixo
+  const X1 = 12;
+  const rows: [number, (x: number) => number, string, string][] = [
+    [3.6, (x) => A1 * Math.sin(k * x - w * t), c1, "y₁"],
+    [1.0, (x) => A2 * Math.sin(k * x - w * t + ph), c2, "y₂"],
+    [-2.6, (x) => r.A * Math.sin(k * x - w * t + r.beta), cr, "y′"],
+  ];
+  for (const [yc, f, col, nome] of rows) {
+    d.line(0, yc, X1, yc, { color: theme.grid, width: 1 });
+    const pts: [number, number][] = [];
+    for (let i = 0; i <= 400; i++) {
+      const x = (X1 * i) / 400;
+      pts.push([x, yc + sc * f(x)]);
+    }
+    d.polyline(pts, { color: col, width: 2 });
+    d.text(nome, -0.2, yc, { color: col, size: 12, weight: "600", align: "right" });
+    d.dot(0, yc + sc * f(0), 5, col);
+  }
+  d.line(0, -5, 0, 5.2, { color: theme.muted, width: 1, dash: [3, 3] });
+  d.text("x = 0", 0, -4.85, { color: theme.muted, size: 10, align: "left", dx: 4 });
+  d.text("y′ = y₁ + y₂", X1, -4.85, { color: cr, size: 11, weight: "600", align: "right" });
+  // diagrama de fasores (ângulo φᵢ − ωt; a projeção vertical é y em x = 0)
+  const C = { x: 16.8, y: 0.6 };
+  const R = 3.6 / Math.max(2, A1 + A2);
+  d.circle(C.x, C.y, R * r.A, { stroke: theme.grid, width: 1 });
+  d.line(C.x - R * 2.1, C.y, C.x + R * 2.1, C.y, { color: theme.grid, width: 1 });
+  d.line(C.x, C.y - R * 2.1, C.x, C.y + R * 2.1, { color: theme.grid, width: 1 });
+  const a1 = -w * t, a2 = ph - w * t, ar = r.beta - w * t;
+  const P1: [number, number] = [C.x + R * A1 * Math.cos(a1), C.y + R * A1 * Math.sin(a1)];
+  d.arrow(C.x, C.y, P1[0] - C.x, P1[1] - C.y, { color: c1, width: 3 });
+  if (A2 > 1e-6) d.arrow(P1[0], P1[1], R * A2 * Math.cos(a2), R * A2 * Math.sin(a2), { color: c2, width: 3 });
+  if (r.A > 1e-6) d.arrow(C.x, C.y, R * r.A * Math.cos(ar), R * r.A * Math.sin(ar), { color: cr, width: 2.5, dash: [6, 3] });
+  // projeções verticais = deslocamentos em x = 0
+  const yr = C.y + R * r.A * Math.sin(ar);
+  d.line(C.x + R * r.A * Math.cos(ar), yr, C.x - R * 2.3, yr, { color: cr, width: 1, dash: [2, 3], alpha: 0.7 });
+  d.text("fasores (giram com ω)", C.x, C.y + R * 2.1 + 0.5, { color: theme.text, size: 12, weight: "600" });
+  d.text(`A₁ = ${fmt(A1)}   A₂ = ${fmt(A2)}   φ = ${fmt(num(p, "phi", 60))}°`, C.x, -3.6, { color: theme.text, size: 11 });
+  d.text(`A′ = ${fmt(r.A)}   β = ${fmt((r.beta * 180) / Math.PI)}°`, C.x, -4.3, { color: cr, size: 12, weight: "600" });
+}
+
 export const superposicao = defineSim({
   id: "superposicao",
   title: "Superposição, batimentos e velocidade de grupo",
@@ -140,6 +198,14 @@ export const superposicao = defineSim({
     String.raw`\omega = ck:\ v_g = v_f \qquad \omega = \sqrt{gk}:\ v_g = \tfrac12 v_f \qquad \omega \propto k^2:\ v_g = 2v_f`,
   ],
   liveEquations(s, p) {
+    if (isPhasor(p)) {
+      const A1 = num(p, "A1", 1), A2 = num(p, "A2", 0.7), ph = num(p, "phi", 60);
+      const r = phasorOf(p);
+      return [
+        String.raw`A' = \sqrt{A_1^2 + A_2^2 + 2A_1A_2\cos\phi} = \sqrt{${texNum(A1)}^2 + ${texNum(A2)}^2 + 2\cdot${texNum(A1)}\cdot${texNum(A2)}\cos ${texNum(ph)}^\circ} = ${texNum(r.A)}`,
+        String.raw`\tan\beta = \frac{A_2\,\mathrm{sen}\,\phi}{A_1 + A_2\cos\phi} \Rightarrow \beta = ${texNum((r.beta * 180) / Math.PI)}^\circ \qquad y' = ${texNum(r.A)}\,\mathrm{sen}(kx - \omega t + ${texNum((r.beta * 180) / Math.PI)}^\circ)`,
+      ];
+    }
     const { vf, vg } = velocities(p);
     const out = [String.raw`v_f = ${texNum(vf)}\ \text{m/s} \qquad v_g = ${texNum(vg)}\ \text{m/s} \qquad v_g/v_f = ${texNum(vg / vf)}`];
     if (!isPacket(p)) {
@@ -166,6 +232,7 @@ export const superposicao = defineSim({
       options: [
         { value: 0, label: "Duas ondas (batimentos)" },
         { value: 1, label: "Pacote de N ondas" },
+        { value: 2, label: "Duas ondas de mesma frequência (fasores)" },
       ],
     },
     {
@@ -179,6 +246,9 @@ export const superposicao = defineSim({
       options: DISP.map((label, value) => ({ value, label })),
     },
     { key: "lambda", label: "Comprimento de onda central λ₀", unit: "m", min: 0.5, max: 2, step: 0.05, default: 1 },
+    { key: "A1", label: "Fasores: amplitude A₁", unit: "", min: 0.1, max: 2, step: 0.05, default: 1, live: true },
+    { key: "A2", label: "Fasores: amplitude A₂", unit: "", min: 0, max: 2, step: 0.05, default: 0.7, live: true },
+    { key: "phi", label: "Fasores: diferença de fase φ", unit: "°", min: 0, max: 360, step: 1, default: 60, live: true },
     { key: "dk", label: "Separação Δk/k₀ (duas ondas)", unit: "", min: 0.02, max: 0.4, step: 0.01, default: 0.15 },
     { key: "N", label: "Número de componentes (pacote)", unit: "", min: 3, max: 101, step: 2, default: 61 },
     { key: "sigma", label: "Largura inicial σ₀ (pacote)", unit: "m", min: 0.4, max: 2, step: 0.05, default: 0.6 },
@@ -199,6 +269,8 @@ export const superposicao = defineSim({
   ],
 
   observables: [
+    { key: "Ares", label: "Fasores: amplitude resultante A′", unit: "", value: (_s, p) => phasorOf(p).A },
+    { key: "beta", label: "Fasores: fase da resultante β", unit: "°", value: (_s, p) => (phasorOf(p).beta * 180) / Math.PI },
     { key: "xg", label: "Marcador de grupo x₀ + v_g t", unit: "m", value: (s, p) => X0 + velocities(p).vg * s[T]! },
     { key: "xf", label: "Marcador de fase x₀ + v_f t", unit: "m", value: (s, p) => X0 + velocities(p).vf * s[T]! },
     { key: "xc", label: "Centro medido do pacote", unit: "m", value: (s, p) => (isPacket(p) ? packetStats(p, s[T]!).xc : X0 + velocities(p).vg * s[T]!) },
@@ -221,6 +293,26 @@ export const superposicao = defineSim({
   chart: { x: "t", y: "yP" },
 
   scenarios: [
+    {
+      id: "fasores",
+      label: "Fasores: somando duas ondas defasadas",
+      params: { modo: 2, lambda: 2, A1: 1, A2: 0.7, phi: 60 },
+      guide: `### A soma como uma soma de vetores girando
+Duas ondas de mesmo $k$ e mesmo $\\omega$, $y_1 = A_1\\,\\mathrm{sen}(kx - \\omega t)$ e $y_2 = A_2\\,\\mathrm{sen}(kx - \\omega t + \\phi)$, somam-se numa onda do mesmo tipo, $y' = A'\\,\\mathrm{sen}(kx - \\omega t + \\beta)$.
+1. À direita, cada onda é um **fasor**: uma seta de comprimento igual à amplitude, girando com $\\omega$. A projeção vertical da seta é o deslocamento da corda no ponto marcado ($x = 0$).
+2. O fasor 2 está sempre $\\phi$ à frente do fasor 1. Coloque-o com a cauda na cabeça do 1: a seta da origem até a ponta é a **resultante**, de comprimento $A'$ e fase $\\beta$.
+3. Rode: os três fasores giram juntos, sem mudar de forma. Por isso a soma também é senoidal, com amplitude constante.
+4. Faça $\\phi = 0$ ($A' = A_1 + A_2$) e $\\phi = 180°$ ($A' = |A_1 - A_2|$). Com $A_1 = A_2$ e $\\phi = 180°$, as ondas se anulam.
+5. Confira $A'$ e $\\beta$ pela lei dos cossenos nas equações ao vivo.`,
+      predict: [
+        {
+          question: "Duas ondas com amplitudes 1,0 e 0,7, defasadas de 90°, somam-se. A amplitude resultante é:",
+          options: ["1,7", "0,3", "cerca de 1,22", "0,85"],
+          answer: 2,
+          explanation: "Com $\\phi = 90°$ os fasores são perpendiculares: $A' = \\sqrt{1{,}0^2 + 0{,}7^2} \\approx 1{,}22$. Só com $\\phi = 0$ as amplitudes se somam diretamente.",
+        },
+      ],
+    },
     {
       id: "batimentos",
       label: "Batimentos de duas ondas",
@@ -337,6 +429,10 @@ export const superposicao = defineSim({
     const d = draw(ctx, frame);
     const { state: s, params: p, theme } = frame;
     const t = s[T]!;
+    if (isPhasor(p)) {
+      renderPhasors(d, p, t, theme);
+      return;
+    }
     const cs = components(p);
     const packet = isPacket(p);
     const { vf, vg } = velocities(p);

@@ -6,8 +6,11 @@ import {
   airy,
   dipRatio,
   fraunhofer,
+  fresnelIntensity,
+  fresnelNumber,
   grating,
   maxOrder,
+  phasorChain,
   presetAperture,
   rayleighAngle,
   singleSlit,
@@ -22,6 +25,7 @@ export const FENDA = 0;
 export const REDE = 1;
 export const RAYLEIGH = 2;
 export const DESENHO = 3;
+export const FRESNEL = 4;
 export const T_SCAN = 10;
 /** Tamanho real da abertura desenhável (lado da grade), em mm. */
 export const APERTURE_MM = 1;
@@ -41,6 +45,31 @@ const fonte = (p: Params) => Math.round(num(p, "fonte"));
 const lam = (p: Params) => num(p, "lambda", 633);
 const nSlits = (p: Params) => Math.max(1, Math.round(num(p, "N", 8)));
 const dUm = (p: Params) => num(p, "d", 5);
+const aF = (p: Params) => num(p, "aF", 1);
+const zF = (p: Params) => num(p, "zF", 1);
+const disco = (p: Params) => Math.round(num(p, "objF")) === 0;
+/** Meio alcance (mm) da tela no modo Fresnel. */
+export const fresnelRange = (p: Params) => 2.2 * aF(p);
+
+let fKey = "";
+let fProf: Float64Array | null = null;
+/** Perfil radial I(r) no modo Fresnel, de r = 0 a fresnelRange, em FN + 1 pontos (com cache). */
+export const FN = 220;
+export function fresnelProfile(p: Params): Float64Array {
+  const key = `${aF(p)}|${zF(p)}|${lam(p)}|${disco(p)}`;
+  if (fProf && key === fKey) return fProf;
+  const out = new Float64Array(FN + 1);
+  for (let i = 0; i <= FN; i++) out[i] = fresnelIntensity((fresnelRange(p) * i) / FN, aF(p), zF(p), lam(p), disco(p));
+  fKey = key;
+  fProf = out;
+  return out;
+}
+const profileAt = (p: Params, rMm: number) => {
+  const pr = fresnelProfile(p);
+  const x = Math.min(FN - 1e-9, (Math.abs(rMm) / fresnelRange(p)) * FN);
+  const i = Math.floor(x);
+  return pr[i]! + (x - i) * (pr[i + 1]! - pr[i]!);
+};
 /** Largura das fendas da rede: 30% do período. */
 export const gratingSlit = (p: Params) => 0.3 * dUm(p);
 
@@ -89,6 +118,8 @@ export function detectorTheta(s: DifState, p: Params): number {
       return s.u * rayRange(p);
     case DESENHO:
       return Math.asin(clamp(s.u * fftRange(p), -1, 1));
+    case FRESNEL:
+      return (s.u * fresnelRange(p) * 1e-3) / zF(p);
     default:
       return Math.asin(clamp(s.u * sinRange(p), -1, 1));
   }
@@ -109,6 +140,8 @@ export function detectorI(s: DifState, p: Params): number {
       const row = (F / 2) * F;
       return (img[row + i] ?? 0) * (1 - f) + (img[row + i + 1] ?? 0) * f;
     }
+    case FRESNEL:
+      return profileAt(p, s.u * fresnelRange(p));
     default:
       return intensity1D(s.u * sinRange(p), p);
   }
@@ -127,6 +160,7 @@ const ZM = { x0: 1.2, x1: 19.2, y0: -6.1, y1: -3.9 };
 const IMG = { x0: 0.6, x1: 9.2, y0: -4.9, y1: 3.7 };
 const PAT = { x0: 10.6, x1: 19.2, y0: -4.9, y1: 3.7 };
 const PROF = { x0: 11.2, x1: 19.4, y0: -2.6, y1: 2.6 };
+const FP = { x0: 10.8, x1: 19.4, y0: -4.2, y1: 3.6 };
 
 const fmt = (v: number, digits = 3) => Number(v.toPrecision(digits)).toString().replace(".", ",").replace("-", "−");
 
@@ -159,6 +193,8 @@ function detectorFromPoint(s: DifState, p: Params, x: number, y: number): DifSta
   }
   if (m === RAYLEIGH && x >= PROF.x0 && x <= PROF.x1 && y > PROF.y0 - 0.5 && y < PROF.y1 + 1)
     return { ...s, u: clamp((x - (PROF.x0 + PROF.x1) / 2) / ((PROF.x1 - PROF.x0) / 2), -1, 1) };
+  if (m === FRESNEL && x >= FP.x0 && x <= FP.x1 && y >= FP.y0 - 0.6 && y <= FP.y1)
+    return { ...s, u: clamp((x - (FP.x0 + FP.x1) / 2) / ((FP.x1 - FP.x0) / 2), -1, 1) };
   if (m === DESENHO && x >= PAT.x0 && x <= PAT.x1 && y >= PAT.y0 && y <= PAT.y1)
     return { ...s, u: clamp((x - (PAT.x0 + PAT.x1) / 2) / ((PAT.x1 - PAT.x0) / 2), -1, 1) };
   return undefined;
@@ -192,6 +228,19 @@ export const difracao = defineSim<DifState>({
       const thR = rayleighAngle(num(p, "D", 2), lam(p));
       out.push(String.raw`\theta_R = 1{,}22\frac{\lambda}{D} = ${texNum(thR * 1e6)}\ \mu\text{rad},\quad \frac{\alpha}{\theta_R} = ${texNum((num(p, "alpha", 400) * 1e-6) / thR)}`);
     }
+    if (m === FRESNEL) {
+      const NF = fresnelNumber(aF(p), zF(p), lam(p));
+      out.push(
+        String.raw`N_F = \frac{a^2}{\lambda z} = \frac{(${texNum(aF(p))}\ \text{mm})^2}{(${texNum(lam(p))}\ \text{nm})(${texNum(zF(p))}\ \text{m})} = ${texNum(NF)}`,
+        disco(p)
+          ? String.raw`\text{disco: } I(0) = I_{\text{livre}} \ \text{(mancha de Arago)},\quad \text{diâmetro da mancha} \approx 0{,}77\frac{\lambda z}{a} = ${texNum((0.77 * lam(p) * 1e-6 * zF(p) * 1e3) / aF(p))}\ \text{mm}`
+          : String.raw`\text{furo: } I(0) = 4\,\text{sen}^2\!\left(\frac{\pi N_F}{2}\right) = ${texNum(4 * Math.sin((Math.PI * NF) / 2) ** 2, 3)}\ \text{(escuro para } N_F \text{ par)}`,
+      );
+    }
+    if (m === FENDA && Math.round(num(p, "fasores")) === 1) {
+      const beta = (Math.PI * num(p, "a", 40) * 1e-6 * Math.sin(th)) / (lam(p) * 1e-9);
+      out.push(String.raw`\beta = \frac{\pi a\,\text{sen}\,\theta}{\lambda} = ${texNum(beta)}\ \text{rad},\quad \phi_{\text{total}} = 2\beta,\quad \frac{E_\theta}{E_m} = \frac{\text{sen}\,\beta}{\beta} = ${texNum(Math.abs(beta) < 1e-9 ? 1 : Math.sin(beta) / beta, 3)}`);
+    }
     if (m === DESENHO) out.push(String.raw`\text{célula} = ${texNum(CELL_M * 1e6)}\ \mu\text{m},\quad \theta_{\text{borda}} = \frac{\lambda}{2\Delta} = ${texNum(fftRange(p) * 1e3)}\ \text{mrad}`);
     return out;
   },
@@ -202,7 +251,7 @@ export const difracao = defineSim<DifState>({
       label: "Experimento",
       unit: "",
       min: 0,
-      max: 3,
+      max: 4,
       step: 1,
       default: FENDA,
       options: [
@@ -210,6 +259,7 @@ export const difracao = defineSim<DifState>({
         { value: REDE, label: "Rede de difração (N fendas)" },
         { value: RAYLEIGH, label: "Duas fontes e critério de Rayleigh" },
         { value: DESENHO, label: "Abertura desenhada (FFT 2D)" },
+        { value: FRESNEL, label: "Disco ou furo circular de perto (Fresnel)" },
       ],
     },
     {
@@ -252,6 +302,36 @@ export const difracao = defineSim<DifState>({
     },
     { key: "pincel", label: "Raio do pincel", unit: "células", min: 0.5, max: 6, step: 0.5, default: 1.5, live: true },
     { key: "dec", label: "Faixa da escala log", unit: "décadas", min: 1, max: 8, step: 0.5, default: 4, live: true },
+    {
+      key: "fasores",
+      label: "Cadeia de fasores (fenda)",
+      unit: "",
+      min: 0,
+      max: 1,
+      step: 1,
+      default: 0,
+      live: true,
+      options: [
+        { value: 0, label: "Ocultar" },
+        { value: 1, label: "Mostrar no ângulo do detector" },
+      ],
+    },
+    {
+      key: "objF",
+      label: "Obstáculo (Fresnel)",
+      unit: "",
+      min: 0,
+      max: 1,
+      step: 1,
+      default: 0,
+      live: true,
+      options: [
+        { value: 0, label: "Disco opaco" },
+        { value: 1, label: "Furo circular num anteparo" },
+      ],
+    },
+    { key: "aF", label: "Raio do disco/furo a (Fresnel)", unit: "mm", min: 0.2, max: 3, step: 0.05, default: 1, live: true },
+    { key: "zF", label: "Distância até a tela z (Fresnel)", unit: "m", min: 0.1, max: 5, step: 0.05, default: 1, live: true },
   ],
 
   observables: [
@@ -262,6 +342,8 @@ export const difracao = defineSim<DifState>({
     { key: "thR", label: "Limite de Rayleigh θ_R", unit: "µrad", value: (_s, p) => rayleighAngle(num(p, "D", 2), lam(p)) * 1e6 },
     { key: "ratio", label: "α / θ_R", unit: "", value: (_s, p) => (num(p, "alpha", 400) * 1e-6) / rayleighAngle(num(p, "D", 2), lam(p)) },
     { key: "abertas", label: "Células abertas na abertura", unit: "", value: (s) => s.grid.reduce((a, b) => a + b, 0) },
+    { key: "rF", label: "Posição do detector na tela (Fresnel)", unit: "mm", value: (s, p) => (mode(p) === FRESNEL ? s.u * fresnelRange(p) : 0) },
+    { key: "NF", label: "Número de Fresnel a²/(λz)", unit: "", value: (_s, p) => fresnelNumber(aF(p), zF(p), lam(p)) },
   ],
   chart: { x: "theta", y: "I" },
 
@@ -329,6 +411,46 @@ export const difracao = defineSim<DifState>({
 2. Quadrado: cruz de franjas nas direções dos lados. Troque a abertura inicial para **Círculo** (anéis de Airy) e **Fenda**.
 3. Pinte e apague com o mouse (botões Pincel/Borracha). Estreite a abertura numa direção: o padrão **alarga** nessa direção.
 4. Desenhe duas fendas: aparecem franjas de interferência dentro da envoltória de uma fenda.`,
+    },
+    {
+      id: "fasores",
+      label: "Fenda simples: a cadeia de fasores",
+      params: { modo: FENDA, fonte: 0, lambda: 633, a: 40, fasores: 1 },
+      guide: `### Somando as ondas de cada faixa da fenda
+1. Divida a fenda em $N$ faixas estreitas. Cada uma manda para a tela uma onda de mesma amplitude, representada por um **fasor** (seta). Entre faixas vizinhas a diferença de caminho dá uma defasagem $\\Delta\\phi$; de uma borda à outra, a defasagem total é
+$$\\phi = \\frac{2\\pi}{\\lambda}\\,a\\,\\text{sen}\\,\\theta = 2\\beta$$
+2. Rode: o detector varre a tela e, embaixo, a cadeia de fasores vai se curvando. No centro ($\\theta = 0$) as setas ficam em linha reta e a resultante é máxima ($E_m$).
+3. Pare o detector (arraste-o) no 1º mínimo: a cadeia fecha um **círculo** ($2\\beta = 2\\pi$) e a resultante é zero. No 1º máximo secundário ela dá cerca de uma volta e meia.
+4. A resultante é a corda de um arco de comprimento $E_m$ e ângulo $2\\beta$:
+$$E_\\theta = E_m\\frac{\\text{sen}\\,\\beta}{\\beta} \\quad\\Rightarrow\\quad I = I_m\\left(\\frac{\\text{sen}\\,\\beta}{\\beta}\\right)^2$$
+5. Compare a razão mostrada com o gráfico $I(\\theta)$: são a mesma coisa.`,
+      predict: [
+        {
+          question: "No primeiro mínimo da fenda simples, a cadeia de fasores:",
+          options: ["fica reta", "forma meia volta", "fecha uma volta completa", "fecha duas voltas"],
+          answer: 2,
+          explanation: "A defasagem entre as bordas é $2\\pi$: o último fasor aponta como o primeiro, a cadeia fecha um círculo e a resultante é nula.",
+        },
+      ],
+    },
+    {
+      id: "arago",
+      label: "Mancha clara de Fresnel (Arago)",
+      params: { modo: FRESNEL, lambda: 633, objF: 0, aF: 1, zF: 1 },
+      guide: `### Um ponto claro no meio da sombra
+1. Um disco opaco de raio $a = 1\\ \\text{mm}$ está a $z = 1\\ \\text{m}$ da tela, iluminado por uma onda plana. A ótica geométrica prevê sombra completa para $r < a$ (tracejado).
+2. Aqui a tela está perto: o número de Fresnel $N_F = a^2/(\\lambda z) \\approx 1{,}6$ não é pequeno, e a difração é de **Fresnel** (campo próximo), não de Fraunhofer. O campo é calculado pela integral de Fresnel sobre a parte livre da frente de onda.
+3. No centro da sombra aparece uma mancha clara com a **mesma intensidade** da luz sem obstáculo. Por simetria, as ondas que contornam a borda do disco chegam ao eixo todas em fase. Poisson usou esse resultado para tentar refutar a teoria ondulatória de Fresnel; Arago fez o experimento e viu a mancha (1818).
+4. Afaste a tela ($z$ maior): a mancha alarga, $\\approx 0{,}77\\lambda z/a$. Aumente $a$: ela fica mais fina, mas não some.
+5. Troque para **furo circular**: agora o centro alterna entre claro e escuro conforme $N_F$ (escuro quando $N_F$ é par: o furo deixa passar um número par de zonas de Fresnel).`,
+      predict: [
+        {
+          question: "No centro da sombra de um disco opaco, a intensidade da luz é:",
+          options: ["zero, é sombra", "um pouco maior que zero", "igual à da luz sem o disco", "o dobro da luz sem o disco"],
+          answer: 2,
+          explanation: "A integral de Fresnel sobre a frente de onda fora do disco dá, no eixo, $|U|^2 = 1$: a mancha de Arago tem a intensidade da onda livre, qualquer que seja o raio do disco (na aproximação de Fresnel).",
+        },
+      ],
     },
   ],
 
@@ -404,6 +526,8 @@ export const difracao = defineSim<DifState>({
         return renderRayleigh(d, theme, s, p);
       case DESENHO:
         return renderDrawing(d, theme, s, p);
+      case FRESNEL:
+        return renderFresnel(d, theme, s, p);
       default:
         return renderLinear(d, theme, s, p);
     }
@@ -544,8 +668,87 @@ function renderLinear(d: Draw, theme: Theme, s: DifState, p: Params) {
     : `fenda a = ${fmt(num(p, "a", 40))} µm · 1º mínimo em sen θ = λ/a`;
   d.text(info, GR.x0, 5.95, { color: theme.muted, size: 11, align: "left" });
 
-  if (isRede && fonte(p) === 2 && maxOrder(dUm(p), 589.6) >= 1) renderZoom(d, theme, p);
+  if (!isRede && Math.round(num(p, "fasores")) === 1) renderPhasors(d, theme, s, p);
+  else if (isRede && fonte(p) === 2 && maxOrder(dUm(p), 589.6) >= 1) renderZoom(d, theme, p);
   else if (fonte(p) === 1) d.text("Luz branca: cada ordem m ≠ 0 se abre num espectro (violeta mais perto do centro).", GR.x0, -3.6, { color: theme.muted, size: 11, align: "left" });
+}
+
+/** Cadeia de fasores das N faixas da fenda no ângulo do detector. */
+function renderPhasors(d: Draw, theme: Theme, s: DifState, p: Params) {
+  const l = fonte(p) === 2 ? 589.3 : fonte(p) === 1 ? 550 : lam(p);
+  const sinT = s.u * sinRange(p);
+  const beta = (Math.PI * num(p, "a", 40) * 1e-6 * sinT) / (l * 1e-9);
+  const N = 24;
+  const chain = phasorChain(beta, N);
+  const L = 7; // comprimento do arco (unidades do palco) = E_m
+  const ox = 2;
+  const oy = -5.2;
+  // centraliza a cadeia verticalmente
+  let ymin = 0;
+  let ymax = 0;
+  for (const [, y] of chain) {
+    ymin = Math.min(ymin, y);
+    ymax = Math.max(ymax, y);
+  }
+  const k = Math.min(L, 2.6 / Math.max(ymax - ymin, 1e-9));
+  const yc = oy - ((ymin + ymax) / 2) * k;
+  d.line(ox, oy - 1.4, ox, oy + 1.4, { color: theme.grid, width: 1 });
+  for (let i = 0; i < N; i++) {
+    const [x0, y0] = chain[i]!;
+    const [x1, y1] = chain[i + 1]!;
+    d.arrow(ox + x0 * k, yc + y0 * k, (x1 - x0) * k, (y1 - y0) * k, { color: theme.series[0]!, width: 1.6, head: 5 });
+  }
+  const [ex, ey] = chain[N]!;
+  d.arrow(ox, yc, ex * k, ey * k, { color: theme.accent, width: 3, head: 9 });
+  const ratio = Math.hypot(ex, ey);
+  d.text(`${N} fasores (faixas da fenda), defasagem total 2β = ${fmt((2 * beta * 180) / Math.PI, 3)}°`, 10.2, -4.2, { color: theme.text, size: 11, align: "left" });
+  d.text(`resultante E_θ/E_m = |sen β/β| = ${fmt(ratio, 3)} → I/I₀ = ${fmt(ratio * ratio, 3)}`, 10.2, -4.9, { color: theme.accent, size: 11, align: "left", weight: "600" });
+  d.text("no 1º mínimo a cadeia fecha um círculo (2β = 360°)", 10.2, -5.6, { color: theme.muted, size: 10, align: "left" });
+  if (k < L) d.text(`(escala ${fmt(k / L, 2)}×)`, 10.2, -6.3, { color: theme.muted, size: 10, align: "left" });
+}
+
+/** Difração de Fresnel por disco ou furo: tela vista de frente e perfil radial. */
+function renderFresnel(d: Draw, theme: Theme, s: DifState, p: Params) {
+  const R = fresnelRange(p);
+  const a = aF(p);
+  const L = lam(p);
+  const prof = fresnelProfile(p);
+  let Imax = 0;
+  for (const v of prof) Imax = Math.max(Imax, v);
+  const Idisp = Math.max(1.6, Imax);
+  // Tela de frente
+  const C = { x: 5.2, y: -0.5, r: 4.6 };
+  d.circle(C.x, C.y, C.r, { fill: "#000" });
+  const n = 160;
+  for (let i = n; i >= 1; i--) {
+    const v = prof[Math.round(((i - 0.5) / n) * FN)]!;
+    d.circle(C.x, C.y, (C.r * i) / n, { fill: cssRGB(monoColor(L, Math.min(1, v / Idisp) * 1.6)) });
+  }
+  d.circle(C.x, C.y, (C.r * a) / R, { stroke: theme.muted, width: 1, dash: [4, 4] });
+  d.circle(C.x, C.y, C.r, { stroke: theme.muted, width: 1 });
+  d.text(disco(p) ? "tela: tracejado = borda da sombra geométrica" : "tela: tracejado = borda do feixe geométrico", C.x, C.y + C.r + 0.45, { color: theme.muted, size: 11 });
+  d.text(`${fmt(2 * R)} mm de lado a lado`, C.x, C.y - C.r - 0.45, { color: theme.muted, size: 10 });
+  // Perfil
+  const X = (r: number) => (FP.x0 + FP.x1) / 2 + ((FP.x1 - FP.x0) / 2) * (r / R);
+  const Y = (I: number) => FP.y0 + (FP.y1 - FP.y0) * clamp(I / Idisp, 0, 1.02);
+  d.line(FP.x0, FP.y0, FP.x1, FP.y0, { color: theme.muted, width: 1 });
+  d.line(X(0), FP.y0, X(0), FP.y1, { color: theme.grid, width: 1 });
+  d.line(FP.x0, Y(1), FP.x1, Y(1), { color: theme.muted, width: 1, dash: [5, 4] });
+  d.text("sem obstáculo", FP.x1, Y(1) + 0.3, { color: theme.muted, size: 10, align: "right" });
+  for (const sg of [-1, 1]) d.line(X(sg * a), FP.y0, X(sg * a), FP.y1, { color: theme.muted, width: 1, dash: [2, 3] });
+  d.plot((x) => Y(profileAt(p, ((x - (FP.x0 + FP.x1) / 2) / ((FP.x1 - FP.x0) / 2)) * R)), FP.x0, FP.x1, { color: theme.series[0]!, width: 1.8, n: 600 });
+  for (const f of [-1, -0.5, 0, 0.5, 1]) d.text(fmt(f * R, 2), X(f * R), FP.y0 - 0.45, { color: theme.muted, size: 10 });
+  d.text("r (mm)", FP.x1, FP.y0 - 0.95, { color: theme.muted, size: 10, align: "right" });
+  d.text("I/I_livre", FP.x0, FP.y1 + 0.35, { color: theme.muted, size: 10, align: "left" });
+  const xs = X(s.u * R);
+  d.line(xs, FP.y0, xs, FP.y1, { color: theme.accent, width: 1.2, dash: [4, 3] });
+  d.dot(xs, Y(detectorI(s, p)), 5, theme.accent);
+  d.text(
+    `${disco(p) ? "disco opaco" : "furo circular"} de raio a = ${fmt(a)} mm · z = ${fmt(zF(p))} m · λ = ${fmt(L)} nm · N_F = ${fmt(fresnelNumber(a, zF(p), L))} · I no centro = ${fmt(prof[0]!, 3)}`,
+    0.4,
+    5.95,
+    { color: theme.text, size: 11, align: "left" },
+  );
 }
 
 function renderZoom(d: Draw, theme: Theme, p: Params) {

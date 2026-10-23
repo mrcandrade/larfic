@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
-import { G, X0, components, field, packetStats, superposicao as sim, velocities } from "../src/index.ts";
+import { G, X0, components, field, packetStats, phasorSum, superposicao as sim, velocities } from "../src/index.ts";
 
 const runTo = (r: Runner, t: number) => {
   while (r.t < t - 1e-9 && !r.finished) r.stepOnce();
@@ -66,5 +66,22 @@ describe("superposicao", () => {
     r.runToEnd();
     expect(r.finished).toBe(true);
     expect(r.value("xg")).toBeCloseTo(19, 6);
+  });
+});
+
+describe("Superposição: fasores de duas ondas de mesma frequência", () => {
+  it("A′ pela lei dos cossenos e β; a soma ponto a ponto confere com A′ sen(kx − ωt + β)", () => {
+    expect(phasorSum(1, 0.7, Math.PI / 2).A).toBeCloseTo(Math.hypot(1, 0.7), 12);
+    expect(phasorSum(1, 0.7, 0).A).toBeCloseTo(1.7, 12);
+    expect(phasorSum(1, 1, Math.PI).A).toBeCloseTo(0, 12);
+    const A1 = 1, A2 = 0.7, ph = 1.1;
+    const r = phasorSum(A1, A2, ph);
+    for (const u of [0, 0.4, 1.3, 2.9, 5]) {
+      const y = A1 * Math.sin(u) + A2 * Math.sin(u + ph);
+      expect(y).toBeCloseTo(r.A * Math.sin(u + r.beta), 12);
+    }
+    const run = new Runner(sim, withOverrides(sim, { modo: 2, A1: 1, A2: 0.7, phi: 90 }));
+    expect(run.value("Ares")).toBeCloseTo(Math.hypot(1, 0.7), 12);
+    expect(run.value("beta")).toBeCloseTo((Math.atan2(0.7, 1) * 180) / Math.PI, 10);
   });
 });

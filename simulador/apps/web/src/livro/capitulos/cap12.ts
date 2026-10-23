@@ -77,8 +77,9 @@ $$x_{CG} = \frac{\sum m_i x_i}{M} = x_{CM} .$$
 
 **Armadilha:** achar que o CG fica no ponto em que há "mais material" ou no meio geométrico do contorno. Ele é uma média ponderada pela massa.
 
-No experimento, recorte uma placa irregular célula a célula e compare o centro de massa calculado com o ponto encontrado pendurando a placa por dois pontos diferentes.`,
+No experimento, levante uma barra uniforme de 2000 km sobre a Terra e veja o centro de gravidade ficar dezenas de quilômetros abaixo do centro de massa; encurte-a para 1 km e veja a diferença cair para uns 2,6 cm. Depois recorte uma placa irregular e compare o centro de massa calculado com o ponto encontrado pendurando-a por dois pontos.`,
       experiments: [
+        { kind: "sim", id: "gravitacao-terra", scenario: "corpo-alto", note: "Com g diminuindo com a altura, o CG de uma barra muito alta fica abaixo do CM; reduza a altura até a diferença sumir." },
         { kind: "sim", id: "centro-massa", scenario: "recortar", note: "Recorte uma placa irregular e veja onde fica o centro de massa, inclusive fora do material." },
         { kind: "sim", id: "centro-massa", scenario: "pendurar", note: "Pendure a placa por dois pontos e encontre o CG no cruzamento das verticais." },
       ],

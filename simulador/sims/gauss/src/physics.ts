@@ -43,9 +43,13 @@ export type Source =
   | { kind: "pontos"; charges: PointCharge[] }
   | { kind: "fio"; x: number; y: number; lambda: number }
   | { kind: "plano"; x: number; sigma: number }
-  | { kind: "esfera"; x: number; y: number; R: number; Q: number };
+  | { kind: "esfera"; x: number; y: number; R: number; Q: number }
+  /** Ímã pequeno (dipolo magnético pontual, momento m em A·m² ao longo de +x): o "campo" é B, em tesla. */
+  | { kind: "ima"; x: number; y: number; m: number };
 
-export const is3D = (src: Source) => src.kind === "pontos" || src.kind === "esfera";
+export const MU0 = 4 * Math.PI * 1e-7;
+
+export const is3D = (src: Source) => src.kind === "pontos" || src.kind === "esfera" || src.kind === "ima";
 
 /** Campo elétrico (N/C) no ponto (x, y, z). Para fio e plano, z é irrelevante. */
 export function field(src: Source, x: number, y: number, z = 0): Vec3 {
@@ -85,6 +89,16 @@ export function field(src: Source, x: number, y: number, z = 0): Vec3 {
       // Dentro: E = kQr/R³ (só a carga interna conta); fora: E = kQ/r².
       const f = r < src.R ? (K * src.Q) / src.R ** 3 : (K * src.Q) / (r2 * r);
       return [f * dx, f * dy, f * z];
+    }
+    case "ima": {
+      // B = μ₀/(4π) [3(m·r̂)r̂ − m]/r³, com m = m x̂
+      const dx = x - src.x;
+      const dy = y - src.y;
+      const r2 = Math.max(dx * dx + dy * dy + z * z, R2_MIN);
+      const r = Math.sqrt(r2);
+      const k = (MU0 * src.m) / (4 * Math.PI * r2 * r);
+      const c = (3 * dx) / r2;
+      return [k * (c * dx - 1), k * c * dy, k * c * z];
     }
   }
 }
@@ -198,6 +212,49 @@ export function flux3D(src: Source, s: Surface, n: number): number {
   return sum;
 }
 
+/** Só a parte que sai (B·n̂ > 0) do fluxo numérico 3D, para comparar com o resíduo da soma. */
+export function outwardFlux(src: Source, s: Surface, n: number): number {
+  let out = 0;
+  if (s.shape === 0) {
+    const nt = n;
+    const np = 2 * n;
+    const dt = Math.PI / nt;
+    const dp = (2 * Math.PI) / np;
+    for (let i = 0; i < nt; i++) {
+      const th = (i + 0.5) * dt;
+      const st = Math.sin(th);
+      const ct = Math.cos(th);
+      const dA = s.a * s.a * st * dt * dp;
+      for (let j = 0; j < np; j++) {
+        const ph = (j + 0.5) * dp;
+        const nx = st * Math.cos(ph);
+        const ny = st * Math.sin(ph);
+        const [ex, ey, ez] = field(src, s.cx + s.a * nx, s.cy + s.a * ny, s.a * ct);
+        out += Math.max(0, ex * nx + ey * ny + ez * ct) * dA;
+      }
+    }
+    return out;
+  }
+  const h: Vec3 = [s.a, s.b, boxDepth(s)];
+  const c: Vec3 = [s.cx, s.cy, 0];
+  for (let k = 0; k < 3; k++) {
+    const u = (k + 1) % 3;
+    const v = (k + 2) % 3;
+    const du = (2 * h[u]!) / n;
+    const dv = (2 * h[v]!) / n;
+    for (const sg of [-1, 1])
+      for (let i = 0; i < n; i++)
+        for (let j = 0; j < n; j++) {
+          const p: Vec3 = [0, 0, 0];
+          p[k] = c[k]! + sg * h[k]!;
+          p[u] = c[u]! - h[u]! + (i + 0.5) * du;
+          p[v] = c[v]! - h[v]! + (j + 0.5) * dv;
+          out += Math.max(0, sg * field(src, p[0], p[1], p[2])[k]!) * du * dv;
+        }
+  }
+  return out;
+}
+
 /** Fluxo numérico com a geometria adequada à fonte. */
 export function fluxNumeric(src: Source, s: Surface, n: number): number {
   return is3D(src) ? flux3D(src, s, n) : flux2D(src, s, n);
@@ -250,6 +307,9 @@ export function enclosedCharge(src: Source, s: Surface, L = L_EXT): number {
     }
     case "fio":
       return inside(s, src.x, src.y) ? src.lambda * L : 0;
+    case "ima":
+      // Não há "carga magnética": o fluxo de B por qualquer superfície fechada é nulo.
+      return 0;
     case "plano": {
       const dx = Math.abs(src.x - s.cx);
       const chord = s.shape === 0 ? (dx < s.a ? 2 * Math.sqrt(s.a * s.a - dx * dx) : 0) : dx < s.a ? 2 * s.b : 0;

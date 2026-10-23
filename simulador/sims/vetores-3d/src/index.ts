@@ -662,8 +662,10 @@ $\\vec A$ e $\\vec B$ marcam a orientação de um corpo rígido (pense num livro
       line3(d, b, A, py, colA, 1.3, [5, 4], 0.8);
       if (Math.abs(q[0]) > 1e-9) arrow3(d, b, O, px, colP, 3.5, undefined, 0.85);
       if (Math.abs(q[1]) > 1e-9) arrow3(d, b, O, py, colP, 3.5, undefined, 0.85);
-      label3(d, b, px, `Ax' = ${fmt(q[0])}`, colP, 12, 0, 14);
-      label3(d, b, py, `Ay' = ${fmt(q[1])}`, colP, 12, 0, 14);
+      // rótulo afastado da origem quando a componente é curta
+      const away = (e: V3, c: number) => scale3(e, (c < 0 ? -1 : 1) * Math.max(Math.abs(c * k), 5.5));
+      label3(d, b, away(ex, q[0]), `Ax' = ${fmt(q[0])}`, colP, 12, 0, 14);
+      label3(d, b, away(ey, q[1]), `Ay' = ${fmt(q[1])}`, colP, 12, 0, 14);
       // componentes antigas, discretas
       line3(d, b, A, [A[0], 0, 0], theme.muted, 1, [2, 3], 0.6);
       line3(d, b, A, [0, A[1], 0], theme.muted, 1, [2, 3], 0.6);

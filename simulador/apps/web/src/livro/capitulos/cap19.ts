@@ -224,8 +224,9 @@ O mesmo mecanismo explica por que o calor específico dos sólidos cai a zero em
 
 **Armadilha comum:** pensar que a equipartição está errada. Ela vale no limite em que $kT$ é muito maior que o espaçamento dos níveis; o erro é aplicá-la a graus de liberdade cujos níveis estão muito separados.
 
-No experimento, veja osciladores quânticos trocando quanta ao acaso num sistema "frio" (poucos quanta por oscilador): quase todos ficam no nível fundamental, que é o congelamento de um grau de liberdade.`,
+No experimento, varra a temperatura do H₂ de 20 K a 10 000 K e veja $C_V$ subir em degraus, de $\tfrac32 R$ para $\tfrac52 R$ quando a rotação desperta e em direção a $\tfrac72 R$ quando a vibração desperta; depois veja osciladores quânticos num sistema "frio" ficarem quase todos no nível fundamental, que é o congelamento de um grau de liberdade.`,
       experiments: [
+        { kind: "sim", id: "calor-especifico-gases", scenario: "hidrogenio", note: "Varra T de 20 K a 10 000 K e veja os degraus 3/2 R, 5/2 R e 7/2 R e a molécula parar de girar no frio." },
         { kind: "sim", id: "boltzmann-dois-gases", scenario: "temperatura", note: "Com kT pequeno perto do quantum ε, quase todos os osciladores ficam no fundamental; aumente q̄ e veja o limite clássico." },
         { kind: "sim", id: "boltzmann-dois-gases", scenario: "boltzmann", note: "Veja a ocupação dos níveis quantizados convergir para o fator de Boltzmann e^(−E/kT)." },
       ],

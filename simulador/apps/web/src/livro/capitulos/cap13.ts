@@ -196,8 +196,9 @@ Na relatividade geral, a gravitação deixa de ser uma força: massas curvam o e
 
 **Armadilha:** pensar que a equivalência vale em qualquer escala. Num laboratório grande, as diferenças de direção e intensidade de $g$ (efeitos de maré, seção 13-4) revelam o campo gravitacional.
 
-No experimento, compare por dentro a cabine parada na Terra com o foguete acelerado e a queda livre com a deriva no espaço; mude o ponto de vista para fora e veja o pulso de luz se curvar.`,
+No experimento, calcule o desvio da luz que passa rente ao Sol e o balanço dos relógios do GPS (adiantamento gravitacional, atraso pela velocidade e o erro de posição acumulado sem correção); depois compare por dentro a cabine parada na Terra com o foguete acelerado e a queda livre com a deriva no espaço.`,
       experiments: [
+        { kind: "sim", id: "gravitacao-terra", scenario: "luz-gps", note: "Leia o desvio de 1,75″ rente ao Sol e o saldo de cerca de 38 µs por dia dos relógios do GPS." },
         { kind: "sim", id: "gravitacao-terra", scenario: "equivalencia", note: "Compare a cabine parada na Terra com o foguete acelerando: por dentro, a bola cai do mesmo jeito." },
         { kind: "sim", id: "gravitacao-terra", scenario: "equivalencia", params: { situacao: 2 }, note: "Na cabine em queda livre, objetos flutuam como à deriva no espaço; troque o ponto de vista para fora." },
         { kind: "concepcao", id: "orbita-sem-gravidade", note: "Queda livre não é ausência de gravidade: confronte a concepção com o elevador de Einstein." },

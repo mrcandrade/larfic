@@ -86,8 +86,9 @@ Duas caixas de som em fase tocam 686 Hz no ar ($\lambda = 343/686 = 0{,}50\ \tex
 
 **Armadilha comum:** pensar que a interferência destrutiva destrói energia. A energia apenas se redistribui: o que falta nas linhas nodais aparece a mais nas regiões de interferência construtiva. Fones com cancelamento ativo de ruído usam essa ideia num ponto pequeno, junto do ouvido.
 
-No experimento (uma cuba de ondas, que mostra em 2D o mesmo fenômeno), ligue as duas fontes em fase, mostre as linhas nodais teóricas e mude a separação e a frequência para ver quantas linhas aparecem.`,
+No experimento, mova o ouvinte diante de duas caixas de som em fase ($\lambda = 1$ m) e ache os pontos em que $\Delta L = 0$, $\lambda/2$ e $\lambda$; ligue o som para ouvir o volume subir e descer. Depois, numa cuba de ondas, veja em 2D as linhas nodais do mesmo fenômeno.`,
       experiments: [
+        { kind: "sim", id: "som-intensidade", scenario: "duas-caixas", note: "Desloque o ouvinte e confira interferência construtiva em ΔL = mλ e destrutiva em ΔL = (m + ½)λ." },
         { kind: "sim", id: "cuba-ondas", scenario: "duas", params: { linhas: 1 }, note: "Duas fontes em fase: confira que as linhas nodais ficam onde ΔL = (m + 1/2)λ." },
       ],
     },

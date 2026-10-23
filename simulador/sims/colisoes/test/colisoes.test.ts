@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
-import { T_HIT, colisoes as sim, final1D, timeToContact } from "../src/index.ts";
+import { T_HIT, colisoes as sim, colisoes, contactDuration, contactForce, final1D, peakForce, timeToContact } from "../src/index.ts";
 
 const after = (over: Record<string, number>) => new Runner(sim, withOverrides(sim, over)).runToEnd();
 
@@ -79,5 +79,60 @@ describe("Colisões 1D e 2D", () => {
     // u' = −e·u no CM
     const vcm = (2 * 3 + 1 * -1) / 3;
     expect(a.value("v1x") - vcm).toBeCloseTo(-0.6 * (3 - vcm), 12);
+  });
+});
+
+describe("Colisões: para-choques de mola (força de contato finita)", () => {
+  const runEnd = (o: Record<string, number>) => {
+    const r = new Runner(colisoes, withOverrides(colisoes, { modo: 2, ref: 0, ...o }));
+    r.runToEnd();
+    return r;
+  };
+
+  it("elástica: velocidades finais da fórmula, impulso = m₂Δv₂ e momento conservado", () => {
+    const r = runEnd({ m1: 1, m2: 3, v1: 2, v2: 0, e: 1, k: 200 });
+    expect(r.state.b[0].vx).toBeCloseTo(-1, 2);
+    expect(r.state.b[1].vx).toBeCloseTo(1, 2);
+    expect(r.state.imp!).toBeCloseTo(3, 2);
+    expect(r.value("px")).toBeCloseTo(2, 10);
+    const hist = r.state.hist!;
+    const Fmax = Math.max(...hist.map((h) => h[1]));
+    expect(Fmax).toBeCloseTo(peakForce(0.75, 200, 2), 0);
+    const dur = hist[hist.length - 1]![0] - hist[0]![0];
+    expect(dur).toBeGreaterThan(contactDuration(0.75, 200, 1) - 0.01);
+    expect(dur).toBeLessThan(contactDuration(0.75, 200, 1) + 0.01);
+  });
+
+  it("restituição e < 1 sai exata pelo modelo de carga e descarga", () => {
+    const r = runEnd({ m1: 2, m2: 1, v1: 2, v2: -1, e: 0.5, k: 300 });
+    const [a, b] = final1D(2, 1, 2, -1, 0.5);
+    expect(r.state.b[0].vx).toBeCloseTo(a, 2);
+    expect(r.state.b[1].vx).toBeCloseTo(b, 2);
+    expect(r.state.hits).toBe(1);
+  });
+
+  it("rigidez 4× maior: mesmo impulso, metade da duração, o dobro do pico", () => {
+    const a = runEnd({ m1: 1, m2: 3, v1: 2, v2: 0, e: 1, k: 100 });
+    const b = runEnd({ m1: 1, m2: 3, v1: 2, v2: 0, e: 1, k: 400 });
+    expect(b.state.imp!).toBeCloseTo(a.state.imp!, 2);
+    const pk = (r: typeof a) => Math.max(...r.state.hist!.map((h) => h[1]));
+    expect(pk(b) / pk(a)).toBeCloseTo(2, 1);
+    expect(contactDuration(0.75, 400, 1) / contactDuration(0.75, 100, 1)).toBeCloseTo(0.5, 12);
+  });
+
+  it("par ação–reação: F₁₂ = −F₂₁ a cada instante e Δp₁ = −Δp₂", () => {
+    const r = new Runner(colisoes, withOverrides(colisoes, { modo: 2, m1: 4, m2: 1, v1: 1.5, v2: -1.5, e: 1, k: 200 }));
+    let seen = false;
+    for (let i = 0; i < 1500; i++) {
+      r.stepOnce();
+      expect(r.value("F12")).toBeCloseTo(-r.value("F21"), 12);
+      if (r.value("F12") > 1) seen = true;
+    }
+    expect(seen).toBe(true);
+    const dp1 = 4 * (r.state.b[0].vx - 1.5), dp2 = 1 * (r.state.b[1].vx + 1.5);
+    expect(dp1).toBeCloseTo(-dp2, 10);
+    expect(r.state.b[1].vx).toBeCloseTo(3.3, 2);
+    expect(contactForce(0.1, 0.1, 200, 0.5)).toBeCloseTo(20, 12);
+    expect(contactForce(0.075, 0.1, 200, 0.5)).toBeCloseTo(0, 12);
   });
 });

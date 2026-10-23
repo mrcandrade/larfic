@@ -20,8 +20,10 @@ export interface FaradayState {
   emf: number;
 }
 
-export const MODES = ["Ímã oscilando", "Ímã passando com velocidade constante", "Arrastar o ímã", "Gerador (espira girando)"] as const;
-const OSC = 0, PASS = 1, DRAG = 2, GEN = 3;
+export const MODES = ["Ímã oscilando", "Ímã passando com velocidade constante", "Arrastar o ímã", "Gerador (espira girando)", "Solenoide com B variável: campo E induzido"] as const;
+const OSC = 0, PASS = 1, DRAG = 2, GEN = 3, SOL = 4;
+/** Raio do solenoide longo do modo SOL (cm). */
+export const RS = 5;
 const X_LIM = 18;
 const AXIS_Y = 2;
 const TAU_DRAG = 0.06;
@@ -50,6 +52,11 @@ function withFields(s: FaradayState, p: Params): FaradayState {
     const B = num(p, "B", 0.2);
     return { ...s, phi: B * area(p) * Math.cos(s.th), emf: N * B * area(p) * omega(p) * Math.sin(s.th) };
   }
+  if (mode(p) === SOL) {
+    // Só a parte da espira dentro do solenoide tem fluxo.
+    const A = Math.PI * (Math.min(num(p, "a", 3), RS) / 100) ** 2;
+    return { ...s, phi: solB(p, s.t) * A, emf: -N * soldBdt(p, s.t) * A };
+  }
   return { ...s, phi: fluxAt(p, s.x), emf: -N * dFluxDx(p, s.x) * (s.v / 100) };
 }
 
@@ -72,6 +79,21 @@ function kinematics(p: Params, t: number): { x: number; v: number; th: number } 
 
 const current = (s: FaradayState, p: Params) => s.emf / num(p, "R", 10);
 
+/** Solenoide: B(t) = B₀ sen ωt dentro (r < R_s), zero fora. */
+export const solB = (p: Params, t: number) => num(p, "B", 0.2) * Math.sin(omega(p) * t);
+export const soldBdt = (p: Params, t: number) => num(p, "B", 0.2) * omega(p) * Math.cos(omega(p) * t);
+/**
+ * Campo elétrico induzido (V/m), componente azimutal (anti-horária positiva, B em +z),
+ * a uma distância r (cm) do eixo: ∮E·dl = −dΦ/dt ⇒ E = −(r/2) dB/dt dentro e −(R²/2r) dB/dt fora.
+ */
+export function inducedE(p: Params, t: number, rCm: number): number {
+  const r = rCm / 100;
+  const R = RS / 100;
+  if (r <= 0) return 0;
+  const dB = soldBdt(p, t);
+  return r <= R ? -(r / 2) * dB : -((R * R) / (2 * r)) * dB;
+}
+
 export const faradayLenz = defineSim<FaradayState>({
   id: "faraday-lenz",
   title: "Lei de Faraday e Lenz: ímã, espira e gerador",
@@ -89,7 +111,13 @@ export const faradayLenz = defineSim<FaradayState>({
   liveEquations(s, p) {
     const N = num(p, "N", 100);
     const out = [String.raw`N\Phi = ${texNum(N * s.phi)}\ \text{Wb} \qquad \varepsilon = ${texNum(s.emf)}\ \text{V} \qquad I = \frac{\varepsilon}{R} = ${texNum(current(s, p))}\ \text{A}`];
-    if (mode(p) === GEN) {
+    if (mode(p) === SOL) {
+      const a = num(p, "a", 3);
+      out.push(
+        String.raw`B = ${texNum(solB(p, s.t))}\ \text{T},\ \frac{dB}{dt} = ${texNum(soldBdt(p, s.t))}\ \text{T/s} \qquad E(r = ${texNum(a)}\ \text{cm}) = ${a <= RS ? String.raw`\frac{r}{2}\left|\frac{dB}{dt}\right|` : String.raw`\frac{R^2}{2r}\left|\frac{dB}{dt}\right|`} = ${texNum(Math.abs(inducedE(p, s.t, a)))}\ \text{V/m}`,
+        String.raw`\oint \vec E\cdot d\vec\ell = E\cdot 2\pi r = ${texNum(Math.abs(inducedE(p, s.t, a)) * 2 * Math.PI * (a / 100))}\ \text{V} = \left|\frac{d\Phi}{dt}\right| \text{ (por espira)}`,
+      );
+    } else if (mode(p) === GEN) {
       const B = num(p, "B", 0.2);
       out.push(String.raw`\varepsilon_{\max} = NBA\omega = ${texNum(N)} \cdot ${texNum(B)}\ \text{T} \cdot ${texNum(area(p))}\ \text{m}^2 \cdot ${texNum(omega(p))}\ \text{rad/s} = ${texNum(N * B * area(p) * omega(p))}\ \text{V}`);
     } else {
@@ -99,7 +127,7 @@ export const faradayLenz = defineSim<FaradayState>({
   },
 
   params: [
-    { key: "modo", label: "Experimento", unit: "", min: 0, max: 3, step: 1, default: 0, options: MODES.map((label, value) => ({ value, label })) },
+    { key: "modo", label: "Experimento", unit: "", min: 0, max: 4, step: 1, default: 0, options: MODES.map((label, value) => ({ value, label })) },
     { key: "m", label: "Momento magnético do ímã", unit: "A·m²", min: 0.1, max: 5, step: 0.1, default: 1 },
     {
       key: "polo",
@@ -120,7 +148,7 @@ export const faradayLenz = defineSim<FaradayState>({
     { key: "A", label: "Amplitude da oscilação", unit: "cm", min: 2, max: 16, step: 0.5, default: 10 },
     { key: "f", label: "Frequência (oscilação ou rotação)", unit: "Hz", min: 0.1, max: 5, step: 0.05, default: 0.5 },
     { key: "v", label: "Velocidade do ímã (passagem)", unit: "cm/s", min: 5, max: 100, step: 1, default: 20 },
-    { key: "B", label: "Campo uniforme do gerador", unit: "T", min: 0.01, max: 1, step: 0.01, default: 0.2 },
+    { key: "B", label: "Campo uniforme do gerador (amplitude no solenoide)", unit: "T", min: 0.01, max: 1, step: 0.01, default: 0.2 },
   ],
 
   observables: [
@@ -196,6 +224,26 @@ export const faradayLenz = defineSim<FaradayState>({
         },
       ],
     },
+    {
+      id: "e-induzido",
+      label: "Campo elétrico induzido: linhas circulares",
+      params: { modo: SOL, B: 0.2, f: 0.5, a: 3, N: 1, R: 1 },
+      guide: `### Um campo elétrico sem cargas
+1. Vista de cima de um solenoide longo de raio $R = 5\\ \\text{cm}$: dentro dele $B(t) = B_0 \\sin\\omega t$ (⊙ saindo, ⊗ entrando); fora, $B = 0$.
+2. Rode. As linhas do campo elétrico induzido (laranja) são **círculos fechados** em torno do eixo: não começam nem terminam em cargas. Por simetria, $E$ é tangente e tem o mesmo módulo em todo o círculo, então
+$$\\oint \\vec E\\cdot d\\vec\\ell = E\\,2\\pi r = -\\frac{d\\Phi_B}{dt}$$
+3. Dentro: $E = \\frac r2\\left|\\frac{dB}{dt}\\right|$ cresce com $r$. Fora: $E = \\frac{R^2}{2r}\\left|\\frac{dB}{dt}\\right|$ — há campo elétrico onde **não há** campo magnético (gráfico à direita).
+4. Quando $B$ passa pelo máximo, $dB/dt = 0$ e o campo elétrico some. Ele é máximo quando $B$ cruza o zero.
+5. Mude o raio da espira de prova para 8 cm (fora do solenoide): a fem continua igual à de 5 cm, porque o fluxo só existe dentro. Esse campo não é conservativo: não dá para definir um potencial, já que a circulação não é nula.`,
+      predict: [
+        {
+          question: "Fora de um solenoide longo, onde B = 0 sempre, o campo elétrico induzido quando a corrente varia é:",
+          options: ["nulo, porque B = 0 ali", "diferente de zero e cai como 1/r", "constante", "radial, apontando para o eixo"],
+          answer: 1,
+          explanation: "Um círculo de raio $r > R$ envolve todo o fluxo variável: $E\\,2\\pi r = \\pi R^2 |dB/dt|$, então $E = R^2|dB/dt|/(2r)$. O campo elétrico depende do fluxo envolvido, não do $B$ local.",
+        },
+      ],
+    },
   ],
 
   exercises: [
@@ -259,6 +307,7 @@ export const faradayLenz = defineSim<FaradayState>({
     const I = current(s, p);
 
     if (mode(p) === GEN) drawGenerator(d, theme, p, s, I);
+    else if (mode(p) === SOL) drawSolenoid(d, theme, p, s);
     else drawMagnetScene(d, theme, p, s, I);
 
     drawInset(d, theme, frame.trail, s, p);
@@ -350,6 +399,67 @@ function drawGenerator(d: Draw, theme: Theme, p: Params, s: FaradayState, I: num
   d.text("n̂", 0 + Math.cos(s.th) * 60 * d.px, AXIS_Y + 0.6, { color: theme.text, size: 12 });
   const deg = (((s.th * 180) / Math.PI) % 360).toFixed(0);
   d.text(`θ = ωt = ${deg}°   Φ = BA cos θ`, -19.5, 10.4, { color: theme.text, size: 12, weight: "600", align: "left" });
+}
+
+/** Corte do solenoide visto de cima: B saindo/entrando e as linhas circulares do E induzido. */
+function drawSolenoid(d: Draw, theme: Theme, p: Params, s: FaradayState) {
+  const cx = -4;
+  const cy = AXIS_Y;
+  const B0 = num(p, "B", 0.2);
+  const B = solB(p, s.t);
+  const fr = B0 > 0 ? B / B0 : 0;
+  // Interior do solenoide: B ⊙ (saindo) ou ⊗ (entrando), com intensidade proporcional
+  d.circle(cx, cy, RS, { fill: theme.accent, alpha: 0.06 + 0.12 * Math.abs(fr), stroke: theme.accent, width: 2 });
+  for (let x = -4; x <= 4; x += 2)
+    for (let y = -4; y <= 4; y += 2) {
+      if (Math.hypot(x, y) > RS - 0.8) continue;
+      const al = 0.15 + 0.85 * Math.abs(fr);
+      if (fr >= 0) {
+        d.circle(cx + x, cy + y, 0.35, { stroke: theme.accent, width: 1.5, alpha: al });
+        d.dot(cx + x, cy + y, 2.5, theme.accent, al);
+      } else {
+        d.line(cx + x - 0.3, cy + y - 0.3, cx + x + 0.3, cy + y + 0.3, { color: theme.accent, width: 1.8, alpha: al });
+        d.line(cx + x - 0.3, cy + y + 0.3, cx + x + 0.3, cy + y - 0.3, { color: theme.accent, width: 1.8, alpha: al });
+      }
+    }
+  // Linhas de E induzido: círculos concêntricos com setas no sentido de E
+  const radii = [1.5, 3, 4.5, 6.5];
+  const Emax = Math.abs((RS / 200) * B0 * omega(p)) || 1;
+  const col = theme.series[1]!;
+  for (const r of radii) {
+    const E = inducedE(p, s.t, r);
+    const l = Math.abs(E) / Emax;
+    d.circle(cx, cy, r, { stroke: col, width: 1 + 2 * l, alpha: 0.25 + 0.75 * l });
+    if (l < 0.02) continue;
+    for (let k = 0; k < 4; k++) {
+      const ph = (Math.PI / 2) * k + Math.PI / 4;
+      const sg = Math.sign(E); // + anti-horário
+      d.arrowPx(cx + r * Math.cos(ph), cy + r * Math.sin(ph), -sg * Math.sin(ph), sg * Math.cos(ph), 8 + 22 * l, { color: col, width: 2, head: 7 });
+    }
+  }
+  // Espira de prova de raio a
+  const a = num(p, "a", 3);
+  d.circle(cx, cy, a, { stroke: theme.series[4] ?? theme.text, width: 3, dash: [6, 4] });
+  d.text(`espira r = ${String(a).replace(".", ",")} cm`, cx + a * 0.72 + 0.4, cy - a * 0.72 - 0.6, { color: theme.series[4] ?? theme.text, size: 11, align: "left" });
+  const dB = soldBdt(p, s.t);
+  d.text(
+    `B = ${Number(B.toPrecision(3)).toString().replace(".", ",")} T ${B >= 0 ? "(saindo ⊙)" : "(entrando ⊗)"} · ${Math.abs(dB) < 1e-9 ? "dB/dt = 0: E induzido nulo" : dB * Math.sign(B || 1) > 0 ? "|B| crescendo: E circula no sentido que se opõe ao aumento (Lenz)" : "|B| diminuindo: E circula no sentido que mantém o fluxo"}`,
+    -19.5,
+    10.4,
+    { color: theme.text, size: 12, weight: "600", align: "left" },
+  );
+  // Perfil E(r) no instante atual
+  const X0 = 6, X1 = 19, Y0 = -4.6, Y1 = 8.4;
+  d.rect(X0, Y0, X1 - X0, Y1 - Y0, { stroke: theme.grid, width: 1 });
+  const rMax = 12;
+  const px = (r: number) => X0 + (r / rMax) * (X1 - X0);
+  const py = (E: number) => Y0 + 0.4 + (Math.abs(E) / Emax) * (Y1 - Y0 - 1.6);
+  d.line(px(RS), Y0, px(RS), Y1, { color: theme.accent, width: 1, dash: [3, 3] });
+  d.text("R", px(RS), Y0 - 0.6, { color: theme.accent, size: 10 });
+  d.plot((x) => py(inducedE(p, s.t, ((x - X0) / (X1 - X0)) * rMax)), X0 + 0.05, X1, { color: col, width: 2 });
+  d.line(px(a), Y0, px(a), Y1, { color: theme.series[4] ?? theme.text, width: 1, dash: [6, 4] });
+  d.text("|E| induzido × r", X0 + 0.2, Y1 - 0.6, { color: col, size: 11, align: "left" });
+  d.text("r (cm)", X1, Y0 - 0.6, { color: theme.muted, size: 10, align: "right" });
 }
 
 /** Gráfico do palco: NΦ(t) e ε(t) juntos, cada um normalizado pelo próprio máximo na janela. */

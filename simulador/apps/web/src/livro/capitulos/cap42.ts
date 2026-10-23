@@ -125,8 +125,9 @@ Depois de um decaimento alfa ou beta, o núcleo filho costuma ficar num estado e
 
 Armadilha: achar que o elétron beta vem da eletrosfera. Ele nasce no núcleo, na conversão de um nêutron em próton.
 
-No experimento, acompanhe uma cadeia pai → filho → estável: veja o número de núcleos filhos subir, passar por um máximo e cair, e compare com a previsão teórica.`,
+No experimento, registre milhares de decaimentos do trítio e veja o histograma da energia dos elétrons formar um espectro contínuo que termina no ponto final $Q$; em cada decaimento, o antineutrino leva o resto. Compare com a linha única das alfas do polônio-210 e, depois, acompanhe uma cadeia pai → filho → estável.`,
       experiments: [
+        { kind: "sim", id: "nuclear", scenario: "espectro-beta", note: "Acumule decaimentos beta do trítio, veja o espectro contínuo até o ponto final Q e compare com a linha única do alfa." },
         { kind: "sim", id: "decaimento", scenario: "cadeia", note: "Acompanhe o crescimento e a queda do número de núcleos filhos numa cadeia de decaimentos." },
         { kind: "sim", id: "nuclear", scenario: "ligacao", note: "Veja o termo de assimetria (N − Z) na energia de ligação: é ele que empurra os núcleos para o vale de estabilidade." },
       ],
@@ -195,8 +196,9 @@ Os núcleons das camadas completas formam um caroço que se comporta coletivamen
 
 Armadilha: perguntar qual dos modelos é "o verdadeiro". Nenhum é; cada um é uma aproximação útil para certas perguntas.
 
-No experimento, mova $A$ na curva de energia de ligação e veja o peso de cada termo da gota líquida; depois, num poço de potencial finito, veja os níveis quantizados em que os núcleons se acomodam.`,
+No experimento, veja os níveis de um nêutron num poço nuclear com e sem spin–órbita: ligue o acoplamento aos poucos e acompanhe as maiores lacunas se abrirem nos números mágicos 2, 8, 20, 28, 50, 82 e 126, ao lado dos dados experimentais e da gota líquida; depois, na curva de energia de ligação, mova $A$ e veja o peso de cada termo da fórmula.`,
       experiments: [
+        { kind: "sim", id: "nuclear", scenario: "camadas", note: "Ligue o spin–órbita num poço de Woods–Saxon e veja as camadas se fecharem nos números mágicos." },
         { kind: "sim", id: "nuclear", scenario: "ligacao", params: { A: 208 }, note: "Veja os termos da fórmula da gota líquida para o chumbo-208 e compare com o ferro-56." },
         { kind: "sim", id: "poco-quantico", scenario: "finito", note: "Veja os níveis quantizados de um poço finito, a base do modelo de camadas." },
         { kind: "sim", id: "nuclear", scenario: "fissao", note: "Veja a gota nuclear excitada se partir em dois fragmentos." },

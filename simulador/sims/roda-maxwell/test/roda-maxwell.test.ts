@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
-import { accel, inertia, rodaMaxwell as sim, tDescida } from "../src/index.ts";
+import { accel, inertia, rodaMaxwell as sim, rodaMaxwell, tDescida, tracao } from "../src/index.ts";
 
 const P = (o: Record<string, number>) => withOverrides(sim, o);
 
@@ -39,5 +39,20 @@ describe("Roda de Maxwell", () => {
       // ápice após o retorno: altura subida = (e v)²/(2a) = e² h
       expect(0.5 - r.value("y")).toBeCloseTo(frac * 0.5, 4);
     }
+  });
+});
+
+describe("Roda de Maxwell: ioiô", () => {
+  it("a = g/(1 + I/mr²), T = m(g − a) = mg/(1 + mr²/I) e Krot/Ktrans = I/mr²", () => {
+    const sc = rodaMaxwell.scenarios.find((s) => s.id === "ioio")!;
+    const p = withOverrides(rodaMaxwell, sc.params);
+    const ratio = inertia(p) / (0.2 * 0.004 ** 2);
+    expect(ratio).toBeCloseTo(50, 9);
+    expect(accel(p)).toBeCloseTo(9.79 / 51, 12);
+    expect(tracao(p)).toBeCloseTo((0.2 * 9.79) / (1 + 1 / 50), 12);
+    const r = new Runner(rodaMaxwell, p);
+    for (let i = 0; i < 300; i++) r.stepOnce();
+    expect(r.value("Kr") / r.value("Kt")).toBeCloseTo(50, 9);
+    expect(r.value("T")).toBeLessThan(0.2 * 9.79);
   });
 });

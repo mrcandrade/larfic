@@ -24,6 +24,9 @@ export function accel(p: Params): number {
   return num(p, "g", 9.79) / (1 + inertia(p) / (massa(p) * r * r));
 }
 
+/** Tração no fio: T = m(g − a) = mg/(1 + m r²/I). */
+export const tracao = (p: Params) => massa(p) * (num(p, "g", 9.79) - accel(p));
+
 /** Tempo verdadeiro de descida da altura h a partir do repouso. */
 export const tDescida = (p: Params) => Math.sqrt((2 * altura(p)) / accel(p));
 export const vFinal = (p: Params) => accel(p) * tDescida(p);
@@ -132,6 +135,7 @@ export const rodaMaxwell = defineSim({
     { key: "Kt", label: "Energia cinética de translação", unit: "J", value: (s, p) => energies(s, p).Kt },
     { key: "Kr", label: "Energia cinética de rotação", unit: "J", value: (s, p) => energies(s, p).Kr },
     { key: "E", label: "Energia mecânica", unit: "J", value: (s, p) => energies(s, p).E },
+    { key: "T", label: "Tração no fio", unit: "N", value: (_s, p) => tracao(p) },
   ],
   chart: { x: "t", y: "y" },
 
@@ -177,6 +181,26 @@ export const rodaMaxwell = defineSim({
           options: ["dobra", "cai quase à metade", "fica igual", "cai a um quarto"],
           answer: 1,
           explanation: "$a \\approx g\\,m r^2/I$ quadruplica e $t = \\sqrt{2h/a}$ cai à metade.",
+        },
+      ],
+    },
+    {
+      id: "ioio",
+      label: "Ioiô: rolando sobre o fio",
+      params: { h: 0.9, m: 0.2, R: 0.04, r: 0.004, forma: 0, e: 0.9, g: 9.79 },
+      guide: `### O ioiô
+Um ioiô é um corpo que **rola sobre o próprio fio**: o fio se desenrola do eixo de raio $r$ sem deslizar, então $v = \\omega r$, como no rolamento (com $r$ no lugar do raio externo).
+1. Escreva a segunda lei para a translação, $mg - T = ma$, e para a rotação em torno do centro, $Tr = I\\alpha = I a/r$. Daí $a = g/(1 + I/mr^2)$ e $T = mg/(1 + mr^2/I)$.
+2. Com $m = 0{,}2$ kg, $R = 4$ cm (disco) e $r = 4$ mm, $I/mr^2 = 50$: a aceleração é $g/51$. Rode e confira $a$ e a tração $T$ nos observáveis.
+3. Compare $K_{rot}$ e $K_{trans}$: a razão é $I/mr^2 = 50$. Quase toda a energia potencial vira rotação.
+4. No fundo o fio está todo desenrolado: o ioiô continua girando no mesmo sentido e **sobe** enrolando o fio. Aqui ele mantém 90% da velocidade; quanto volta a subir?
+5. Engrosse o eixo ($r$) e veja o ioiô ficar mais "rápido" e girar menos.`,
+      predict: [
+        {
+          question: "Enquanto o ioiô desce, a tração no fio é:",
+          options: ["maior que o peso", "igual ao peso", "um pouco menor que o peso", "zero, porque ele cai"],
+          answer: 2,
+          explanation: "O centro acelera para baixo, então $T < mg$: $T = m(g - a) = mg/(1 + mr^2/I)$. Com $I/mr^2 = 50$, $T \\approx 0{,}98\\,mg$: o fio sustenta quase todo o peso, e é o torque dessa tração que faz o ioiô girar.",
         },
       ],
     },

@@ -5,6 +5,10 @@ import {
   CUNHA,
   MICHELSON,
   NEWTON,
+  coherenceLength,
+  michelsonI,
+  michelsonIc,
+  visibility,
   darkRingRadius,
   filmReflectance,
   filmesFinos as sim,
@@ -78,5 +82,33 @@ describe("Filmes finos, Newton e Michelson", () => {
     const pb = withOverrides(sim, { exp: BOLHA });
     const b = sim.pointer!.down!(sim.init(pb), pb, { x: 6, y: 5.5 })!;
     expect(b.probe).toBeCloseTo(0, 9);
+  });
+
+  it("coerência: ℓc = λ²/Δλ, visibilidade cai com a diferença de caminho; Δλ = 0 recupera o laser ideal", () => {
+    expect(coherenceLength(633, 0.5) * 1e3).toBeCloseTo(0.801, 3);
+    expect(visibility(0.2e-3, 633, 0.5)).toBeCloseTo(0.80, 2);
+    expect(visibility(1e-3, 633, 0.5)).toBeLessThan(0.01);
+    expect(visibility(5e-3, 633, 0)).toBe(1);
+    for (const th of [0, 0.01]) expect(michelsonIc(1.234e-3, 5e-4, th, 633, 0)).toBeCloseTo(michelsonI(1.234e-3, 5e-4, th, 633), 12);
+    const r = new Runner(sim, withOverrides(sim, sim.scenarios.find((c) => c.id === "coerencia")!.params));
+    expect(r.value("V")).toBeCloseTo(0.8, 1);
+    const far = new Runner(sim, withOverrides(sim, { ...sim.scenarios.find((c) => c.id === "coerencia")!.params, d0: 0.5 }));
+    expect(far.value("V")).toBeLessThan(0.01);
+    expect(far.value("I")).toBeCloseTo(0.5, 2);
+  });
+
+  it("antirreflexo: mínimo em λ = 4n₂e, abaixo do vidro nu; camada de λ/2n₂ é invisível", () => {
+    const R = (e: number, nm: number) => filmReflectance(1, 1.38, 1.52, e, nm);
+    const lmin = 4 * 1.38 * 100;
+    expect(R(100, lmin)).toBeLessThan(R(100, lmin - 30));
+    expect(R(100, lmin)).toBeLessThan(R(100, lmin + 30));
+    expect(R(100, lmin)).toBeCloseTo(((1.52 - 1.38 ** 2) / (1.52 + 1.38 ** 2)) ** 2, 10);
+    const bare = ((1.52 - 1) / 2.52) ** 2;
+    expect(R(lmin / (2 * 1.38), lmin)).toBeCloseTo(bare, 10);
+    expect(filmReflectance(1, Math.sqrt(1.52), 1.52, 550 / (4 * Math.sqrt(1.52)), 550)).toBeCloseTo(0, 12);
+    const r = new Runner(sim, withOverrides(sim, sim.scenarios.find((c) => c.id === "antirreflexo")!.params));
+    expect(r.value("Rar")).toBeLessThan(1.5);
+    expect(r.value("Rvidro")).toBeCloseTo(100 * bare, 10);
+    expect(r.value("e")).toBe(100);
   });
 });

@@ -273,6 +273,27 @@ export const ampere = defineSim<AmpState>({
         },
       ],
     },
+    {
+      id: "dois-fios",
+      label: "Força entre dois fios paralelos",
+      params: { caminho: 0, montagem: 4, R: 1.5, I: 10 },
+      guide: `### Um fio no campo do outro
+1. Dois fios longos e paralelos, separados por $d = 4\\ \\text{cm}$, com $I = 10\\ \\text{A}$ saindo da tela nos dois. O círculo amperiano em torno do fio 1 lembra que ele cria $B_1 = \\mu_0 I_1/(2\\pi r)$ ao redor.
+2. No lugar do fio 2, esse campo é perpendicular ao fio, e a força por comprimento é $\\vec F/L = I_2\\,\\hat z \\times \\vec B_1$:
+$$\\frac{F}{L} = \\frac{\\mu_0 I_1 I_2}{2\\pi d}$$
+Confira: $2\\times10^{-7} \\times 100/0{,}04 = 5\\times10^{-4}\\ \\text{N/m}$ (setas roxas).
+3. As duas forças têm o mesmo módulo e sentidos opostos (terceira lei). Correntes no **mesmo sentido se atraem**.
+4. Clique em **Inverter correntes**: nada muda (os dois sinais trocam). Agora troque a montagem para sentidos opostos: os fios se repelem.
+5. Arraste o fio 2 para longe: $F/L$ cai como $1/d$ (veja o observável). Foi assim que o ampère foi definido até 2019: $2\\times10^{-7}\\ \\text{N/m}$ entre fios a 1 m com 1 A.`,
+      predict: [
+        {
+          question: "Dois fios paralelos levam correntes no mesmo sentido. Eles:",
+          options: ["se atraem", "se repelem", "não exercem força um no outro", "giram um em torno do outro"],
+          answer: 0,
+          explanation: "O campo do fio 1 no fio 2 é perpendicular à ligação entre eles; $I_2\\hat z \\times \\vec B_1$ aponta para o fio 1. Ao contrário das cargas, correntes de mesmo sentido se atraem.",
+        },
+      ],
+    },
   ],
 
   exercises: [

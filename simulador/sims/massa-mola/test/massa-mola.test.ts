@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
-import { massaMola as sim } from "../src/index.ts";
+import { massaMola as sim, massaMola, profileForce, profileWork } from "../src/index.ts";
 
 describe("massa-mola", () => {
   it("sem atrito: x(t) = x0 cos(ωt)", () => {
@@ -32,5 +32,35 @@ describe("massa-mola", () => {
     const E0 = r.value("bal");
     for (let i = 0; i < 20000; i++) r.stepOnce();
     expect(Math.abs(r.value("bal") - E0)).toBeLessThan(1e-3);
+  });
+});
+
+describe("Massa-mola: força variável F(x) definida pelo aluno", () => {
+  const P = { modo: 1, m: 1, mu: 0, x0: 0, v0: 0, F0: 2, F1: 6, F2: 10, F3: 4, F4: -4 };
+  it("área por trapézios e interpolação linear", () => {
+    const p = withOverrides(massaMola, P);
+    expect(profileWork(0, 0.6, p)).toBeCloseTo(2.85, 12);
+    expect(profileForce(0.525, p)).toBeCloseTo(0, 12);
+    expect(profileForce(0.7, p)).toBe(0);
+    expect(profileWork(0.6, 0, p)).toBeCloseTo(-2.85, 12);
+  });
+
+  it("teorema trabalho–energia: K − K₀ = área sob F(x); v máxima onde F troca de sinal", () => {
+    const r = new Runner(massaMola, withOverrides(massaMola, P));
+    let vmax = 0, xAtVmax = 0;
+    while (!r.finished && r.t < 10) {
+      r.stepOnce();
+      const v = r.value("v");
+      if (v > vmax) {
+        vmax = v;
+        xAtVmax = r.value("x");
+      }
+      // tolerância: a força salta de −4 N para 0 em x = 0,6 m (um passo de RK4 atravessa o salto)
+      expect(r.value("K")).toBeCloseTo(profileWork(0, r.value("x"), r.params), 2);
+    }
+    expect(r.finished).toBe(true);
+    expect(xAtVmax).toBeCloseTo(0.525, 2);
+    expect(r.value("WF")).toBeCloseTo(2.85, 2);
+    expect(r.value("v")).toBeCloseTo(Math.sqrt(2 * 2.85), 2);
   });
 });

@@ -21,8 +21,9 @@ Ao aquecer um objeto de 300 K para 600 K, sua temperatura absoluta dobrou. Já p
 
 **Armadilha comum:** confundir temperatura com calor. Uma piscina morna tem muito mais energia interna que uma brasa, mas a brasa está a uma temperatura muito maior: tocar na brasa queima porque a energia flui para a sua pele com rapidez.
 
-No experimento, aqueça um conjunto de átomos de argônio e veja a agitação crescer com a temperatura até o sólido derreter e depois evaporar.`,
+No experimento, meça com um termômetro de gás a temperatura do nitrogênio líquido e de outros banhos e localize cada uma na escala Kelvin, que começa no zero absoluto; depois aqueça um conjunto de átomos de argônio e veja a agitação crescer com a temperatura.`,
       experiments: [
+        { kind: "sim", id: "termometro-gas", scenario: "escalas", params: { banho: 1 }, note: "Meça o nitrogênio líquido (77 K) e outros banhos e veja-os na escala Kelvin, a partir do zero absoluto." },
         { kind: "sim", id: "estados-materia", scenario: "fusao", note: "Aqueça o argônio e relacione a temperatura com a agitação dos átomos, do sólido ao gás." },
         { kind: "concepcao", id: "calor-temperatura", note: "Separe as ideias de calor e de temperatura." },
       ],
@@ -68,8 +69,10 @@ Termômetros de líquido em vidro, termopares, termistores e pirômetros óptico
 
 **Armadilha comum:** pensar que qualquer propriedade linear dá a mesma escala. Um termômetro de mercúrio e um de álcool, calibrados nos mesmos dois pontos, discordam um pouco entre eles, porque as dilatações não são exatamente lineares. Por isso se escolheu o gás rarefeito como referência.
 
-No experimento, mantenha o volume fixo, varie a pressão do gás e confira que a razão $P/T$ não muda: é o termômetro de gás a volume constante.`,
+No experimento, calibre o termômetro de gás na célula do ponto triplo, meça a água fervendo com várias quantidades de gás e extrapole as leituras para $p_3 \to 0$: N₂, H₂, He e O₂ dão retas diferentes que convergem para 373,12 K.`,
       experiments: [
+        { kind: "sim", id: "termometro-gas", scenario: "extrapolacao", note: "Registre leituras com p₃ de 80 a 20 kPa, extrapole para p₃ → 0 e repita com outro gás." },
+        { kind: "sim", id: "termometro-gas", scenario: "ponto-triplo", note: "Calibre o bulbo no ponto triplo (273,16 K) e meça a água fervendo com T = 273,16 K · p/p₃." },
         { kind: "sim", id: "processos-pv", scenario: "isocorica", note: "A volume constante, a temperatura acompanha a pressão: P/T fica fixo, como no termômetro de gás." },
         { kind: "pratica", id: "exp2-charles", note: "Extrapole o gráfico de um gás até pressão (ou volume) nula e estime o zero absoluto." },
         { kind: "sim", id: "moto-perpetuo", scenario: "galileu", note: "Um termômetro curioso: o de Galileu, que usa o empuxo em esferas num líquido que se dilata." },
@@ -96,8 +99,9 @@ Converta leituras com as fórmulas completas, mas converta **diferenças** só p
 
 **Armadilhas comuns:** somar 32 ao converter uma variação; usar graus Celsius em fórmulas que pedem temperatura absoluta (como $pV = nRT$ ou a radiação térmica, $\propto T^4$). Em qualquer equação com razão ou potência de $T$, use kelvin.
 
-No experimento de bancada, meça a pressão (ou o volume) de um gás em várias temperaturas em graus Celsius e extrapole a reta até a pressão nula: o ponto de corte, perto de −273 °C, é o zero da escala Kelvin.`,
+No experimento, leia a mesma temperatura nas escalas Kelvin, Celsius e Fahrenheit, lado a lado, e procure o valor em que Celsius e Fahrenheit coincidem. Na bancada, meça a pressão de um gás em várias temperaturas em graus Celsius e extrapole a reta até a pressão nula: o ponto de corte, perto de −273 °C, é o zero da escala Kelvin.`,
       experiments: [
+        { kind: "sim", id: "termometro-gas", scenario: "escalas", note: "Leia a temperatura medida em K, °C e °F lado a lado e ache onde Celsius e Fahrenheit coincidem." },
         { kind: "pratica", id: "exp2-charles", note: "Ajuste uma reta aos dados em °C e encontre o zero absoluto no ponto em que ela corta o eixo." },
         { kind: "sim", id: "processos-pv", scenario: "isocorica", note: "Leia a temperatura final em kelvin e em graus Celsius para vários estados do gás." },
       ],

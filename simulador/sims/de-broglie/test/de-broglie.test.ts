@@ -57,4 +57,22 @@ describe("De Broglie e fenda dupla", () => {
     for (let i = 0; i < 50; i++) r.stepOnce();
     expect(r.state.n).toBe(100);
   });
+
+  it("fótons um a um: λ da luz, fendas × 100, franjas de 4,2 mm e acúmulo com franjas", () => {
+    const p = withOverrides(sim, sim.scenarios.find((c) => c.id === "fotons")!.params);
+    const sl = slitsOf(p);
+    expect(sl.lambda).toBeCloseTo(633e-9, 15);
+    expect(sl.d).toBeCloseTo(150e-6, 12);
+    const r = new Runner(sim, p);
+    expect(r.value("dy")).toBeCloseTo(4.22, 2);
+    const s = burst(p, 4);
+    expect(s.n).toBe(4000);
+    expect(s.hits.every((h) => Math.abs(h.y) <= W_UM)).toBe(true);
+    expect(visibility(s.hist, W_UM, r.value("dy"))).toBeGreaterThan(0.6);
+    // a densidade (por mm) integra a 1 na tela
+    const f = density(p);
+    let tot = 0;
+    for (let y = -W_UM; y < W_UM; y += 0.01) tot += f(y + 0.005) * 0.01;
+    expect(tot).toBeCloseTo(1, 3);
+  });
 });

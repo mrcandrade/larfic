@@ -165,8 +165,9 @@ Uma mola linear de 50 N/m teria realizado apenas $-225$ J.
 
 **Armadilha:** multiplicar a força num ponto pelo deslocamento total. Isso só dá certo se a força for constante.
 
-No experimento, desenhe um caminho entre A e B e veja o painel acumular $\vec F \cdot d\vec r$ trecho a trecho; com o campo rotacional ligado, o resultado passa a depender do caminho.`,
+No experimento, defina você mesmo a força $F(x)$ em cinco pontos, calcule a área sob o gráfico e veja o bloco ganhar exatamente essa energia cinética enquanto a região sombreada acompanha a posição; depois desenhe caminhos em 2D e acompanhe a soma de $\vec F \cdot d\vec r$ trecho a trecho.`,
       experiments: [
+        { kind: "sim", id: "massa-mola", scenario: "forca-variavel", note: "Monte F(x) nos controles e confira que K − K₀ é a área sob o gráfico entre a posição inicial e a atual." },
         { kind: "sim", id: "forcas-conservativas", scenario: "desenhar", note: "Desenhe um caminho e acompanhe a integral de F·dr sendo somada trecho a trecho." },
         { kind: "sim", id: "massa-mola", scenario: "livre", note: "Relacione o trabalho da mola com a área sob a reta F × x entre duas posições." },
       ],

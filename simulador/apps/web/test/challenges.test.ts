@@ -73,7 +73,7 @@ describe("desafios", () => {
   it("a velocidade mínima fixa da barreira é a da varredura", () => {
     const ch = challenges.find((c) => c.id === "barreira-com-arrasto")!;
     expect(wallMinSpeed(paramsFor(ch))).toBe(WALL_VMIN);
-  });
+  }, 30_000); // a varredura leva alguns segundos; com a suíte inteira em paralelo passa dos 5 s padrão
 
   it("circuito: lâmpadas trocadas, bateria inventada e lâmpada fraca não passam", () => {
     const ch = challenges.find((c) => c.id === "circuito-economico")!;

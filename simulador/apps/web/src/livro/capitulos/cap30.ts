@@ -78,8 +78,9 @@ Esse campo é diferente do eletrostático: suas linhas não começam nem termina
 
 Armadilha: medir "a tensão" entre dois pontos numa região com campo magnético variável como se fosse única. O resultado depende do caminho dos fios do voltímetro.
 
-No experimento, observe a fem numa bobina em repouso enquanto a corrente no primário varia: não há nada se movendo, e ainda assim aparece fem, sinal do campo elétrico induzido.`,
+No experimento, faça variar o campo de um solenoide e veja as linhas circulares do campo elétrico induzido, dentro e fora da bobina, sem nenhuma carga que as produza; depois observe a fem numa bobina em repouso enquanto a corrente no primário varia.`,
       experiments: [
+        { kind: "sim", id: "faraday-lenz", scenario: "e-induzido", note: "Veja as linhas fechadas de E em torno do solenoide e o valor de E em função de r." },
         { kind: "sim", id: "transformador", scenario: "mutua", note: "Com as bobinas paradas, a variação da corrente no primário induz fem no secundário." },
         { kind: "sim", id: "faraday-lenz", scenario: "oscilando", note: "Relacione a fem na espira com a circulação do campo elétrico induzido." },
       ],

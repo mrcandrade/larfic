@@ -117,8 +117,9 @@ Exemplo: modelando um ponto quântico como poço infinito com $L = 4{,}0$ nm, $h
 
 Armadilha: pensar que só a composição química define a cor. Nesses sistemas, o tamanho é tão importante quanto o material.
 
-No experimento, desenhe o seu próprio potencial (um degrau, dois poços) e veja como os níveis se rearranjam; no oscilador harmônico, outro tipo de armadilha, observe níveis igualmente espaçados; no LED, ligue a energia do gap à cor emitida.`,
+No experimento, mude o raio de um nanocristal de CdSe e veja a cor emitida ir do vermelho ao azul à medida que ele encolhe; desenhe o seu próprio potencial (um degrau, dois poços) e veja como os níveis se rearranjam; no oscilador harmônico, outro tipo de armadilha, observe níveis igualmente espaçados; no LED, ligue a energia do gap à cor emitida.`,
       experiments: [
+        { kind: "sim", id: "poco-quantico", scenario: "pontos-quanticos", note: "Mude o tamanho do ponto quântico e veja a cor da luz emitida mudar." },
         { kind: "sim", id: "poco-quantico", scenario: "desenhar", note: "Desenhe uma armadilha qualquer e veja os níveis e as funções de onda que ela admite." },
         { kind: "sim", id: "poco-quantico", scenario: "oscilador", note: "Compare uma armadilha parabólica com o poço quadrado: níveis igualmente espaçados." },
         { kind: "sim", id: "semicondutores", scenario: "led", note: "Mude a energia do gap e veja a cor emitida mudar, como num ponto quântico de outro tamanho." },
@@ -139,8 +140,9 @@ Armadilha: somar os números quânticos ($n_x + n_y$) para ordenar os níveis. O
 
 O simulador resolve poços em uma dimensão; a separação de variáveis significa que cada direção do curral se comporta como um desses poços. A degenerescência em três dimensões, por sua vez, aparece de forma clara no átomo de hidrogênio.
 
-No experimento, calcule $E_{n_x,n_y}$ a partir dos níveis do poço unidimensional; depois, no hidrogênio, veja orbitais diferentes com a mesma energia e conte os nós.`,
+No experimento, veja os níveis $E_{n_x,n_y}$ de um poço quadrado e de uma caixa cúbica, com os estados de mesma energia agrupados, e desfaça a degenerescência tornando a caixa retangular; depois, no hidrogênio, veja orbitais diferentes com a mesma energia e conte os nós.`,
       experiments: [
+        { kind: "sim", id: "poco-quantico", scenario: "caixa-2d", note: "Conte os estados de cada nível no poço 2D e na caixa 3D e veja o mapa de |ψ|²." },
         { kind: "sim", id: "poco-quantico", scenario: "infinito", note: "Use os níveis 1D de cada direção para montar os níveis de um curral retangular." },
         { kind: "sim", id: "hidrogenio", scenario: "nos", note: "Veja estados degenerados em três dimensões: formas diferentes, mesma energia." },
       ],

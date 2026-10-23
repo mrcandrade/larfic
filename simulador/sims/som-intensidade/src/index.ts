@@ -1,4 +1,4 @@
-import { defineSim, draw, num, texNum, type Params } from "@fisilab/core";
+import { defineSim, draw, num, texNum, type Params, type Theme } from "@fisilab/core";
 
 /** Ar a 20 °C. */
 export const RHO = 1.2;
@@ -18,6 +18,26 @@ export const pressureAmp = (p: Params) => Math.sqrt(2 * RHO * C_SOM * intensity(
 export const displacementAmp = (p: Params) => pressureAmp(p) / (RHO * C_SOM * 2 * Math.PI * num(p, "f", 1000));
 export const wavelength = (p: Params) => C_SOM / num(p, "f", 1000);
 
+/** Modo 1: duas caixas de som em fase, separadas por d, e um ouvinte em (D, y). */
+export const isDuas = (p: Params) => Math.round(num(p, "modo")) === 1;
+
+/** Interferência de duas caixas coerentes e em fase, cada uma com potência P (ondas esféricas). */
+export function duasCaixas(p: Params) {
+  const d = num(p, "d", 1.5), D = num(p, "D", 4), y = num(p, "yL", 0);
+  const L1 = Math.hypot(D, y - d / 2);
+  const L2 = Math.hypot(D, y + d / 2);
+  const lam = wavelength(p);
+  const dL = L2 - L1;
+  const phi = (2 * Math.PI * dL) / lam;
+  const P = num(p, "P", 0.01);
+  const I1 = P / (4 * Math.PI * L1 * L1);
+  const I2 = P / (4 * Math.PI * L2 * L2);
+  const I = I1 + I2 + 2 * Math.sqrt(I1 * I2) * Math.cos(phi);
+  return { L1, L2, dL, phi, I1, I2, I: Math.max(0, I), lam };
+}
+/** Nível sonoro total no ouvinte, com as duas caixas (dB). */
+export const levelDuas = (p: Params) => 10 * Math.log10(Math.max(duasCaixas(p).I, 1e-30) / I0);
+
 /** Limiar de audição aproximado (dB), fórmula de Terhardt. */
 export function threshold(f: number): number {
   const k = f / 1000;
@@ -32,7 +52,7 @@ export function threshold(f: number): number {
 export function toneFor(params: Params): { freq: number; gain: number } {
   const freq = num(params, "f", 1000);
   if (Math.round(num(params, "som")) !== 1) return { freq, gain: 0 };
-  const beta = level(params);
+  const beta = isDuas(params) ? levelDuas(params) : level(params);
   const gain = Math.min(GAIN_MAX, GAIN_MAX * 10 ** ((beta - 110) / 40));
   return { freq, gain: Number.isFinite(gain) ? Math.max(0, gain) : 0 };
 }
@@ -64,6 +84,79 @@ const REFERENCIAS: [number, string][] = [
   [130, "limiar da dor"],
 ];
 
+/** Vista de cima das duas caixas, frentes de onda e perfil de intensidade na linha do ouvinte. */
+function renderDuas(d: ReturnType<typeof draw>, theme: Theme, p: Params, tv: number) {
+  const dd = num(p, "d", 1.5), D = num(p, "D", 4), y = num(p, "yL", 0);
+  const q = duasCaixas(p);
+  const s = Math.min(0.6, 5.4 / (D + 0.6));
+  const X0 = 0.8, Y0 = 3.2;
+  const X = (xm: number) => X0 + s * xm;
+  const Yy = (ym: number) => Y0 + s * ym;
+  const cols = [theme.series[0]!, theme.series[1]!];
+  const srcs: [number, number][] = [[0, dd / 2], [0, -dd / 2]];
+  // frentes de onda (cristas), em câmera lenta
+  const lamS = q.lam * s;
+  const Rmax = Math.hypot(D, 5.5) + 0.5;
+  if (lamS > 0.07) {
+    const frac = (F_VIS * tv) % 1;
+    srcs.forEach(([sx, sy], i) => {
+      for (let n = 0; (n + frac) * q.lam < Rmax; n++) {
+        const R = (n + frac) * q.lam;
+        const pts: [number, number][] = [];
+        for (let z = 0; z <= 40; z++) {
+          const a = -Math.PI / 2 + (Math.PI * z) / 40;
+          const px = sx + R * Math.cos(a), py = sy + R * Math.sin(a);
+          if (px <= D + 0.3 && Math.abs(py) <= 5.3) pts.push([X(px), Yy(py)]);
+          else if (pts.length > 1) break;
+        }
+        if (pts.length > 1) d.polyline(pts, { color: cols[i]!, width: 1.2, alpha: 0.45 });
+      }
+    });
+  } else {
+    d.text("λ pequeno demais para desenhar as frentes de onda nesta escala", X(D / 2), 0.35, { color: theme.muted, size: 10 });
+  }
+  // caixas
+  srcs.forEach(([sx, sy], i) => {
+    d.rect(X(sx) - 0.22, Yy(sy) - 0.16, 0.22, 0.32, { fill: theme.text });
+    d.text(`S${i + 1}`, X(sx) - 0.11, Yy(sy), { color: cols[i]!, size: 11, weight: "700", dx: -16 });
+  });
+  // linha do ouvinte e caminhos
+  d.line(X(D), Yy(-5.3), X(D), Yy(5.3), { color: theme.grid, width: 1, dash: [4, 4] });
+  const [Lx, Ly] = [X(D), Yy(y)];
+  d.line(X(0), Yy(dd / 2), Lx, Ly, { color: cols[0]!, width: 1.5 });
+  d.line(X(0), Yy(-dd / 2), Lx, Ly, { color: cols[1]!, width: 1.5 });
+  d.dot(Lx, Ly, 7, theme.series[2] ?? theme.accent);
+  d.text("ouvinte", Lx, Ly, { color: theme.text, size: 10, dy: -14 });
+  // perfil de intensidade ao longo da linha x = D
+  const PX0 = 7.0, PW = 2.6;
+  const Iy = (yy: number) => duasCaixas({ ...p, yL: yy }).I;
+  let Imax = 0;
+  const ys: number[] = [];
+  for (let z = 0; z <= 400; z++) ys.push(-5 + (10 * z) / 400);
+  const Is = ys.map(Iy);
+  for (const I of Is) Imax = Math.max(Imax, I);
+  d.line(PX0, Yy(-5), PX0, Yy(5), { color: theme.muted, width: 1 });
+  d.polyline(ys.map((yy, z) => [PX0 + (PW * Is[z]!) / Imax, Yy(yy)] as [number, number]), { color: theme.accent, width: 2 });
+  d.line(PX0, Ly, PX0 + (PW * q.I) / Imax, Ly, { color: theme.series[2] ?? theme.accent, width: 2 });
+  d.dot(PX0 + (PW * q.I) / Imax, Ly, 5, theme.series[2] ?? theme.accent);
+  d.text("intensidade ao longo da linha do ouvinte", PX0 + PW / 2, Yy(5) + 0.25, { color: theme.muted, size: 10 });
+  // números
+  const fr = (((q.dL / q.lam) % 1) + 1) % 1;
+  const tipo = fr < 0.05 || fr > 0.95 ? "construtiva" : Math.abs(fr - 0.5) < 0.05 ? "destrutiva" : "intermediária";
+  d.text(
+    `L₁ = ${fmtBR(q.L1, 2)} m   L₂ = ${fmtBR(q.L2, 2)} m   ΔL = ${fmtBR(q.dL, 3)} m = ${fmtBR(q.dL / q.lam, 2)} λ   (λ = ${fmtSci(q.lam)} m)   interferência ${tipo}`,
+    0.3,
+    6.75,
+    { color: theme.text, size: 12, weight: "600", align: "left" },
+  );
+  d.text(
+    `I/(I₁ + I₂) = ${fmtBR(q.I / (q.I1 + q.I2), 2)}   ·   β = ${fmtBR(levelDuas(p))} dB (uma caixa só: ${fmtBR(10 * Math.log10(q.I1 / I0))} dB)   ·   ${Math.round(num(p, "som")) === 1 ? "som ligado" : "som desligado"}`,
+    0.3,
+    6.35,
+    { color: theme.text, size: 11, align: "left" },
+  );
+}
+
 export const somIntensidade = defineSim({
   tone: (p) => toneFor(p),
   id: "som-intensidade",
@@ -79,6 +172,13 @@ export const somIntensidade = defineSim({
     String.raw`s(x,t) = s_0\cos(kx - \omega t) \qquad \Delta p(x,t) = \rho c\,\omega\, s_0 \operatorname{sen}(kx - \omega t)`,
   ],
   liveEquations(_s, p) {
+    if (isDuas(p)) {
+      const q = duasCaixas(p);
+      return [
+        String.raw`\Delta L = L_2 - L_1 = ${texNum(q.L2)} - ${texNum(q.L1)} = ${texNum(q.dL)}\ \text{m} = ${texNum(q.dL / q.lam)}\,\lambda \qquad \phi = 2\pi\frac{\Delta L}{\lambda} = ${texNum((q.phi * 180) / Math.PI)}^\circ`,
+        String.raw`I = I_1 + I_2 + 2\sqrt{I_1 I_2}\cos\phi = ${texNum(q.I)}\ \text{W/m}^2 \qquad \frac{I}{I_1 + I_2} = ${texNum(q.I / (q.I1 + q.I2))} \qquad \beta = ${texNum(levelDuas(p), 3)}\ \text{dB}`,
+      ];
+    }
     const I = intensity(p);
     const b = level(p);
     return [
@@ -99,6 +199,16 @@ export const somIntensidade = defineSim({
         { value: 1, label: "Ligado (volume limitado)" },
       ],
     },
+    {
+      key: "modo", label: "Montagem", unit: "", min: 0, max: 1, step: 1, default: 0,
+      options: [
+        { value: 0, label: "Uma fonte pontual" },
+        { value: 1, label: "Duas caixas de som em fase (interferência)" },
+      ],
+    },
+    { key: "d", label: "Duas caixas: separação d", unit: "m", min: 0.2, max: 5, step: 0.05, default: 1.5 },
+    { key: "D", label: "Duas caixas: distância do ouvinte à linha das caixas", unit: "m", min: 1, max: 10, step: 0.1, default: 4 },
+    { key: "yL", label: "Duas caixas: posição lateral do ouvinte", unit: "m", min: -5, max: 5, step: 0.01, default: 0, live: true },
   ],
 
   observables: [
@@ -108,6 +218,10 @@ export const somIntensidade = defineSim({
     { key: "s0", label: "Amplitude de deslocamento do ar", unit: "m", value: (_s, p) => displacementAmp(p) },
     { key: "lambda", label: "Comprimento de onda", unit: "m", value: (_s, p) => wavelength(p) },
     { key: "acima", label: "Nível acima do limiar de audição", unit: "dB", value: (_s, p) => level(p) - threshold(num(p, "f", 1000)) },
+    { key: "dL", label: "Duas caixas: diferença de caminho ΔL", unit: "m", value: (_s, p) => duasCaixas(p).dL },
+    { key: "dLl", label: "Duas caixas: ΔL/λ", unit: "", value: (_s, p) => duasCaixas(p).dL / wavelength(p) },
+    { key: "Irel", label: "Duas caixas: I/(I₁ + I₂)", unit: "", value: (_s, p) => { const q = duasCaixas(p); return q.I / (q.I1 + q.I2); } },
+    { key: "beta2", label: "Duas caixas: nível total β", unit: "dB", value: (_s, p) => levelDuas(p) },
     { key: "p", label: "Pressão no ouvinte (câmera lenta)", unit: "Pa", value: (s, p) => pressureAmp(p) * Math.sin(-2 * Math.PI * F_VIS * (s[0] ?? 0)) },
   ],
   chart: { x: "t", y: "beta" },
@@ -169,6 +283,26 @@ export const somIntensidade = defineSim({
 3. Compare a curva de pressão com o deslocamento: a pressão é máxima onde o deslocamento é **zero** (defasagem de 90°).
 4. Com 1 W a 1 m, a amplitude real de deslocamento é de micrômetros, e a de pressão, de alguns pascals, contra 101 325 Pa da atmosfera.`,
     },
+    {
+      id: "duas-caixas",
+      label: "Interferência de duas caixas de som",
+      params: { modo: 1, P: 0.01, f: 343, d: 1.5, D: 4, yL: 0 },
+      guide: `### Construtiva ou destrutiva?
+Duas caixas ligadas ao mesmo amplificador emitem o mesmo tom, em fase. Com $f = 343$ Hz, $\\lambda = c/f = 1$ m.
+1. Com o ouvinte em $y = 0$, as distâncias $L_1$ e $L_2$ são iguais: as ondas chegam em fase e a intensidade é **4 vezes** a de uma caixa só (+6 dB), não 2 vezes.
+2. Mova o ouvinte de lado (controle **posição lateral**). A diferença de fase é $\\phi = 2\\pi\\,\\Delta L/\\lambda$. Ache o primeiro mínimo: ali $\\Delta L = \\lambda/2$.
+3. Confira as condições: **construtiva** para $\\Delta L = m\\lambda$ e **destrutiva** para $\\Delta L = (m + \\tfrac12)\\lambda$. O perfil à direita mostra a intensidade ao longo da linha do ouvinte.
+4. Nos mínimos o som não some por completo: as caixas estão a distâncias diferentes e as amplitudes não são iguais.
+5. Ligue o som e mova o ouvinte: o volume sobe e desce. Mude a frequência: os mínimos mudam de lugar, porque dependem de $\\lambda$.`,
+      predict: [
+        {
+          question: "Com o ouvinte à mesma distância das duas caixas (em fase), a intensidade, comparada à de uma caixa só, é:",
+          options: ["a mesma", "o dobro", "o quádruplo", "zero"],
+          answer: 2,
+          explanation: "As ondas chegam em fase e as **amplitudes** se somam: amplitude dobrada, intensidade (proporcional ao quadrado) quadruplicada. A energia não é criada: ela sai dos mínimos, onde a intensidade é menor que a de uma caixa só.",
+        },
+      ],
+    },
   ],
 
   exercises: [
@@ -209,6 +343,10 @@ export const somIntensidade = defineSim({
     const r = num(p, "r", 2);
     const beta = level(p);
     const thr = threshold(f);
+    if (isDuas(p)) {
+      renderDuas(d, theme, p, tv);
+      return;
+    }
 
     // ---- Painel A: partículas de ar numa janela de 3λ ao redor do ouvinte
     const cols = 46;

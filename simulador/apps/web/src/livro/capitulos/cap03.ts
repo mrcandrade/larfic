@@ -157,8 +157,9 @@ Podemos escolher os eixos que mais simplificam as contas:
 
 **Armadilha:** achar que, por terem componentes diferentes em dois sistemas, os vetores são diferentes. O vetor é a seta; as componentes são só uma descrição dela.
 
-No experimento, gire a câmera em torno da cena 3D e observe que o paralelogramo e o módulo da soma não mudam; depois resolva o bloco na rampa com eixos alinhados ao plano.`,
+No experimento, gire os eixos $x'y'$ com o controle do ângulo $\varphi$ e veja as componentes de $\vec A$ mudarem enquanto a seta, o módulo e o produto escalar ficam iguais; depois resolva o bloco na rampa com eixos alinhados ao plano.`,
       experiments: [
+        { kind: "sim", id: "vetores-3d", scenario: "rotacao-eixos", note: "Gire os eixos de φ: as componentes A_x′ e A_y′ mudam, mas o vetor, o módulo e A·B não." },
         { kind: "sim", id: "vetores-3d", scenario: "soma", params: { giro: 1 }, note: "Gire a câmera e veja que o módulo da soma e o ângulo entre os vetores não dependem do ponto de vista." },
         { kind: "sim", id: "plano-inclinado", scenario: "desce", params: { componentes: 1 }, note: "Use eixos alinhados com a rampa: a aceleração fica com uma única componente." },
       ],

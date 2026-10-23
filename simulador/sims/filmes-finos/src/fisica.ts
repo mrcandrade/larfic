@@ -53,6 +53,25 @@ export function michelsonI(opdCenter: number, d: number, theta: number, lambdaNm
   return Math.cos((Math.PI * opd) / (lambdaNm * 1e-9)) ** 2;
 }
 
+/** Comprimento de coerência (m) de uma fonte de largura espectral Δλ: ℓ_c = λ²/Δλ (infinito para Δλ = 0). */
+export const coherenceLength = (lambdaNm: number, dlamNm: number) => (dlamNm > 0 ? ((lambdaNm * 1e-9) ** 2) / (dlamNm * 1e-9) : Infinity);
+
+/**
+ * Visibilidade das franjas (grau de coerência) para uma diferença de caminho Δ (m), espectro gaussiano
+ * de largura a meia altura Δλ: γ = exp[−(πΔ/ℓ_c)²/(4 ln 2)], com ℓ_c = λ²/Δλ.
+ */
+export function visibility(opd: number, lambdaNm: number, dlamNm: number): number {
+  const lc = coherenceLength(lambdaNm, dlamNm);
+  if (!Number.isFinite(lc)) return 1;
+  return Math.exp(-(((Math.PI * opd) / lc) ** 2) / (4 * Math.LN2));
+}
+
+/** Intensidade (0–1) com coerência parcial: ½[1 + γ cos(2πΔ/λ)]; γ = 1 recupera michelsonI. */
+export function michelsonIc(opdCenter: number, d: number, theta: number, lambdaNm: number, dlamNm: number): number {
+  const g = visibility(opdCenter, lambdaNm, dlamNm);
+  return 0.5 * (1 - g) + g * michelsonI(opdCenter, d, theta, lambdaNm);
+}
+
 /** Franjas que passaram pelo centro entre duas diferenças de caminho (cruzamentos de máximos). */
 export const fringesBetween = (opd0: number, opd1: number, lambdaNm: number) =>
   Math.abs(Math.floor(opd1 / (lambdaNm * 1e-9)) - Math.floor(opd0 / (lambdaNm * 1e-9)));

@@ -249,7 +249,9 @@ function niceStep(range: number): number {
   return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
 }
 
-function fmtTick(v: number): string {
+function fmtTick(v: number, step: number): string {
+  // Somas sucessivas de `step` acumulam erro de arredondamento: 0 vira −5,55e−17.
+  if (Math.abs(v) < step * 1e-6) v = 0;
   return String(+v.toPrecision(6)).replace(".", ",");
 }
 
@@ -273,10 +275,10 @@ function drawAxes(ctx: CanvasRenderingContext2D, vp: Viewport, scale: number, ox
   ctx.stroke();
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  for (let x = Math.ceil(vp.xMin / step) * step; x <= vp.xMax + 1e-9; x += step) ctx.fillText(fmtTick(x), X(x), Y(vp.yMin) + 4);
+  for (let x = Math.ceil(vp.xMin / step) * step; x <= vp.xMax + 1e-9; x += step) ctx.fillText(fmtTick(x, step), X(x), Y(vp.yMin) + 4);
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
-  for (let y = Math.ceil(vp.yMin / step) * step; y <= vp.yMax + 1e-9; y += step) ctx.fillText(fmtTick(y), X(vp.xMin) - 4, Y(y));
+  for (let y = Math.ceil(vp.yMin / step) * step; y <= vp.yMax + 1e-9; y += step) ctx.fillText(fmtTick(y, step), X(vp.xMin) - 4, Y(y));
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   ctx.fillText(vp.unit ?? "", X(vp.xMax) + 4, Y(vp.yMin) + 4);

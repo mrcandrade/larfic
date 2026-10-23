@@ -2,8 +2,10 @@ import { defineSim, draw, num, texNum, type Params, type WorldPoint } from "@fis
 import { fmt, panel, type Panel } from "./panel.ts";
 import { X_MAX, grid, infiniteWellE, meanX, oscillatorE, solvePotential, type PotentialParams, type Solution } from "./physics.ts";
 import { derivation } from "./derivation.ts";
+import { CDSE, boxDensity2D, boxLevels, dotEnergy, nmToCss, photonNm, type BoxLevel } from "./caixas.ts";
 
 export * from "./physics.ts";
+export * from "./caixas.ts";
 
 export const NDRAW = 64;
 export const VDRAW = 30;
@@ -17,6 +19,10 @@ export interface WellState {
 }
 
 const kind = (p: Params) => Math.round(num(p, "modo"));
+/** Modos 5 (caixa 2D/3D) e 6 (pontos quânticos) não usam o solver 1D. */
+const BOX_MODE = 5;
+const DOT_MODE = 6;
+const isNew = (p: Params) => kind(p) >= BOX_MODE;
 const H_GRID = grid().h;
 
 /** Potencial "de fábrica" para o modo desenhável: poço assimétrico com degrau. */
@@ -29,8 +35,9 @@ export function defaultDrawn(): number[] {
 
 export function potParams(p: Params, s: WellState): PotentialParams {
   let L = num(p, "L", 2);
-  if (kind(p) === 0) L = Math.max(4 * H_GRID, Math.round(L / (2 * H_GRID)) * 2 * H_GRID);
-  return { kind: kind(p), L, V0: num(p, "V0", 10), omega: num(p, "omega", 1), drawn: s.drawn };
+  const k = isNew(p) ? 0 : kind(p);
+  if (k === 0) L = Math.max(4 * H_GRID, Math.round(L / (2 * H_GRID)) * 2 * H_GRID);
+  return { kind: k, L, V0: num(p, "V0", 10), omega: num(p, "omega", 1), drawn: s.drawn };
 }
 
 const cache = new Map<string, Solution>();
@@ -90,6 +97,22 @@ function ranges(p: Params, sol: Solution): { xr: [number, number]; er: [number, 
 
 const BOX = { x0: 1.4, y0: 0.9, x1: 19.6, y1: 11.4 };
 
+/** Lados da caixa retangular (modo 5): 2 ou 3 conforme a dimensão. */
+export function boxSides(p: Params): number[] {
+  const Ls = [num(p, "L", 2), num(p, "Ly", 2)];
+  if (Math.round(num(p, "dim", 2)) === 3) Ls.push(num(p, "Lz", 2));
+  return Ls;
+}
+export const boxLevelsFor = (p: Params): BoxLevel[] => boxLevels(boxSides(p), MAX_LEVELS);
+/** Energias mostradas como E₁, E₂, E₃: níveis 1D, níveis distintos da caixa, ou nada (ponto quântico). */
+function energies(p: Params, s: WellState): number[] {
+  if (kind(p) === BOX_MODE) return boxLevelsFor(p).map((l) => l.E);
+  if (kind(p) === DOT_MODE) return [];
+  return solutionFor(p, s).E;
+}
+const rdot = (p: Params) => num(p, "Rdot", 2.5);
+const nsLabel = (n: number[]) => `(${n.join(",")})`;
+
 function mkPanel(d: ReturnType<typeof draw>, p: Params, sol: Solution): Panel {
   const { xr, er } = ranges(p, sol);
   return panel(d, BOX, { min: xr[0], max: xr[1] }, { min: er[0], max: er[1] });
@@ -127,6 +150,24 @@ export const pocoQuantico = defineSim<WellState>({
     String.raw`\Psi(x,t) = \tfrac{1}{\sqrt2}\left(\psi_a e^{-iE_at} + \psi_b e^{-iE_bt}\right) \qquad T = \frac{2\pi}{E_b - E_a}`,
   ],
   liveEquations(s, p, t) {
+    if (kind(p) === BOX_MODE) {
+      const Ls = boxSides(p);
+      const ax = ["x", "y", "z"];
+      const sum = Ls.map((L, i) => String.raw`\frac{n_${ax[i]}^2}{${texNum(L, 3)}^2}`).join(" + ");
+      const lv = boxLevelsFor(p).slice(0, 5);
+      return [
+        String.raw`E = \frac{\pi^2}{2}\left(${sum}\right)`,
+        lv.map((l, i) => String.raw`E_{${i + 1}} = ${texNum(l.E, 4)}\ (g = ${l.states.length})`).join(",\\ "),
+      ];
+    }
+    if (kind(p) === DOT_MODE) {
+      const R = rdot(p);
+      const E = dotEnergy(R);
+      return [
+        String.raw`E = E_g + \frac{h^2}{8R^2}\left(\frac{1}{m_e^*} + \frac{1}{m_h^*}\right) - \frac{1{,}786\,e^2}{4\pi\varepsilon_0\varepsilon_r R}`,
+        String.raw`R = ${texNum(R, 3)}\ \text{nm}:\ E = ${texNum(E, 3)}\ \text{eV} \qquad \lambda = \frac{hc}{E} = ${texNum(photonNm(E), 3)}\ \text{nm}`,
+      ];
+    }
     const sol = solutionFor(p, s);
     const n = shownLevels(p, sol);
     const Es = sol.E.slice(0, Math.min(n, 5)).map((e, i) => `E_{${i + 1}} = ${texNum(e, 4)}`);
@@ -149,7 +190,7 @@ export const pocoQuantico = defineSim<WellState>({
       label: "Potencial",
       unit: "",
       min: 0,
-      max: 4,
+      max: 6,
       step: 1,
       default: 0,
       live: true,
@@ -159,9 +200,28 @@ export const pocoQuantico = defineSim<WellState>({
         { value: 2, label: "Oscilador harmônico" },
         { value: 3, label: "Poço duplo (quártico)" },
         { value: 4, label: "Desenhado com o mouse" },
+        { value: 5, label: "Caixa retangular 2D/3D (níveis e degenerescência)" },
+        { value: 6, label: "Ponto quântico de CdSe (cor × tamanho)" },
       ],
     },
-    { key: "L", label: "Largura L", unit: "", min: 0.4, max: 8, step: 0.04, default: 2, live: true },
+    { key: "L", label: "Largura L (lado Lx da caixa)", unit: "", min: 0.4, max: 8, step: 0.04, default: 2, live: true },
+    {
+      key: "dim",
+      label: "Caixa: dimensão",
+      unit: "",
+      min: 2,
+      max: 3,
+      step: 1,
+      default: 2,
+      live: true,
+      options: [
+        { value: 2, label: "2D (poço quadrado/retangular)" },
+        { value: 3, label: "3D (caixa)" },
+      ],
+    },
+    { key: "Ly", label: "Caixa: lado Ly", unit: "", min: 0.4, max: 8, step: 0.04, default: 2, live: true },
+    { key: "Lz", label: "Caixa: lado Lz (3D)", unit: "", min: 0.4, max: 8, step: 0.04, default: 2, live: true },
+    { key: "Rdot", label: "Raio do ponto quântico", unit: "nm", min: 1.5, max: 6, step: 0.1, default: 2.5, live: true },
     { key: "V0", label: "Profundidade / barreira V₀", unit: "", min: 1, max: 60, step: 0.5, default: 10, live: true },
     { key: "omega", label: "Frequência ω do oscilador", unit: "", min: 0.2, max: 4, step: 0.05, default: 1, live: true },
     { key: "niveis", label: "Níveis mostrados", unit: "", min: 1, max: MAX_LEVELS, step: 1, default: 5, live: true },
@@ -185,15 +245,15 @@ export const pocoQuantico = defineSim<WellState>({
   ],
 
   observables: [
-    { key: "E1", label: "E₁", unit: "", value: (s, p) => solutionFor(p, s).E[0] ?? 0 },
-    { key: "E2", label: "E₂", unit: "", value: (s, p) => solutionFor(p, s).E[1] ?? 0 },
-    { key: "E3", label: "E₃", unit: "", value: (s, p) => solutionFor(p, s).E[2] ?? 0 },
+    { key: "E1", label: "E₁", unit: "", value: (s, p) => energies(p, s)[0] ?? 0 },
+    { key: "E2", label: "E₂", unit: "", value: (s, p) => energies(p, s)[1] ?? 0 },
+    { key: "E3", label: "E₃", unit: "", value: (s, p) => energies(p, s)[2] ?? 0 },
     {
       key: "r21",
       label: "E₂/E₁",
       unit: "",
       value: (s, p) => {
-        const E = solutionFor(p, s).E;
+        const E = energies(p, s);
         return E[0] && E[1] !== undefined ? E[1] / E[0] : 0;
       },
     },
@@ -202,10 +262,19 @@ export const pocoQuantico = defineSim<WellState>({
       label: "⟨x⟩ da superposição",
       unit: "",
       value: (s, p, t) => {
+        if (isNew(p)) return 0;
         const [a, b] = supIdx(p);
         return meanX(solutionFor(p, s), a, b, t);
       },
     },
+    {
+      key: "g2",
+      label: "Degenerescência do 2º nível da caixa",
+      unit: "",
+      value: (_s, p) => (kind(p) === BOX_MODE ? (boxLevelsFor(p)[1]?.states.length ?? 0) : 0),
+    },
+    { key: "Edot", label: "Energia do fóton do ponto quântico", unit: "eV", value: (_s, p) => (kind(p) === DOT_MODE ? dotEnergy(rdot(p)) : 0) },
+    { key: "lamDot", label: "λ emitido pelo ponto quântico", unit: "nm", value: (_s, p) => (kind(p) === DOT_MODE ? photonNm(dotEnergy(rdot(p))) : 0) },
   ],
   chart: { x: "t", y: "xm" },
 
@@ -261,6 +330,42 @@ export const pocoQuantico = defineSim<WellState>({
 1. Clique e arraste no palco para desenhar $V(x)$ (0 a 30). Os níveis e as autofunções são recalculados a cada traço.
 2. Faça dois poços iguais separados por uma barreira: os níveis aparecem em pares quase degenerados (estados simétrico e antissimétrico).
 3. Faça um degrau dentro do poço: onde $E < V$, a função de onda decai; onde $E > V$, oscila com comprimento de onda $2\\pi/\\sqrt{2(E - V)}$.`,
+    },
+    {
+      id: "caixa-2d",
+      label: "Poço 2D e caixa 3D: degenerescência",
+      params: { modo: 5, dim: 2, L: 2, Ly: 2, Lz: 2, niveis: 5, n1: 2 },
+      guide: `### Caixas em duas e três dimensões
+1. Num poço quadrado 2D de lado $L$, $E = \\frac{\\pi^2}{2L^2}(n_x^2 + n_y^2)$. O 2º nível tem **dois** estados, $(1,2)$ e $(2,1)$: veja os dois traços na escada e o rótulo $g = 2$.
+2. Escolha o nível com **Superposição: nível a** (n1) e compare o mapa de $|\\psi|^2$: os estados degenerados são o mesmo padrão girado de 90°.
+3. Torne a caixa retangular ($L_y \\neq L_x$): a simetria some e a degenerescência se desfaz.
+4. Passe para **3D** com $L_x = L_y = L_z$: o 2º nível passa a ter $g = 3$, e o nível $(1,2,3)$ tem $g = 6$.`,
+      predict: [
+        {
+          question: "Numa caixa cúbica, quantos estados diferentes têm a energia do primeiro nível excitado?",
+          options: ["1", "2", "3", "6"],
+          answer: 2,
+          explanation: "O nível vem de $n_x^2 + n_y^2 + n_z^2 = 6$: $(2,1,1)$, $(1,2,1)$ e $(1,1,2)$, três estados com a mesma energia.",
+        },
+      ],
+    },
+    {
+      id: "pontos-quanticos",
+      label: "Pontos quânticos: a cor depende do tamanho",
+      params: { modo: 6, Rdot: 2.5 },
+      guide: `### Nanocristais de CdSe
+1. O elétron e o buraco ficam confinados num cristal de poucos nanômetros: a energia de confinamento ($\\propto 1/R^2$) soma-se ao gap $E_g$ do material.
+2. Diminua $R$: a energia do fóton sobe e a cor vai do vermelho ao azul. Mesma substância, cores diferentes só pelo tamanho.
+3. Aumente $R$: a curva se aproxima de $E_g$ (linha tracejada), o limite do cristal grande.
+4. Os currais quânticos (átomos dispostos em anel numa superfície) usam a mesma ideia: as paredes definem as ondas estacionárias permitidas.`,
+      predict: [
+        {
+          question: "Se um ponto quântico de CdSe for fabricado menor, a luz que ele emite fica:",
+          options: ["mais avermelhada", "mais azulada", "igual: depende só do material", "invisível"],
+          answer: 1,
+          explanation: "A energia de confinamento cresce como $1/R^2$; fótons mais energéticos têm comprimento de onda menor (mais azul).",
+        },
+      ],
     },
   ],
 
@@ -322,6 +427,8 @@ export const pocoQuantico = defineSim<WellState>({
   render(ctx, frame) {
     const d = draw(ctx, frame);
     const { state: s, params: p, theme, t } = frame;
+    if (kind(p) === BOX_MODE) return renderBox(d, p);
+    if (kind(p) === DOT_MODE) return renderDots(d, p);
     const sol = solutionFor(p, s);
     const P = mkPanel(d, p, sol);
     const { xr, er } = ranges(p, sol);
@@ -402,6 +509,80 @@ export const pocoQuantico = defineSim<WellState>({
     }
   },
 });
+
+type D = ReturnType<typeof draw>;
+
+/** Modo 5: escada de níveis com degenerescência (esquerda) e |ψ|² do estado escolhido (direita). */
+function renderBox(d: D, p: Params) {
+  const { theme } = d;
+  const Ls = boxSides(p);
+  const lv = boxLevelsFor(p);
+  const nShow = Math.max(1, Math.min(lv.length, Math.round(num(p, "niveis", 5)) + 2));
+  const shown = lv.slice(0, nShow);
+  const sel = Math.max(0, Math.min(shown.length - 1, Math.round(num(p, "n1", 1)) - 1));
+  const Emax = shown[shown.length - 1]!.E * 1.12;
+  const LB = { x0: 1.4, y0: 0.9, x1: 9.6, y1: 11.0 };
+  const P = panel(d, LB, { min: 0, max: 1 }, { min: 0, max: Emax });
+  P.frame({ ylabel: "E  (ħ = m = 1)", xticks: [] });
+  const dim = Ls.length;
+  shown.forEach((l, i) => {
+    const g = l.states.length;
+    const color = i === sel ? theme.accent : theme.series[i % theme.series.length]!;
+    const w = 0.8 / Math.max(g, 1);
+    for (let k = 0; k < g; k++) {
+      const a = 0.05 + k * w;
+      P.line([[a + 0.08 * w, l.E], [a + 0.92 * w, l.E]], { color, width: i === sel ? 3.5 : 2.5 });
+    }
+    const lab = l.states.length <= 3 ? l.states.map(nsLabel).join(" ") : `${nsLabel(l.states[0]!)} …`;
+    d.text(`g=${g}  ${lab}`, LB.x1, P.Y(l.E), { align: "right", size: 10, color, dx: -3, dy: -8 });
+  });
+  d.text(dim === 3 ? "níveis da caixa 3D" : "níveis do poço 2D", LB.x0 + 0.2, LB.y1 - 0.4, { align: "left", size: 12, weight: "600", color: theme.text });
+
+  // Mapa de |ψ|² do primeiro estado do nível escolhido
+  const st = shown[sel]!.states[0]!;
+  const [Lx, Ly] = [Ls[0]!, Ls[1]!];
+  const R = { x0: 10.6, y0: 1.4, x1: 19.4, y1: 10.4 };
+  const sc = Math.min((R.x1 - R.x0) / Lx, (R.y1 - R.y0) / Ly);
+  const W = Lx * sc;
+  const Hh = Ly * sc;
+  const ox = R.x0 + (R.x1 - R.x0 - W) / 2;
+  const oy = R.y0 + (R.y1 - R.y0 - Hh) / 2;
+  const N = 36;
+  for (let i = 0; i < N; i++)
+    for (let j = 0; j < N; j++) {
+      const v = boxDensity2D(st[0]!, st[1]!, Lx, Ly, ((i + 0.5) * Lx) / N, ((j + 0.5) * Ly) / N);
+      if (v > 0.01) d.rect(ox + (i * W) / N, oy + (j * Hh) / N, W / N + 0.01, Hh / N + 0.01, { fill: theme.accent, alpha: v });
+    }
+  d.rect(ox, oy, W, Hh, { stroke: theme.text, width: 2 });
+  const sub = dim === 3 ? `, projeção em xy (n_z = ${st[2]})` : "";
+  d.text(`|ψ|² do estado ${nsLabel(st)}${sub}`, (R.x0 + R.x1) / 2, R.y1 + 0.6, { size: 12, weight: "600", color: theme.accent });
+  if (shown[sel]!.states.length > 1)
+    d.text(`mesma energia: ${shown[sel]!.states.slice(1, 4).map(nsLabel).join(" ")}${shown[sel]!.states.length > 4 ? " …" : ""}`, (R.x0 + R.x1) / 2, R.y0 - 0.3, { size: 11, color: theme.muted });
+}
+
+/** Modo 6: fileira de nanocristais coloridos pela emissão e gráfico E(R). */
+function renderDots(d: D, p: Params) {
+  const { theme } = d;
+  const R = rdot(p);
+  const radii = [1.5, 2, 2.5, 3, 3.5, 4.5, 6];
+  const y = 9.6;
+  radii.forEach((r, i) => {
+    const x = 2.2 + i * 2.55;
+    const nm = photonNm(dotEnergy(r));
+    d.circle(x, y, 0.16 * r, { fill: nmToCss(nm), stroke: theme.muted, width: 1 });
+    d.text(`${fmt(r, 2)} nm`, x, y - 1.25, { size: 10, color: theme.muted });
+    d.text(`${fmt(nm, 3)} nm`, x, y - 1.6, { size: 10, color: theme.muted, dy: 4 });
+  });
+  const P = panel(d, { x0: 1.4, y0: 0.9, x1: 19.6, y1: 6.6 }, { min: 1.5, max: 6 }, { min: 1.5, max: 3.5 });
+  P.frame({ xlabel: "raio R (nm)", ylabel: "energia do fóton (eV)" });
+  P.line([[1.5, CDSE.Eg], [6, CDSE.Eg]], { color: theme.muted, dash: [5, 4], width: 1 });
+  d.text("E_g do CdSe maciço (1,74 eV)", P.X(6), P.Y(CDSE.Eg), { align: "right", size: 10, color: theme.muted, dx: -4, dy: 8 });
+  P.plot(dotEnergy, 1.5, 6, { color: theme.accent, width: 2 });
+  const E = dotEnergy(R);
+  const col = nmToCss(photonNm(E));
+  d.circle(P.X(R), P.Y(E), 0.22, { fill: col, stroke: theme.text, width: 1.5 });
+  d.text(`R = ${fmt(R, 2)} nm → E = ${fmt(E, 3)} eV, λ = ${fmt(photonNm(E), 3)} nm`, P.X(R), P.Y(E), { align: R > 4 ? "right" : "left", size: 12, weight: "600", color: theme.text, dx: R > 4 ? -10 : 10, dy: -10 });
+}
 
 /** V(x) contínuo (para desenho), com parede infinita truncada. */
 function solvePotentialValue(pp: PotentialParams, x: number): number {

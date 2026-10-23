@@ -106,7 +106,45 @@ export interface Corda {
   /** Picos (com sinal) medidos nas janelas do pulso refletido e transmitido. */
   refl: number;
   trans: number;
+  /** Energia que já atravessou a sonda 1 para a direita (J) e instante em que a onda chegou lá (s; −1 antes). */
+  flux?: number;
+  tflux?: number;
 }
+
+/** Densidades de energia na conta i (J/m): cinética ½μ(∂y/∂t)² e potencial ½T(∂y/∂x)². */
+export function localEnergy(s: Corda, p: Params, i: number): { k: number; u: number } {
+  const g = grid(p);
+  const T = num(p, "T", 10);
+  const dx = i < g.J ? g.dx1 : g.dx2;
+  const mu = g.m[i]! / dx;
+  const v = (s.y[i]! - s.yp[i]!) / g.h;
+  const ii = Math.min(g.N - 1, Math.max(1, i));
+  const slope = (s.y[ii + 1]! - s.y[ii - 1]!) / (g.x[ii + 1]! - g.x[ii - 1]!);
+  return { k: 0.5 * mu * v * v, u: 0.5 * T * slope * slope };
+}
+
+/** Potência que atravessa a conta i para a direita: P = −T (∂y/∂x)(∂y/∂t). */
+export function powerAt(s: Corda, p: Params, i: number): number {
+  const g = grid(p);
+  const slope = (s.y[i + 1]! - s.y[i - 1]!) / (g.x[i + 1]! - g.x[i - 1]!);
+  const v = (s.y[i]! - s.yp[i]!) / g.h;
+  return -num(p, "T", 10) * slope * v;
+}
+
+/** Aceleração da conta i (força/massa) e v²·∂²y/∂x² pelas diferenças finitas (equação de onda). */
+export function accelCurv(s: Corda, p: Params, i: number): { a: number; vc: number } {
+  const g = grid(p);
+  const ii = Math.min(g.N - 1, Math.max(1, i));
+  const F = g.k[ii - 1]! * (s.y[ii - 1]! - s.y[ii]!) + g.k[ii]! * (s.y[ii + 1]! - s.y[ii]!);
+  const dxl = g.x[ii]! - g.x[ii - 1]!, dxr = g.x[ii + 1]! - g.x[ii]!;
+  const curv = (2 * ((s.y[ii + 1]! - s.y[ii]!) / dxr - (s.y[ii]! - s.y[ii - 1]!) / dxl)) / (dxl + dxr);
+  const mu = g.m[ii]! / ((dxl + dxr) / 2);
+  return { a: F / g.m[ii]!, vc: (num(p, "T", 10) / mu) * curv };
+}
+
+/** Potência média de uma onda senoidal progressiva: P̄ = ½ μ v ω² A². */
+export const potMedia = (p: Params) => 0.5 * num(p, "mu1", 0.1) * grid(p).v1 * (2 * Math.PI * num(p, "f", 2)) ** 2 * num(p, "A", 0.4) ** 2;
+const analise = (p: Params) => Math.round(num(p, "analise"));
 
 const sigmaT = (p: Params) => num(p, "w", 0.3) / grid(p).v1;
 /** Instante em que o centro do pulso gaussiano passa pela ponta esquerda. */
@@ -136,6 +174,8 @@ export function advance(s: Corda, p: Params, steps: number): Corda {
   let yp = Float64Array.from(s.yp);
   let yn = new Float64Array(N + 1);
   let { n, fPrev, fCur, refl, trans } = s;
+  let flux = s.flux ?? 0, tflux = s.tflux ?? -1;
+  const ip = g.i1, Tt = num(p, "T", 10), dxp = 2 * g.dx1;
   const fonte = Math.round(num(p, "fonte"));
   const ponta = Math.round(num(p, "ponta"));
   const h2 = h * h;
@@ -166,6 +206,12 @@ export function advance(s: Corda, p: Params, steps: number): Corda {
     fPrev = fCur;
     fCur = fNext;
     n++;
+    {
+      // energia que atravessa a sonda 1 (potência P = −T y' ẏ integrada no tempo)
+      const P = (-Tt * (y[ip + 1]! - y[ip - 1]!) / dxp) * ((y[ip]! - yp[ip]!) / h);
+      if (tflux < 0 && Math.abs(P) > 1e-9) tflux = n * h;
+      if (tflux >= 0) flux += P * h;
+    }
     if (gauss) {
       const t = n * h;
       const a = y[g.i1]!;
@@ -174,7 +220,7 @@ export function advance(s: Corda, p: Params, steps: number): Corda {
       if (Math.abs(t - tT) < 2.5 * st && Math.abs(b) > Math.abs(trans)) trans = b;
     }
   }
-  return { ...s, n, y, yp, fPrev, fCur, refl, trans };
+  return { ...s, n, y, yp, fPrev, fCur, refl, trans, flux, tflux };
 }
 
 /** Energia mecânica da corda (J): cinética das contas + elástica dos segmentos. */
@@ -194,6 +240,12 @@ export function energy(s: Corda, p: Params): number {
 }
 
 const tOf = (s: Corda, p: Params) => s.n * grid(p).h;
+/** Potência média medida na sonda 1: energia que passou / tempo desde a chegada da onda. */
+export function pMed(s: Corda, p: Params): number {
+  const t0 = s.tflux ?? -1;
+  const dt = tOf(s, p) - t0;
+  return t0 >= 0 && dt > 0 ? (s.flux ?? 0) / dt : 0;
+}
 const isGauss = (p: Params) => Math.round(num(p, "fonte")) === FONTE.gauss;
 const Rmed = (s: Corda, p: Params) => (isGauss(p) ? s.refl / num(p, "A", 0.4) : 0);
 const Tmed = (s: Corda, p: Params) => (isGauss(p) ? s.trans / num(p, "A", 0.4) : 0);
@@ -225,6 +277,17 @@ export const ondaCorda = defineSim<Corda>({
     if (isGauss(p)) eqs.push(String.raw`R_{\text{med}} = ${s.refl === 0 ? String.raw`\text{(aguardando)}` : texNum(Rmed(s, p))} \qquad \tau_{\text{med}} = ${s.trans === 0 ? String.raw`\text{(aguardando)}` : texNum(Tmed(s, p))}`);
     if (Math.round(num(p, "fonte")) === FONTE.seno)
       eqs.push(String.raw`\lambda_1 = \frac{v_1}{f} = ${texNum(g.v1 / num(p, "f", 2))}\ \text{m} \qquad \lambda_2 = ${texNum(g.v2 / num(p, "f", 2))}\ \text{m}`);
+    if (analise(p) === 1) {
+      const e = localEnergy(s, p, g.i1);
+      eqs.push(
+        String.raw`\text{sonda 1: } \tfrac12\mu\dot y^2 = ${texNum(e.k)}\ \text{J/m} \quad \tfrac12 T y'^2 = ${texNum(e.u)}\ \text{J/m} \quad P = -T\,y'\,\dot y = ${texNum(powerAt(s, p, g.i1))}\ \text{W}`,
+        String.raw`\bar P_{\text{teo}} = \tfrac12\mu v\omega^2A^2 = ${texNum(potMedia(p))}\ \text{W} \qquad \bar P_{\text{med}} = ${texNum(pMed(s, p))}\ \text{W}`,
+      );
+    }
+    if (analise(p) === 2) {
+      const q = accelCurv(s, p, g.i1);
+      eqs.push(String.raw`\text{sonda 1: } \frac{\partial^2 y}{\partial t^2} = ${texNum(q.a)}\ \text{m/s}^2 \qquad v^2\frac{\partial^2 y}{\partial x^2} = ${texNum(q.vc)}\ \text{m/s}^2`);
+    }
     return eqs;
   },
 
@@ -251,6 +314,14 @@ export const ondaCorda = defineSim<Corda>({
     { key: "A", label: "Amplitude da fonte", unit: "m", min: 0.1, max: 0.6, step: 0.01, default: 0.4, live: true },
     { key: "w", label: "Largura do pulso (σ)", unit: "m", min: 0.1, max: 0.8, step: 0.01, default: 0.3 },
     { key: "f", label: "Frequência (onda senoidal)", unit: "Hz", min: 0.5, max: 10, step: 0.1, default: 2, live: true },
+    {
+      key: "analise", label: "Mostrar na corda", unit: "", min: 0, max: 2, step: 1, default: 0, live: true,
+      options: [
+        { value: 0, label: "Só a corda" },
+        { value: 1, label: "Energia cinética e potencial de cada elemento" },
+        { value: 2, label: "Aceleração × curvatura (equação de onda)" },
+      ],
+    },
   ],
 
   observables: [
@@ -259,6 +330,12 @@ export const ondaCorda = defineSim<Corda>({
     { key: "Rmed", label: "Razão refletida/incidente medida", unit: "", value: (s, p) => Rmed(s, p) },
     { key: "Tmed", label: "Razão transmitida/incidente medida", unit: "", value: (s, p) => Tmed(s, p) },
     { key: "E", label: "Energia na corda", unit: "J", value: (s, p) => energy(s, p) },
+    { key: "dK", label: "Sonda 1: energia cinética por metro", unit: "J/m", value: (s, p) => localEnergy(s, p, grid(p).i1).k },
+    { key: "dU", label: "Sonda 1: energia potencial por metro", unit: "J/m", value: (s, p) => localEnergy(s, p, grid(p).i1).u },
+    { key: "Pot", label: "Sonda 1: potência transmitida", unit: "W", value: (s, p) => powerAt(s, p, grid(p).i1) },
+    { key: "Pmed", label: "Sonda 1: potência média desde a chegada da onda", unit: "W", value: (s, p) => pMed(s, p) },
+    { key: "acel", label: "Sonda 1: aceleração ∂²y/∂t²", unit: "m/s²", value: (s, p) => accelCurv(s, p, grid(p).i1).a },
+    { key: "vcurv", label: "Sonda 1: v²·∂²y/∂x²", unit: "m/s²", value: (s, p) => accelCurv(s, p, grid(p).i1).vc },
   ],
   chart: { x: "t", y: "y1" },
 
@@ -317,6 +394,44 @@ export const ondaCorda = defineSim<Corda>({
 2. O pulso transmitido é **maior** que o incidente! Isso viola a conservação de energia?
 3. Calcule a potência transportada, proporcional a $Z A^2$: $Z_1 (1)^2 = Z_1 (1/3)^2 + (Z_1/2)(4/3)^2$. Confira que os dois lados são iguais.
 4. Troque a fonte para onda senoidal e compare os comprimentos de onda nas duas cordas.`,
+    },
+    {
+      id: "energia-potencia",
+      label: "Energia e potência numa onda progressiva",
+      params: { fonte: FONTE.seno, ponta: PONTA.absorvente, razao: 1, T: 10, mu1: 0.1, A: 0.15, f: 4, analise: 1 },
+      guide: `### Para onde vai a energia
+Abaixo da corda aparecem duas curvas: a energia **cinética** por metro, $\\tfrac12\\mu(\\partial y/\\partial t)^2$, e a **potencial** (elástica) por metro, $\\tfrac12 T(\\partial y/\\partial x)^2$.
+1. Rode. Onde a corda passa pela posição de equilíbrio ($y = 0$) ela está mais rápida **e** mais esticada: as duas energias são máximas ali. Nas cristas, a corda para por um instante e fica sem inclinação: as duas são nulas.
+2. As duas curvas são iguais e andam junto com a onda: a energia viaja com velocidade $v$.
+3. A potência que atravessa a sonda 1 é $P = -T\\,(\\partial y/\\partial x)(\\partial y/\\partial t)$; ela oscila entre zero e um máximo e **nunca fica negativa** numa onda progressiva.
+4. Espere alguns períodos e compare a potência média medida com $\\bar P = \\tfrac12\\mu v\\omega^2A^2$ (equações ao vivo). Dobre a amplitude: $\\bar P$ quadruplica. Dobre a frequência: também.`,
+      predict: [
+        {
+          question: "Num elemento da corda que passa pela posição de equilíbrio, a energia cinética e a potencial são:",
+          options: ["cinética máxima e potencial nula, como num oscilador", "as duas máximas", "as duas nulas"],
+          answer: 1,
+          explanation: "Diferente de um oscilador massa–mola, a energia potencial do elemento depende da **inclinação** da corda, não do deslocamento. Em $y = 0$ a inclinação é máxima, assim como a velocidade: as duas energias são máximas ao mesmo tempo.",
+        },
+      ],
+    },
+    {
+      id: "equacao-onda",
+      label: "Equação de onda: aceleração e curvatura",
+      params: { fonte: FONTE.gauss, ponta: PONTA.absorvente, razao: 1, T: 10, mu1: 0.1, A: 0.4, w: 0.3, analise: 2 },
+      guide: `### Por que ∂²y/∂t² = v² ∂²y/∂x²
+Cada elemento da corda é puxado pelas trações dos dois vizinhos. Se a corda é **curva** ali, as duas trações não se cancelam e sobra uma força vertical $T\\,\\partial^2y/\\partial x^2\\,dx$. Pela segunda lei, $\\mu\\,dx\\,\\partial^2y/\\partial t^2 = T\\,\\partial^2y/\\partial x^2\\,dx$.
+1. Rode devagar. As setas cheias são a aceleração de alguns elementos; as tracejadas, $v^2\\,\\partial^2y/\\partial x^2$ calculado da forma da corda. Elas coincidem.
+2. Onde a corda é côncava para cima (vale), a aceleração aponta para cima; na crista, para baixo. Num trecho reto, mesmo inclinado, a aceleração é nula.
+3. Compare os observáveis **aceleração** e **v²·∂²y/∂x²** na sonda 1 no gráfico.
+4. Mude a tensão: com $T$ maior, a mesma curvatura dá aceleração maior e a onda anda mais depressa, $v = \\sqrt{T/\\mu}$.`,
+      predict: [
+        {
+          question: "No pico de um pulso que viaja pela corda, a aceleração do elemento da corda aponta:",
+          options: ["para cima", "para baixo", "na direção em que o pulso anda", "é nula"],
+          answer: 1,
+          explanation: "No pico a corda é côncava para baixo ($\\partial^2y/\\partial x^2 < 0$): as trações dos vizinhos puxam o elemento para baixo e $\\partial^2y/\\partial t^2 = v^2\\partial^2y/\\partial x^2 < 0$.",
+        },
+      ],
     },
   ],
 
@@ -404,6 +519,35 @@ export const ondaCorda = defineSim<Corda>({
     if (Math.abs(razao - 1) > 1e-6) {
       d.dot(L1, s.y[g.J] ?? 0, 4, theme.text);
       d.text("emenda", L1, 1.3, { color: theme.muted, size: 10 });
+    }
+
+    if (analise(p) === 1) {
+      // densidades de energia por elemento, numa faixa abaixo da corda
+      const base = -1.1;
+      const emax = 0.5 * num(p, "T", 10) * ((2 * Math.PI * num(p, "f", 2) * num(p, "A", 0.4)) / g.v1) ** 2 || 1;
+      const ks: [number, number][] = [], us: [number, number][] = [];
+      for (let i = 1; i < g.N; i++) {
+        const e = localEnergy(s, p, i);
+        ks.push([g.x[i]!, base + Math.min(0.6, (0.5 * e.k) / emax)]);
+        us.push([g.x[i]!, base + Math.min(0.6, (0.5 * e.u) / emax)]);
+      }
+      d.line(0, base, xe, base, { color: theme.grid, width: 1 });
+      d.polyline(ks, { color: theme.series[3], width: 2 });
+      d.polyline(us, { color: theme.series[4], width: 1.5, dash: [5, 3] });
+      d.text("cinética ½μẏ²", 0.1, base + 0.62, { color: theme.series[3], size: 10, align: "left" });
+      d.text("potencial ½T y′² (tracejada)", 2.3, base + 0.62, { color: theme.series[4], size: 10, align: "left" });
+    }
+    if (analise(p) === 2) {
+      const amax = Math.max(1e-9, ...Array.from({ length: Math.floor(g.N / 6) }, (_, j) => Math.abs(accelCurv(s, p, 1 + j * 6).a)));
+      const kk = 0.5 / amax;
+      for (let i = 4; i < g.N - 1; i += 12) {
+        const q = accelCurv(s, p, i);
+        if (Math.abs(q.a) * kk < 0.02) continue;
+        const x = g.x[i]!, y = s.y[i] ?? 0;
+        d.arrow(x, y, 0, q.a * kk, { color: theme.negative, width: 2 });
+        d.arrow(x + 0.06, y, 0, q.vc * kk, { color: theme.accent, width: 1.5, dash: [3, 2] });
+      }
+      d.text("setas: ∂²y/∂t² (cheia) e v²·∂²y/∂x² (tracejada)", 0.1, -1.1, { color: theme.negative, size: 10, align: "left" });
     }
 
     // Fonte (mão / oscilador) na ponta esquerda

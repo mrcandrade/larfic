@@ -26,6 +26,7 @@ import {
   omegaTunnel,
   periodTunnel,
   potential,
+  C_LIGHT,
   realLightDrop,
   somigliana,
   tunnelStep,
@@ -52,7 +53,7 @@ export interface GravState {
 
 export const mode = (p: Params) => Math.round(num(p, "modo"));
 /** Fator entre o tempo físico e o tempo do relógio do app, por modo. */
-const TIME_SCALE = [1, 600, 1, 240, 0.5];
+const TIME_SCALE = [1, 600, 1, 240, 0.5, 1, 3600];
 /** Duração da cena do elevador (s, tempo físico). */
 export const ELEV_T = 1.2;
 const BALL_R = 0.15;
@@ -80,6 +81,36 @@ export const elevCase = (p: Params) => elevatorCase(Math.round(num(p, "situacao"
 /** Energia mecânica por unidade de massa no túnel (J/kg). */
 export function tunnelEnergy(s: GravState, p: Params): number {
   return 0.5 * s.v * s.v + potential(Math.hypot(s.s, num(p, "b") * 1000), earthModel(p));
+}
+
+/**
+ * Corpo alto e vertical (barra uniforme de comprimento L sobre a superfície): altura do centro de
+ * massa e do centro de gravidade, r_CG = ∫ r g(r) dm / ∫ g(r) dm = R(R+L) ln(1 + L/R)/L.
+ * Também o peso relativo F/(m g₀) = R/(R + L).
+ */
+export function tallBody(L: number) {
+  const hcm = L / 2;
+  const x = L / RE;
+  const hcg = x < 1e-6 ? L / 2 - (L * L) / (6 * RE) : (RE * (RE + L) * Math.log1p(x)) / L - RE;
+  return { hcm, hcg, diff: hcm - hcg, Frel: RE / (RE + L) };
+}
+
+/** Massa (GM) e raio do Sol, para o desvio da luz. */
+export const GM_SUN = 1.32712440018e20;
+export const R_SUN = 6.957e8;
+/** Desvio da luz pela relatividade geral, δ = 4GM/(c²b), em segundos de arco (b em raios solares). */
+export const lightDeflectionArcsec = (bRsun: number) => ((4 * GM_SUN) / (C_LIGHT ** 2 * bRsun * R_SUN)) * (180 / Math.PI) * 3600;
+
+/**
+ * Relógio de um satélite em órbita circular de altitude h comparado a um relógio no solo (sem a rotação
+ * da Terra), em microssegundos por dia: ganho gravitacional GM(1/R − 1/r)/c² e atraso cinemático v²/(2c²).
+ */
+export function gpsClock(h: number) {
+  const r = RE + h;
+  const day = 86400;
+  const grav = ((GM * (1 / RE - 1 / r)) / C_LIGHT ** 2) * day * 1e6;
+  const vel = (-(GM / r) / (2 * C_LIGHT ** 2)) * day * 1e6;
+  return { grav, vel, net: grav + vel, v: Math.sqrt(GM / r), erroKm: ((grav + vel) * 1e-6 * C_LIGHT) / 1000 };
 }
 
 const ISS = 400, GPS = 20200;
@@ -143,6 +174,20 @@ export const gravitacaoTerra = defineSim<GravState>({
           String.raw`t = ${texNum(s.tau / 60, 4)}\ \text{min} \qquad t_{travessia} = ${s.tArr > 0 ? `${texNum(s.tArr / 60, 4)}\\ \\text{min (medido)}` : String.raw`\text{(ainda não chegou)}`}`,
         ];
       }
+      case 5: {
+        const q = tallBody(num(p, "Lh", 2000) * 1000);
+        return [
+          String.raw`h_{CM} = \frac{L}{2} = ${texNum(q.hcm / 1000, 5)}\ \text{km} \qquad h_{CG} = \frac{R(R+L)}{L}\ln\!\Big(1 + \frac{L}{R}\Big) - R = ${texNum(q.hcg / 1000, 5)}\ \text{km}`,
+          String.raw`h_{CM} - h_{CG} = ${texNum(q.diff, 4)}\ \text{m} \approx \frac{L^2}{6R} \qquad \frac{F}{m g_0} = \frac{R}{R+L} = ${texNum(q.Frel, 4)}`,
+        ];
+      }
+      case 6: {
+        const q = gpsClock(num(p, "h") * 1000);
+        return [
+          String.raw`\delta = \frac{4GM_\odot}{c^2 b} = ${texNum(lightDeflectionArcsec(num(p, "bsol", 1)), 4)}''`,
+          String.raw`\frac{\Delta t}{\text{dia}} = \underbrace{${texNum(q.grav, 4)}}_{GM(1/R - 1/r)/c^2} \underbrace{${q.vel < 0 ? "-" : "+"} ${texNum(Math.abs(q.vel), 4)}}_{-v^2/2c^2} = ${texNum(q.net, 4)}\ \mu\text{s} \qquad c\,\Delta t = ${texNum(q.erroKm, 4)}\ \text{km/dia}`,
+        ];
+      }
       default: {
         const c = elevCase(p);
         const ga = apparentG(c);
@@ -171,6 +216,8 @@ export const gravitacaoTerra = defineSim<GravState>({
         { value: 2, label: "g no interior da Terra" },
         { value: 3, label: "Túnel através da Terra" },
         { value: 4, label: "Elevador de Einstein" },
+        { value: 5, label: "Corpo alto: centro de gravidade" },
+        { value: 6, label: "Luz desviada pelo Sol e relógios do GPS" },
       ],
     },
     { key: "n", label: "Superposição: número de massas", unit: "", min: 1, max: 3, step: 1, default: 3, live: true },
@@ -230,6 +277,8 @@ export const gravitacaoTerra = defineSim<GravState>({
       ],
     },
     { key: "a", label: "Elevador: aceleração do foguete", unit: "m/s²", min: 0, max: 15, step: 0.1, default: 9.8 },
+    { key: "Lh", label: "Corpo alto: altura da barra", unit: "km", min: 0.1, max: 20000, step: 0.1, default: 2000, log: true, live: true },
+    { key: "bsol", label: "Luz: menor distância do raio ao centro do Sol", unit: "raios solares", min: 1, max: 20, step: 0.1, default: 1, live: true },
     {
       key: "ref",
       label: "Elevador: ponto de vista",
@@ -258,6 +307,12 @@ export const gravitacaoTerra = defineSim<GravState>({
     { key: "v", label: "Túnel: velocidade", unit: "km/s", value: (s) => s.v / 1000 },
     { key: "E", label: "Túnel: energia mecânica por massa", unit: "J/kg", value: (s, p) => tunnelEnergy(s, p) },
     { key: "tmin", label: "Tempo físico", unit: "min", value: (s) => s.tau / 60 },
+    { key: "hcm", label: "Corpo alto: altura do centro de massa", unit: "km", value: (_s, p) => tallBody(num(p, "Lh", 2000) * 1000).hcm / 1000 },
+    { key: "hcg", label: "Corpo alto: altura do centro de gravidade", unit: "km", value: (_s, p) => tallBody(num(p, "Lh", 2000) * 1000).hcg / 1000 },
+    { key: "dcg", label: "Corpo alto: CM − CG", unit: "m", value: (_s, p) => tallBody(num(p, "Lh", 2000) * 1000).diff },
+    { key: "delta", label: "Luz: desvio angular (relatividade geral)", unit: "″", value: (_s, p) => lightDeflectionArcsec(num(p, "bsol", 1)) },
+    { key: "gpsNet", label: "GPS: adiantamento do relógio do satélite", unit: "µs/dia", value: (_s, p) => gpsClock(num(p, "h") * 1000).net },
+    { key: "gpsAcc", label: "GPS: adiantamento acumulado", unit: "µs", value: (s, p) => (gpsClock(num(p, "h") * 1000).net * s.tau) / 86400 },
     { key: "yb", label: "Elevador: altura da bola sobre o piso", unit: "m", value: (s, p) => ballRel(elevCase(p), BALL_H0, s.tau, BALL_R).y - BALL_R },
     { key: "yl", label: "Elevador: queda do pulso de luz (no desenho)", unit: "m", value: (s, p) => LIGHT_H - lightRel(elevCase(p), LIGHT_H, C_DRAW, s.tau).y },
   ],
@@ -355,6 +410,44 @@ export const gravitacaoTerra = defineSim<GravState>({
           options: ["flutua parada, porque não há gravidade", "cai até o piso exatamente como na Terra", "sobe até o teto", "cai mais devagar que na Terra"],
           answer: 1,
           explanation: "A bola segue em linha reta com a velocidade que tinha; o piso acelera para cima a 9,8 m/s². Na cabine, a aceleração relativa é 9,8 m/s² para baixo: princípio da equivalência.",
+        },
+      ],
+    },
+    {
+      id: "corpo-alto",
+      label: "Corpo muito alto: centro de gravidade abaixo do centro de massa",
+      params: { modo: 5, Lh: 2000 },
+      guide: `### Quando g não é uniforme
+O **centro de gravidade** é o ponto onde se pode considerar aplicada a força gravitacional total; o **centro de massa** só depende de como a massa está distribuída. Com $g$ uniforme, os dois coincidem.
+1. A barra uniforme tem 2000 km de altura. O centro de massa está no meio, a 1000 km. Cada pedaço é puxado com $g(r) = GM/r^2$: os de baixo pesam mais (setas à direita).
+2. Por isso o centro de gravidade fica **abaixo** do centro de massa: $r_{CG} = \\int r\\,g\\,dm \\big/ \\int g\\,dm$. Leia a diferença.
+3. Reduza a altura para 1 km (um arranha-céu muito alto): a diferença cai para uns 2,6 cm, proporcional a $L^2/6R$. Para objetos do dia a dia, CG e CM são o mesmo ponto.
+4. Compare o peso total com $mg_0$: ele vale $mg_0\\,R/(R + L)$.`,
+      predict: [
+        {
+          question: "Numa torre uniforme e muito alta, o centro de gravidade fica:",
+          options: ["acima do centro de massa", "no centro de massa", "abaixo do centro de massa"],
+          answer: 2,
+          explanation: "A parte de baixo está mais perto do centro da Terra e é puxada com $g$ maior: o ponto de aplicação do peso total desce em relação ao centro de massa.",
+        },
+      ],
+    },
+    {
+      id: "luz-gps",
+      label: "Luz desviada pelo Sol e relógios do GPS",
+      params: { modo: 6, bsol: 1, h: 20200 },
+      guide: `### A gravitação de Einstein na prática
+1. **Desvio da luz.** Um raio de luz de uma estrela que passa rente ao Sol é desviado de $\\delta = 4GM/(c^2 b) \\approx 1{,}75''$ (o desenho exagera muito o ângulo). Foi medido no eclipse de 1919, inclusive em Sobral, no Ceará. Uma conta newtoniana daria metade disso.
+2. Aumente a distância $b$ do raio ao Sol: o desvio cai com $1/b$.
+3. **GPS.** Os satélites estão a 20 200 km de altitude. Lá em cima o potencial gravitacional é maior e o relógio **adianta** cerca de 45,7 µs por dia; por andar a quase 3,9 km/s, ele **atrasa** cerca de 7,2 µs por dia. Saldo: uns 38 µs por dia.
+4. Rode: o tempo passa a uma hora por segundo. Veja o erro de posição que se acumularia ($c \\times$ atraso) se ninguém corrigisse os relógios: mais de 10 km por dia.
+5. Mude a altitude: em que altitude os dois efeitos se cancelam?`,
+      predict: [
+        {
+          question: "Sem nenhuma correção relativística, o relógio de um satélite GPS, comparado com um relógio no solo:",
+          options: ["atrasa, porque o satélite é rápido", "adianta, porque o efeito gravitacional vence", "marca o mesmo tempo"],
+          answer: 1,
+          explanation: "O atraso cinemático ($-v^2/2c^2$, cerca de −7 µs/dia) é menor que o adiantamento gravitacional ($GM(1/R - 1/r)/c^2$, cerca de +46 µs/dia). O saldo, perto de +38 µs/dia, é corrigido ajustando a frequência dos relógios antes do lançamento.",
         },
       ],
     },
@@ -510,6 +603,8 @@ export const gravitacaoTerra = defineSim<GravState>({
     else if (m === 1) renderAltitude(d, frame.params, frame.state, fs);
     else if (m === 2) renderInterior(d, frame.params, fs);
     else if (m === 3) renderTunnel(d, frame.state, frame.params, frame.trail, fs);
+    else if (m === 5) renderTall(d, frame.params, fs);
+    else if (m === 6) renderLightGps(d, frame.state, frame.params, fs);
     else renderElevator(d, frame.state, frame.params, fs);
   },
 });
@@ -546,6 +641,102 @@ function legend(d: Draw, x: number, y: number, fs: Fs) {
     d.text(str, x, yy, { align: "left", size: fs(size), color, weight });
     yy -= fs(size + 6) * d.px;
   };
+}
+
+/** Barra alta: pesos dos elementos (setas) e marcas do CM e do CG. */
+function renderTall(d: Draw, p: Params, fs: Fs) {
+  const { theme } = d;
+  const L = num(p, "Lh", 2000) * 1000;
+  const q = tallBody(L);
+  const y0 = 1.3, y1 = 10.6, x = 6.5, w = 0.9;
+  const Y = (h: number) => y0 + (h / L) * (y1 - y0);
+  // chão (arco da superfície) e barra
+  d.rect(0.5, 0.4, 12, y0 - 0.4, { fill: theme.ground });
+  d.rect(x - w / 2, y0, w, y1 - y0, { fill: theme.series[1], alpha: 0.3 });
+  d.rect(x - w / 2, y0, w, y1 - y0, { stroke: theme.text, width: 1.5 });
+  // pesos dos elementos: proporcionais a g(r)
+  const n = 10;
+  for (let i = 0; i < n; i++) {
+    const h = ((i + 0.5) / n) * L;
+    const gRel = (RE / (RE + h)) ** 2;
+    const yy = Y(h);
+    d.line(x + w / 2, yy, x + w / 2 + 0.25, yy, { color: theme.muted, width: 1 });
+    d.arrow(x + w / 2 + 0.6, yy, 0, -0.75 * gRel, { color: theme.series[3], width: 2 });
+  }
+  d.text("peso de cada fatia ∝ g(r)", x + w / 2 + 0.6, y1 + 0.35, { size: fs(10), color: theme.series[3], align: "left" });
+  // CM e CG
+  d.line(x - w / 2 - 1.6, Y(q.hcm), x + w / 2, Y(q.hcm), { color: theme.text, width: 1.5 });
+  d.text(`CM: ${fmt(q.hcm / 1000, 5)} km`, x - w / 2 - 1.7, Y(q.hcm), { size: fs(11), weight: "600", align: "right" });
+  d.line(x - w / 2 - 1.6, Y(q.hcg), x + w / 2, Y(q.hcg), { color: theme.negative, width: 1.5, dash: [5, 3] });
+  d.text(`CG: ${fmt(q.hcg / 1000, 5)} km`, x - w / 2 - 1.7, Y(q.hcg), { size: fs(11), weight: "600", align: "right", color: theme.negative, dy: 14 });
+  d.arrow(x, Y(q.hcg), 0, -1.2, { color: theme.negative, width: 3 });
+  d.text("peso total", x, Y(q.hcg) - 1.2, { size: fs(10), color: theme.negative, dy: 10 });
+  d.text(`L = ${fmt(L / 1000, 5)} km`, x, y1 + 0.35, { size: fs(11), weight: "600", align: "right", dx: -20 });
+  const line = legend(d, 13.0, 10.8, fs);
+  line("Barra uniforme e vertical", theme.text, "700", 12);
+  line(`CM − CG = ${fmt(q.diff, 4)} m`, theme.negative, "600");
+  line(`≈ L²/(6R) = ${fmt((L * L) / (6 * RE), 4)} m`, theme.muted);
+  line(`peso = ${fmt(q.Frel, 4)} · m g₀`, theme.series[3], "600");
+  line("g uniforme: CG = CM", theme.muted, "400", 10);
+}
+
+/** Desvio da luz pelo Sol (exagerado) e balanço dos relógios do GPS. */
+function renderLightGps(d: Draw, s: GravState, p: Params, fs: Fs) {
+  const { theme } = d;
+  const b = num(p, "bsol", 1);
+  const delta = lightDeflectionArcsec(b);
+  // Sol e raio
+  const S = { x: 4.2, y: 7.2 }, Rs = 1.0;
+  d.circle(S.x, S.y, Rs, { fill: "#f5b301", alpha: 0.9 });
+  d.text("Sol", S.x, S.y, { size: fs(11), weight: "700", color: "#3a2a00" });
+  const yb = S.y + b * Rs;
+  const ex = (0.25 * delta) / 1.75; // inclinação exagerada no desenho
+  // o raio chega horizontal, é desviado em direção ao Sol e chega à Terra; prolongado para trás,
+  // dá a posição aparente da estrela, mais afastada do Sol
+  const yE = yb - ex * (9.6 - S.x);
+  d.line(0.4, yb, S.x, yb, { color: theme.accent, width: 2 });
+  d.line(S.x, yb, 9.6, yE, { color: theme.accent, width: 2 });
+  d.line(S.x, yb, 9.6, yb, { color: theme.muted, width: 1, dash: [4, 3] });
+  d.line(S.x, yb, 0.4, yb + ex * (S.x - 0.4), { color: theme.muted, width: 1, dash: [2, 3] });
+  d.dot(0.4, yb, 4, theme.accent);
+  d.text("estrela", 0.4, yb, { size: fs(10), color: theme.accent, dy: 12, align: "left" });
+  d.text("posição aparente", 0.4, yb + ex * (S.x - 0.4), { size: fs(10), color: theme.muted, dy: -10, align: "left" });
+  d.text("Terra", 9.6, yE, { size: fs(10), color: theme.accent, dy: 12, align: "right" });
+  d.text(`δ = ${fmt(delta, 3)}″ (ângulo exagerado no desenho)`, 5, 10.9, { size: fs(12), weight: "600", color: theme.accent });
+  d.text(`b = ${fmt(b, 3)} R☉   ·   newtoniano: ${fmt(delta / 2, 3)}″`, 5, 10.3, { size: fs(11), color: theme.muted });
+
+  // GPS: barras em µs/dia
+  const q = gpsClock(num(p, "h") * 1000);
+  const B = { x0: 11.0, x1: 19.6, y: 9.0 };
+  const k = (B.x1 - B.x0) / 2 / 60; // 60 µs/dia ocupa meia largura
+  const xc = (B.x0 + B.x1) / 2;
+  d.line(xc, B.y - 3.2, xc, B.y + 0.6, { color: theme.muted, width: 1 });
+  const bars: [string, number, string][] = [
+    ["gravitacional", q.grav, theme.positive],
+    ["velocidade", q.vel, theme.negative],
+    ["saldo", q.net, theme.accent],
+  ];
+  bars.forEach(([nome, v, col], i) => {
+    const y = B.y - i * 1.1;
+    d.rect(Math.min(xc, xc + v * k), y - 0.3, Math.abs(v * k), 0.6, { fill: col, alpha: 0.8 });
+    d.text(`${nome}: ${v >= 0 ? "+" : "−"}${fmt(Math.abs(v), 4)} µs/dia`, xc + (v >= 0 ? -0.15 : 0.15), y, { size: fs(11), align: v >= 0 ? "right" : "left", color: theme.text });
+  });
+  d.text(`Relógio do satélite a ${fmt(num(p, "h"), 5)} km (v = ${fmt(q.v / 1000, 3)} km/s) comparado ao do solo`, xc, B.y + 1.2, { size: fs(11), weight: "600" });
+  const dias = s.tau / 86400;
+  const acc = q.net * dias;
+  const line = legend(d, 11.0, 4.6, fs);
+  line(`tempo decorrido: ${fmt(s.tau / 3600, 3)} h`, theme.text, "600");
+  line(`adiantamento acumulado: ${fmt(acc, 4)} µs`, theme.accent, "600");
+  line(`erro de distância c·Δt: ${fmt((acc * 1e-6 * C_LIGHT) / 1000, 4)} km`, theme.negative, "600");
+  line(`(por dia: ${fmt(q.erroKm, 3)} km sem correção)`, theme.muted, "400", 10);
+  // Terra e órbita
+  const E = { x: 4.2, y: 2.6 };
+  const rO = 0.7 + 1.5 * Math.min(1, num(p, "h") / 40000);
+  d.circle(E.x, E.y, 0.7, { fill: theme.series[0], alpha: 0.5 });
+  d.circle(E.x, E.y, rO, { stroke: theme.muted, width: 1, dash: [3, 3] });
+  const ang = (2 * Math.PI * s.tau) / (2 * Math.PI * (RE + num(p, "h") * 1000) / q.v);
+  d.dot(E.x + rO * Math.cos(ang), E.y + rO * Math.sin(ang), 5, theme.accent);
+  d.text("GPS", E.x + rO * Math.cos(ang), E.y + rO * Math.sin(ang), { size: fs(10), color: theme.accent, dy: -10 });
 }
 
 function renderSuperposition(d: Draw, s: GravState, p: Params, fs: Fs) {

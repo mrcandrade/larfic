@@ -9,6 +9,7 @@ import {
   fmt,
   inside,
   is3D,
+  outwardFlux,
   type Source,
   type Surface,
 } from "./physics.ts";
@@ -46,6 +47,8 @@ export function sourceOf(s: GaussState, p: Params): Source {
       return { kind: "plano", x: s.src.x, sigma: num(p, "sigma") * NC };
     case 3:
       return { kind: "esfera", x: s.src.x, y: s.src.y, R: num(p, "R0", 0.3), Q: num(p, "Qe") * NC };
+    case 4:
+      return { kind: "ima", x: s.src.x, y: s.src.y, m: num(p, "mB", 1) };
     default:
       return {
         kind: "pontos",
@@ -79,7 +82,7 @@ function hitTest(s: GaussState, p: Params, x: number, y: number): Drag | null {
       const q = s.charges[i]!;
       if (num(p, `q${i + 1}`) !== 0 && Math.hypot(x - q.x, y - q.y) < HIT) return { kind: "carga", i };
     }
-  } else if (c === 1 && Math.hypot(x - s.src.x, y - s.src.y) < HIT) {
+  } else if ((c === 1 || c === 4) && Math.hypot(x - s.src.x, y - s.src.y) < HIT) {
     return { kind: "fonte", ox: x - s.src.x, oy: y - s.src.y };
   } else if (c === 2 && Math.abs(x - s.src.x) < 0.05) {
     return { kind: "fonte", ox: x - s.src.x, oy: 0 };
@@ -125,6 +128,11 @@ export const gauss = defineSim<GaussState>({
   ],
   liveEquations(s, p) {
     const phi = fluxOf(s, p);
+    if (caso(p) === 4)
+      return [
+        String.raw`\Phi_B = \oint \vec B\cdot\hat n\,dA \approx \sum_i (\vec B_i\cdot\hat n_i)\,\Delta A_i = ${texNum(phi)}\ \text{Wb}`,
+        String.raw`\text{Lei de Gauss do magnetismo: } \oint \vec B\cdot d\vec A = 0 \ \text{(não há monopolo magnético)}`,
+      ];
     const q = qIntOf(s, p);
     const n = nElem(p);
     const elems = is3D(sourceOf(s, p)) ? (Math.round(num(p, "forma")) === 0 ? 2 * n * n : 6 * n * n) : contourElements(surfaceOf(s, p), n).length;
@@ -140,7 +148,7 @@ export const gauss = defineSim<GaussState>({
       label: "Distribuição de carga",
       unit: "",
       min: 0,
-      max: 3,
+      max: 4,
       step: 1,
       default: 0,
       options: [
@@ -148,6 +156,7 @@ export const gauss = defineSim<GaussState>({
         { value: 1, label: "Fio infinito (perpendicular à tela)" },
         { value: 2, label: "Plano infinito (perpendicular à tela)" },
         { value: 3, label: "Esfera isolante uniforme" },
+        { value: 4, label: "Ímã pequeno: fluxo do campo B" },
       ],
     },
     {
@@ -172,6 +181,7 @@ export const gauss = defineSim<GaussState>({
     { key: "Qe", label: "Carga total Q da esfera", unit: "nC", min: -20, max: 20, step: 0.5, default: 5, live: true },
     { key: "R0", label: "Raio R da esfera carregada", unit: "m", min: 0.1, max: 0.6, step: 0.01, default: 0.35, live: true },
     { key: "a0", label: "Tamanho inicial da superfície", unit: "m", min: 0.1, max: 0.7, step: 0.01, default: 0.45 },
+    { key: "mB", label: "Momento magnético do ímã", unit: "A·m²", min: 0.1, max: 10, step: 0.1, default: 1, live: true },
   ],
 
   observables: [
@@ -241,6 +251,27 @@ export const gauss = defineSim<GaussState>({
 2. Arraste a alça devagar até sair da esfera e observe no gráfico $\\Phi \\times a$: cresce como $r^3$ e depois fica constante em $Q/\\varepsilon_0$.
 3. Deduza $E(r)$: dentro, $E\\,4\\pi r^2 = Q r^3/(\\varepsilon_0 R^3)$, logo $E \\propto r$; fora, $E \\propto 1/r^2$.
 4. Desloque a superfície para que corte só parte da esfera. A carga interna agora é o volume da interseção vezes $\\rho$, e a soma numérica continua concordando.`,
+    },
+    {
+      id: "fluxo-b",
+      label: "Gauss para o magnetismo: fluxo de B",
+      params: { caso: 4, forma: 0, mB: 1, a0: 0.3, N: 32 },
+      guide: `### Não existe polo magnético isolado
+1. Agora a fonte é um ímã pequeno (um dipolo magnético) e as setas de fundo são o campo $\\vec B$. A superfície fechada envolve o ímã inteiro.
+2. Veja as setas na borda: $\\vec B$ **sai** perto do polo norte (vermelho) e **entra** perto do polo sul (azul). Somando tudo,
+$$\\Phi_B = \\oint \\vec B\\cdot d\\vec A = 0$$
+(o resíduo é só erro da soma numérica; aumente o número de elementos).
+3. Arraste a superfície para tentar envolver "só o norte": desloque o centro para a direita do ímã, mantendo o ímã dentro. As linhas de $\\vec B$ são fechadas — cada uma que sai volta a entrar —, então o fluxo continua nulo.
+4. Troque para **caixa** e mude o tamanho: o resultado não depende da forma. Compare com as cargas pontuais: lá, uma carga isolada dava $\\Phi_E = q/\\varepsilon_0 \\neq 0$.
+5. Partir um ímã ao meio só produz dois ímãs menores, cada um com norte e sul: é essa ausência de monopolos que a lei expressa.`,
+      predict: [
+        {
+          question: "Uma superfície fechada envolve o polo norte de um ímã, mas não o polo sul (o ímã atravessa a superfície). O fluxo de B através dela é:",
+          options: ["positivo, pois envolve o norte", "negativo", "zero", "infinito"],
+          answer: 2,
+          explanation: "Dentro do ímã as linhas de $\\vec B$ vão do sul para o norte e fecham por fora: o que sai pela parte externa entra pela seção onde o ímã cruza a superfície. $\\oint \\vec B\\cdot d\\vec A = 0$ para qualquer superfície fechada.",
+        },
+      ],
     },
   ],
 
@@ -351,6 +382,13 @@ export const gauss = defineSim<GaussState>({
       d.rect(src.x - 0.012, VP.yMin, 0.024, VP.yMax - VP.yMin, { fill: col, alpha: 0.75 });
       for (let y = VP.yMin + 0.1; y < VP.yMax; y += 0.2) d.text(src.sigma >= 0 ? "+" : "−", src.x, y, { color: "#fff", size: 10, weight: "700" });
       d.text(`plano  σ = ${fmt(src.sigma / NC)} nC/m²`, src.x, VP.yMin + 0.25, src.x > 0.4 ? { dx: -8, align: "right", size: 11, color: col } : { dx: 8, align: "left", size: 11, color: col });
+    } else if (src.kind === "ima") {
+      const L = 0.06;
+      d.rect(src.x - L, src.y - 0.018, L, 0.036, { fill: theme.negative });
+      d.rect(src.x, src.y - 0.018, L, 0.036, { fill: theme.positive });
+      d.text("S", src.x - L / 2, src.y, { color: "#fff", size: 10, weight: "700" });
+      d.text("N", src.x + L / 2, src.y, { color: "#fff", size: 10, weight: "700" });
+      d.text(`ímã (dipolo) m = ${fmt(src.m)} A·m²`, src.x, src.y, { dy: -18, size: 11, color: theme.text });
     } else {
       const col = src.Q >= 0 ? theme.positive : theme.negative;
       d.circle(src.x, src.y, src.R, { fill: col, alpha: 0.18 });
@@ -416,9 +454,18 @@ export const gauss = defineSim<GaussState>({
       y0 -= 0.075;
     };
     line(`Superfície: ${SURF_NAME(src, surf.shape)}`, theme.muted);
-    line(`Φ (soma dos elementos) = ${fmt(phi)} N·m²/C`, theme.text, "600");
-    line(`q_int/ε₀ = ${fmt(phiT)} N·m²/C   (q_int = ${fmt(q / NC)} nC)`, theme.text, "600");
-    line(Math.abs(phiT) < 1e-9 && Math.abs(phi) < 1e-6 * Math.max(1, maxF) ? "concordam (fluxo nulo)" : `diferença relativa: ${fmt(err, 2)} %`, err < 1 ? theme.series[2]! : theme.muted);
+    if (src.kind === "ima") {
+      line(`Φ_B (soma dos elementos) = ${fmt(Math.abs(phi) < 1e-12 ? 0 : phi)} Wb`, theme.text, "600");
+      line("∮B·dA = 0: tanto B entra quanto sai (não há polo isolado)", theme.text, "600");
+    } else {
+      line(`Φ (soma dos elementos) = ${fmt(phi)} N·m²/C`, theme.text, "600");
+      line(`q_int/ε₀ = ${fmt(phiT)} N·m²/C   (q_int = ${fmt(q / NC)} nC)`, theme.text, "600");
+    }
+    if (src.kind === "ima") {
+      const out = outwardFlux(src, surf, nElem(p));
+      line(out > 0 ? `fluxo que sai = ${fmt(out)} Wb, resíduo da soma: ${fmt((100 * Math.abs(phi)) / out, 2)} %` : "superfície longe do ímã: B quase nulo", theme.series[2]!);
+    } else
+      line(Math.abs(phiT) < 1e-9 && Math.abs(phi) < 1e-6 * Math.max(1, maxF) ? "concordam (fluxo nulo)" : `diferença relativa: ${fmt(err, 2)} %`, err < 1 ? theme.series[2]! : theme.muted);
 
     d.text("seta vermelha: E·n̂ > 0 (sai)   seta azul: E·n̂ < 0 (entra)", VP.xMax - 0.04, VP.yMin + 0.05, {
       align: "right",

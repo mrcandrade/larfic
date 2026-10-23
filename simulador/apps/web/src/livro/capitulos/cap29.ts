@@ -48,8 +48,9 @@ Exemplo: num cabo de extensão, os dois condutores levam $10$ A em sentidos opos
 
 Armadilha: aplicar a intuição eletrostática ("iguais se repelem") a correntes. Para correntes, o sentido igual atrai.
 
-No experimento, coloque um fio com corrente no campo produzido por outro: use a lei de Ampère para obter o campo de um fio na posição do outro e, no experimento da força num fio, aplique esse valor de $B$ e veja o sentido da força.`,
+No experimento, ponha dois fios paralelos lado a lado e meça a força por unidade de comprimento, $\mu_0 I_1 I_2/(2\pi d)$: atração com correntes no mesmo sentido, repulsão com sentidos opostos; depois, no experimento da força num fio, aplique o campo de um fio sobre o outro e confira o sentido da força.`,
       experiments: [
+        { kind: "sim", id: "ampere", scenario: "dois-fios", note: "Veja a força entre dois fios paralelos e inverta uma das correntes." },
         { kind: "sim", id: "ampere", scenario: "opostas", note: "Meça o campo de um fio na posição do outro e veja o efeito do sentido das correntes." },
         { kind: "sim", id: "motor-hall", scenario: "fio", params: { B: 0.0001, Ifio: 10 }, note: "Ponha um fio de 10 A num campo de 0,1 mT (o de outro fio a 2 cm) e calcule a força." },
       ],

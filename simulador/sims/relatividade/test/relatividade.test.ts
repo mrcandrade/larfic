@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, withOverrides } from "@fisilab/core";
-import { RATE, gammaOf, interval, lorentz, relatividade as sim } from "../src/index.ts";
+import { RATE, addVel, gammaOf, interval, lorentz, relatividade as sim } from "../src/index.ts";
 
 describe("Relatividade restrita", () => {
   it("γ(0,6) = 1,25 e γ(0,8) = 5/3", () => {
@@ -52,5 +52,28 @@ describe("Relatividade restrita", () => {
     s = sim.pointer!.move!(s, p, { x: 0.5, y: 3 }, true)!;
     expect(s.ev[0]).toEqual({ x: 0.5, ct: 3 });
     expect(sim.pointer!.up!(s, p, { x: 0, y: 0 })!.drag).toBe(-1);
+  });
+
+  it("grade de relógios: Lorentz do evento A do cenário e relógios de S' dessincronizados", () => {
+    const p = withOverrides(sim, sim.scenarios.find((c) => c.id === "relogios")!.params);
+    const r = new Runner(sim, p);
+    expect(r.value("xA")).toBeCloseTo(-2.75, 12);
+    expect(r.value("tA")).toBeCloseTo(3.25, 12);
+    // relógios de S' em x = 0 e x = 1 (mesmo t de S): t' difere de −γβΔx
+    const g = gammaOf(0.6);
+    expect(g * (1 - 0.6 * 1) - g * (1 - 0)).toBeCloseTo(-0.75, 12);
+  });
+
+  it("composição de velocidades: 0,6c ⊕ 0,6c ≈ 0,882c; luz continua c; limite de Galileu", () => {
+    expect(addVel(0.6, 0.6)).toBeCloseTo(1.2 / 1.36, 12);
+    for (const v of [-0.9, 0.3, 0.99]) expect(addVel(1, v)).toBeCloseTo(1, 12);
+    expect(addVel(0.001, 0.002)).toBeCloseTo(0.003, 7);
+    for (const a of [-0.95, 0.5, 0.95]) for (const b of [-0.95, 0.2, 0.95]) expect(Math.abs(addVel(a, b))).toBeLessThan(1);
+    // consistente com Lorentz: a linha de mundo x = u't' transformada de volta para S tem x/t = addVel
+    const ev = lorentz({ x: 0.6 * 2, ct: 2 }, -0.6);
+    expect(ev.x / ev.ct).toBeCloseTo(addVel(0.6, 0.6), 12);
+    const r = new Runner(sim, withOverrides(sim, sim.scenarios.find((c) => c.id === "velocidades")!.params));
+    expect(r.value("uRel")).toBeCloseTo(0.88235, 4);
+    expect(r.value("uGal")).toBeCloseTo(1.2, 12);
   });
 });

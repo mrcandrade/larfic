@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Runner, generateExercise, withOverrides } from "@fisilab/core";
-import { acceptanceDeg, analyze, nAir, refracao as sim, traceGradient, type RefState } from "../src/index.ts";
+import { acceptanceDeg, analyze, dioptImage, nAir, refracao as sim, sagX, sceneDioptro, trace, traceGradient, type RefState } from "../src/index.ts";
 
 const DEG = Math.PI / 180;
 const at = (over: Record<string, number>) => {
@@ -109,5 +109,25 @@ describe("Reflexão e refração", () => {
       expect(sim.liveEquations!(r.state, r.params, r.t).length).toBeGreaterThan(0);
     }
     for (const ex of sim.exercises!) for (let seed = 1; seed <= 5; seed++) expect(Number.isFinite(generateExercise(sim, ex, seed).answer)).toBe(true);
+  });
+
+  it("dioptro esférico: raios paraxiais traçados com Snell cruzam o eixo na imagem n₁/p + n₂/i = (n₂ − n₁)/R", () => {
+    const p = withOverrides(sim, sim.scenarios.find((c) => c.id === "dioptro")!.params);
+    const s = sim.init(p);
+    expect(s.lx).toBe(-30);
+    const { i, m } = dioptImage(1, 1.5, 6, 30);
+    expect(i).toBeCloseTo(30, 10);
+    expect(m).toBeCloseTo(-2 / 3, 10);
+    const y = 0.05;
+    const segs = trace(sceneDioptro(p), [-30, 0], [sagX(6, y) + 30, y], { maxDepth: 2, maxLen: 140 });
+    const out = segs.find((g) => g.depth === 1)!;
+    expect(out.n).toBeCloseTo(1.5, 12);
+    const cross = out.a[0] - (out.a[1] * (out.b[0] - out.a[0])) / (out.b[1] - out.a[1]);
+    expect(cross).toBeCloseTo(30, 1);
+    // perto do objeto a imagem é virtual; superfície côncava: sempre virtual
+    expect(dioptImage(1, 1.5, 6, 8).i).toBeLessThan(0);
+    for (const po of [5, 20, 38]) expect(dioptImage(1, 1.5, -6, po).i).toBeLessThan(0);
+    const r = new Runner(sim, p);
+    expect(r.value("idio")).toBeCloseTo(30, 10);
   });
 });

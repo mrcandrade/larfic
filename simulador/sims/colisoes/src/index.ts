@@ -18,11 +18,25 @@ export interface Col {
   ini: [Body, Body];
   /** Número de colisões já resolvidas. */
   hits: number;
+  /** Modo com para-choques de mola: força que 1 exerce sobre 2 (N, positiva empurra 2 para +x). */
+  F?: number;
+  /** Impulso acumulado sobre o carrinho 2, ∫F dt (N·s). */
+  imp?: number;
+  /** Maior compressão do contato atual (m); 0 fora de contato. */
+  dmax?: number;
+  /** Curva F(t) do contato: pares [t, F]. */
+  hist?: [number, number][];
 }
 
 const m1 = (p: Params) => num(p, "m1", 1);
 const m2 = (p: Params) => num(p, "m2", 1);
 const is2D = (p: Params) => Math.round(num(p, "modo")) === 1;
+/** Modo 2: 1D com para-choques de mola, força de contato finita. */
+export const isSpring = (p: Params) => Math.round(num(p, "modo")) === 2;
+/** Comprimento livre de cada para-choque (m). */
+export const BUMP = 0.12;
+/** Menor restituição usada no modo com para-choques (e = 0 exigiria descarga instantânea). */
+export const E_MIN_SPRING = 0.05;
 const isCM = (p: Params) => Math.round(num(p, "ref")) === 1;
 
 /** Velocidades finais de uma colisão 1D com coeficiente de restituição e (fórmulas fechadas). */
@@ -92,6 +106,79 @@ export function advance(s: Col, p: Params, dt: number): Col {
   return { ...s, b: move(b, rem), hits };
 }
 
+/**
+ * Força de contato dos para-choques (modelo de Walton e Braun): carrega com rigidez k e
+ * descarrega com rigidez k/e², a partir da compressão máxima dmax. A energia devolvida é
+ * e² vezes a armazenada, então a restituição é exatamente e. Nunca puxa (F ≥ 0).
+ */
+export function contactForce(delta: number, dmax: number, k: number, e: number): number {
+  if (delta <= 0) return 0;
+  if (delta >= dmax) return k * delta;
+  const e2 = e * e;
+  return Math.max(0, (k / e2) * (delta - dmax * (1 - e2)));
+}
+
+/** Duração prevista do contato: meia oscilação na carga e meia na descarga. */
+export const contactDuration = (mu: number, k: number, e: number) => (Math.PI / 2) * Math.sqrt(mu / k) * (1 + e);
+/** Força máxima prevista: k·δmax, com δmax = u·√(μ/k). */
+export const peakForce = (mu: number, k: number, u: number) => Math.abs(u) * Math.sqrt(k * mu);
+
+/** Passo do modo com para-choques: Euler simplético em subpassos, forças iguais e opostas. */
+export function advanceSpring(s: Col, p: Params, t: number, dt: number): Col {
+  const k = num(p, "k", 200);
+  const e = Math.min(1, Math.max(E_MIN_SPRING, num(p, "e", 1)));
+  const ma = m1(p), mb = m2(p);
+  const mu = (ma * mb) / (ma + mb);
+  const hMax = Math.min(2e-4, 0.05 / Math.sqrt(k / (e * e) / mu));
+  const n = Math.max(1, Math.ceil(dt / hMax));
+  const h = dt / n;
+  let x1 = s.b[0].x, v1 = s.b[0].vx, x2 = s.b[1].x, v2 = s.b[1].vx;
+  let dmax = s.dmax ?? 0, imp = s.imp ?? 0, hits = s.hits;
+  for (let i = 0; i < n; i++) {
+    const delta = D - (x2 - x1);
+    let F = 0;
+    if (delta > 0) {
+      dmax = Math.max(dmax, delta);
+      F = contactForce(delta, dmax, k, e);
+    } else if (dmax > 0) {
+      hits++;
+      dmax = 0;
+    }
+    v1 -= (F / ma) * h;
+    v2 += (F / mb) * h;
+    x1 += v1 * h;
+    x2 += v2 * h;
+    imp += F * h;
+  }
+  const F = contactForce(D - (x2 - x1), dmax, k, e);
+  let hist = s.hist ?? [];
+  const last = hist[hist.length - 1];
+  if (F > 0 || (last && last[1] > 0)) {
+    hist = hist.length === 0 ? [[t, 0], [t + dt, F]] : hist.length < 4000 ? [...hist, [t + dt, F]] : hist;
+  }
+  return {
+    ...s,
+    b: [
+      { ...s.b[0], x: x1, vx: v1 },
+      { ...s.b[1], x: x2, vx: v2 },
+    ],
+    hits,
+    F,
+    imp,
+    dmax,
+    hist,
+  };
+}
+
+/** Molas em zigue-zague para os para-choques. */
+function zigzag(d: ReturnType<typeof draw>, x0: number, x1: number, y: number, amp: number, color: string) {
+  const n = 5;
+  const pts: [number, number][] = [[x0, y]];
+  for (let i = 1; i < 2 * n; i++) pts.push([x0 + ((x1 - x0) * i) / (2 * n), y + (i % 2 ? amp : -amp)]);
+  pts.push([x1, y]);
+  d.polyline(pts, { color, width: 1.5 });
+}
+
 export function initial(p: Params): [Body, Body] {
   const v1 = num(p, "v1", 2), v2 = num(p, "v2", 0);
   const two = is2D(p);
@@ -150,6 +237,12 @@ export const colisoes = defineSim<Col>({
     const out = [
       String.raw`p_x = ${texNum(px)}\ \text{kg·m/s} \qquad v_{CM} = ${texNum(ux)}\ \text{m/s} \qquad K = \tfrac12 M v_{CM}^2 + K_{CM} = ${texNum(0.5 * M * (ux * ux + uy * uy))} + ${texNum(Kc)}\ \text{J}`,
     ];
+    if (isSpring(p)) {
+      const dv2 = s.b[1].vx - s.ini[1].vx;
+      out.push(
+        String.raw`F_{12} = -F_{21} = ${texNum(s.F ?? 0)}\ \text{N} \qquad J = \int F_{12}\,dt = ${texNum(s.imp ?? 0)}\ \text{N·s} \qquad m_2\,\Delta v_2 = ${texNum(m2(p) * dv2)}\ \text{kg·m/s}`,
+      );
+    }
     if (!is2D(p)) {
       const [a, b] = final1D(m1(p), m2(p), num(p, "v1", 2), num(p, "v2"), num(p, "e", 1));
       out.push(String.raw`\text{previsto: } v_1' = ${texNum(a)}\ \text{m/s} \qquad v_2' = ${texNum(b)}\ \text{m/s}`);
@@ -169,6 +262,7 @@ export const colisoes = defineSim<Col>({
       options: [
         { value: 0, label: "1D: carrinhos num trilho" },
         { value: 1, label: "2D: discos numa mesa de ar" },
+        { value: 2, label: "1D: para-choques de mola (força de contato finita)" },
       ],
     },
     {
@@ -191,6 +285,7 @@ export const colisoes = defineSim<Col>({
     { key: "v2", label: "Velocidade inicial v₂", unit: "m/s", min: -4, max: 4, step: 0.1, default: 0 },
     { key: "e", label: "Coeficiente de restituição e", unit: "", min: 0, max: 1, step: 0.01, default: 1 },
     { key: "b", label: "Parâmetro de impacto b (2D)", unit: "m", min: 0, max: 1.2, step: 0.01, default: 0.5 },
+    { key: "k", label: "Rigidez dos para-choques (modo de mola)", unit: "N/m", min: 20, max: 2000, step: 10, default: 200 },
   ],
 
   observables: [
@@ -216,6 +311,9 @@ export const colisoes = defineSim<Col>({
     { key: "xcm", label: "Posição do centro de massa", unit: "m", value: (s, p) => rcm(s.b, p)[0] },
     { key: "th1", label: "Direção de v₁ (ângulo com x)", unit: "°", value: (s) => deg(s.b[0].vx, s.b[0].vy) },
     { key: "th2", label: "Direção de v₂ (ângulo com x)", unit: "°", value: (s) => deg(s.b[1].vx, s.b[1].vy) },
+    { key: "F12", label: "Força de 1 sobre 2 (para-choques)", unit: "N", value: (s) => s.F ?? 0 },
+    { key: "F21", label: "Força de 2 sobre 1 (para-choques)", unit: "N", value: (s) => -(s.F ?? 0) },
+    { key: "J", label: "Impulso sobre 2, ∫F dt (para-choques)", unit: "N·s", value: (s) => s.imp ?? 0 },
   ],
   conserved: "px",
   chart: { x: "t", y: "v1x" },
@@ -289,6 +387,44 @@ export const colisoes = defineSim<Col>({
         },
       ],
     },
+    {
+      id: "acao-reacao",
+      label: "Ação e reação durante o choque",
+      params: { modo: 2, ref: 0, m1: 4, m2: 1, v1: 1.5, v2: -1.5, e: 1, k: 200 },
+      guide: `### As duas forças do par
+Os carrinhos têm para-choques de mola, então o choque dura um tempo finito e dá para ver as forças.
+1. Rode devagar. Durante o contato aparecem duas setas: $\\vec F_{21}$, que o carrinho 2 faz sobre o 1, e $\\vec F_{12}$, que o 1 faz sobre o 2. Cada uma está desenhada **no corpo em que age**.
+2. Pause em vários instantes: as setas têm sempre o **mesmo comprimento** e sentidos opostos, embora o carrinho 1 tenha 4 vezes a massa do 2. Leia $F_{12}$ e $F_{21}$ no gráfico (observáveis).
+3. As acelerações não são iguais: $a_1 = F/m_1$ é quatro vezes menor que $a_2 = F/m_2$. Na tabela, $\\Delta p_1 = -\\Delta p_2$, e o momento total não muda.
+4. As duas forças não se cancelam: agem em corpos diferentes. Cada uma muda o momento do corpo em que age.`,
+      predict: [
+        {
+          question: "Um carrinho de 4 kg e um de 1 kg colidem de frente. Durante o contato, a força que o carrinho de 4 kg faz sobre o de 1 kg é:",
+          options: ["4 vezes maior que a força do de 1 kg sobre o de 4 kg", "igual em módulo e oposta", "4 vezes menor", "depende de qual está mais rápido"],
+          answer: 1,
+          explanation: "Pela terceira lei, $\\vec F_{12} = -\\vec F_{21}$ a cada instante, quaisquer que sejam as massas e as velocidades. O que difere são as acelerações: o carrinho leve muda de velocidade quatro vezes mais.",
+        },
+      ],
+    },
+    {
+      id: "forca-contato",
+      label: "Força de contato finita: F(t) e impulso",
+      params: { modo: 2, ref: 0, m1: 1, m2: 3, v1: 2, v2: 0, e: 1, k: 200 },
+      guide: `### O impulso é a área sob F(t)
+1. Rode. Durante o contato o gráfico acima do trilho desenha a força $F(t)$ que o carrinho 1 faz sobre o 2; a área sombreada é o impulso $J = \\int F\\,dt$.
+2. Depois do choque, compare $J$ com a variação de momento do carrinho 2 na tabela: $J = m_2\\,\\Delta v_2$ (teorema impulso–momento).
+3. Calcule a força média $F_{\\text{méd}} = J/\\Delta t$ com a duração $\\Delta t$ indicada. Ela é menor que o pico: para um pulso em forma de meia senoide, $F_{\\text{méd}} = (2/\\pi)F_{\\text{máx}}$.
+4. Quadruplique a rigidez $k$ (para-choques mais duros): o contato dura metade, o pico dobra, mas a área não muda. É o que fazem os airbags e os capacetes, só que ao contrário: aumentar $\\Delta t$ para reduzir a força.
+5. Baixe $e$ para 0,5: a curva fica assimétrica (a descarga é mais rápida) e o impulso cai para $(1+e)\\,\\mu\\,u$, com $\\mu = m_1m_2/(m_1+m_2)$. Neste modo, $e$ mínimo é 0,05.`,
+      predict: [
+        {
+          question: "Se os para-choques ficarem 4 vezes mais rígidos, mantendo massas e velocidades, o impulso que um carrinho recebe:",
+          options: ["fica 4 vezes maior", "dobra", "não muda", "cai pela metade"],
+          answer: 2,
+          explanation: "O impulso é igual à variação de momento, que só depende das massas, das velocidades e de $e$. Com $k$ quatro vezes maior, $\\Delta t \\propto \\sqrt{\\mu/k}$ cai à metade e o pico $F_{\\text{máx}} \\propto \\sqrt{k}$ dobra: a área fica igual.",
+        },
+      ],
+    },
   ],
 
   exercises: [
@@ -320,17 +456,17 @@ export const colisoes = defineSim<Col>({
     const b = initial(p);
     return { b, ini: b, hits: 0 };
   },
-  step: (s, p, _t, dt) => advance(s, p, dt),
+  step: (s, p, t, dt) => (isSpring(p) ? advanceSpring(s, p, t, dt) : advance(s, p, dt)),
   dt: 2e-3,
   sampleEvery: 5,
   tEnd: 5,
 
-  viewport: (p) => ({ xMin: -10.4, xMax: 10.4, yMin: -8, yMax: is2D(p) ? 4.6 : 2.9 }),
+  viewport: (p) => ({ xMin: -10.4, xMax: 10.4, yMin: -8, yMax: is2D(p) ? 4.6 : isSpring(p) ? 6.9 : 2.9 }),
 
   render(ctx, frame) {
     const d = draw(ctx, frame);
     const { state: s, params: p, theme } = frame;
-    const two = is2D(p), cm = isCM(p);
+    const two = is2D(p), cm = isCM(p), spring = isSpring(p);
     const ma = m1(p), mb = m2(p), M = ma + mb;
     const cols = [theme.series[0]!, theme.series[1]!];
     const Y0 = two ? 1.6 : 0.6; // altura do centro dos corpos no palco
@@ -376,10 +512,19 @@ export const colisoes = defineSim<Col>({
         d.text(`${i + 1}`, x, y, { color: theme.dark ? "#10151c" : "#ffffff", size: 13, weight: "700" });
       } else {
         const h = 0.35 + 0.35 * Math.min(1, Math.sqrt(m / 10) * 1.6); // altura sugere a massa
-        d.rect(x - D / 2, 0.05, D, h, { fill: col, alpha: 0.9, stroke: theme.text, width: 1 });
+        const wC = spring ? D - 2 * BUMP : D;
+        d.rect(x - wC / 2, 0.05, wC, h, { fill: col, alpha: 0.9, stroke: theme.text, width: 1 });
+        if (spring) {
+          // para-choque na face voltada para o outro carrinho
+          const other = shown[1 - i]!;
+          const gap = Math.abs(other.x - q.x) - wC;
+          const L = Math.max(0, Math.min(BUMP, gap / 2));
+          const dir = other.x >= q.x ? 1 : -1;
+          zigzag(d, x + (dir * wC) / 2, x + dir * (wC / 2 + L), 0.05 + h / 2, 0.07, theme.text);
+        }
         d.circle(x - 0.28, 0.02, 0.07, { fill: theme.text });
         d.circle(x + 0.28, 0.02, 0.07, { fill: theme.text });
-        d.text(`${fmt(m, 1)} kg`, x, 0.05 + h, { color: col, size: 11, weight: "600", dy: -9 });
+        d.text(`${fmt(m, 1)} kg`, x, 0.05 + h, { color: col, size: 11, weight: "600", dy: -9, align: spring ? (q.x <= shown[1 - i]!.x ? "right" : "left") : "center" });
       }
       const sp = Math.hypot(q.vx, q.vy);
       const ay = two ? y : 1.35 + 0.5 * i;
@@ -399,6 +544,57 @@ export const colisoes = defineSim<Col>({
     d.line(cx, cy - r, cx, cy + r, { color: theme.text, width: 1.5 });
     d.text("CM", cx + r, cy, { size: 10, color: theme.text, align: "left", dx: 4, dy: two ? 0 : 6 });
     ctx.restore();
+
+    // Forças do par ação–reação (fora do recorte, para os rótulos caberem)
+    const Fc = s.F ?? 0;
+    if (spring && Fc > 1e-6) {
+      const mu = (ma * mb) / M;
+      const Fpk = Math.max(1e-6, peakForce(mu, num(p, "k", 200), s.ini[0].vx - s.ini[1].vx));
+      const len = Math.min(140, (110 * Fc) / Fpk);
+      const yF = 2.2;
+      const [q1, q2] = shown;
+      d.arrowPx(q2.x, yF, 1, 0, len, { color: theme.negative, width: 3 });
+      d.arrowPx(q1.x, yF, -1, 0, len, { color: theme.negative, width: 3 });
+      d.text(`F₁₂ = ${fmt(Fc, 1)} N (1 sobre 2)`, q2.x, yF, { color: theme.negative, size: 11, weight: "600", align: "left", dy: -12 });
+      d.text(`F₂₁ = ${fmt(Fc, 1)} N (2 sobre 1)`, q1.x, yF, { color: theme.negative, size: 11, weight: "600", align: "right", dy: -12 });
+    }
+
+    if (spring) {
+      // Gráfico F(t) com a área (impulso) sombreada
+      const G = { x0: -6.5, x1: 6.5, y0: 3.4, y1: 6.2 };
+      const mu = (ma * mb) / M;
+      const kk = num(p, "k", 200);
+      const ee = Math.min(1, Math.max(E_MIN_SPRING, num(p, "e", 1)));
+      const u0 = s.ini[0].vx - s.ini[1].vx;
+      const Fpk = Math.max(1e-6, peakForce(mu, kk, u0));
+      const dtc = contactDuration(mu, kk, ee);
+      d.line(G.x0, G.y0, G.x1, G.y0, { color: theme.muted, width: 1 });
+      d.line(G.x0, G.y0, G.x0, G.y1, { color: theme.muted, width: 1 });
+      d.text("F₁₂ (N)", G.x0, G.y1, { color: theme.muted, size: 11, align: "left", dx: 4, dy: 2 });
+      d.text("t", G.x1, G.y0, { color: theme.muted, size: 11, align: "left", dx: 4 });
+      d.text(fmt(Fpk * 1.1, 1), G.x0, G.y1 - 0.3, { color: theme.muted, size: 10, align: "right", dx: -4 });
+      const hist = s.hist ?? [];
+      if (hist.length > 1) {
+        const t0 = hist[0]![0];
+        const W = Math.max(1.5 * dtc, hist[hist.length - 1]![0] - t0) || 1;
+        const X = (tt: number) => G.x0 + 0.5 + ((tt - t0) / W) * (G.x1 - G.x0 - 1);
+        const Y = (F: number) => G.y0 + (F / (1.1 * Fpk)) * (G.y1 - G.y0 - 0.3);
+        const pts: [number, number][] = hist.map(([tt, F]) => [X(tt), Y(F)]);
+        d.polyline([[X(t0), G.y0], ...pts, [pts[pts.length - 1]![0], G.y0]], { color: "none", fill: theme.negative, alpha: 0.2, close: true });
+        d.polyline(pts, { color: theme.negative, width: 2 });
+        const ended = hist[hist.length - 1]![1] === 0;
+        const dur = ended ? hist[hist.length - 1]![0] - t0 : NaN;
+        d.text(`área = impulso J = ∫F dt = ${fmt(s.imp ?? 0, 3)} N·s`, G.x1, G.y1 - 0.2, { color: theme.negative, size: 12, weight: "600", align: "right" });
+        d.text(
+          ended ? `Δt ≈ ${fmt(dur, 3)} s   F_máx ≈ ${fmt(Math.max(...hist.map((h) => h[1])), 1)} N   F_méd = J/Δt ≈ ${fmt((s.imp ?? 0) / dur, 1)} N` : "contato em andamento…",
+          G.x1,
+          G.y1 - 0.75,
+          { color: theme.text, size: 11, align: "right" },
+        );
+      } else {
+        d.text("O gráfico de F(t) aparece quando os para-choques se tocam.", 0, (G.y0 + G.y1) / 2, { color: theme.muted, size: 12 });
+      }
+    }
 
     // Legenda do referencial
     const [ux, uy] = vcm(s, p);
