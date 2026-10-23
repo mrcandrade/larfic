@@ -542,6 +542,7 @@ export const centroMassa = defineSim<CMState>({
     { id: "soltar", label: "Soltar a placa", run: (s) => ({ ...s, hang: null, ang: 0, om: 0, plumbs: [] }) },
   ],
 
+  narrowSplit: () => 0.683,
   viewport(p) {
     const md = modo(p);
     if (md === 0) return { xMin: PV.x0, xMax: 10, yMin: PV.y0, yMax: PV.y1, unit: "" };

@@ -244,6 +244,7 @@ export const entropia = defineSim<EntState>({
 
   actions: [{ id: "inverter", label: "Inverter velocidades", run: (s, p) => reverse(s, delta(p)) }],
 
+  narrowSplit: () => 0.569,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 9 }),
 
   render(ctx, frame) {

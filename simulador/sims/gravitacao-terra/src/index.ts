@@ -575,6 +575,7 @@ O **centro de gravidade** é o ponto onde se pode considerar aplicada a força g
     },
   ],
 
+  narrowSplit: () => 0.467,
   viewport(p, s) {
     switch (mode(p)) {
       case 0:

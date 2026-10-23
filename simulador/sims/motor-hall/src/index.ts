@@ -351,6 +351,7 @@ export const motorHall = defineSim<MotorState>({
     },
   },
 
+  narrowSplit: () => 0.542,
   viewport(p) {
     const m = modo(p);
     if (m === 1) return { xMin: -0.3, xMax: 0.3, yMin: -0.2, yMax: 0.2, unit: "m" };

@@ -192,6 +192,7 @@ Para $R = 2\\sqrt{L/C}$ ($\\alpha = \\omega_0$) o capacitor descarrega o mais de
   dt: 1e-4,
   sampleEvery: 10,
 
+  narrowSplit: () => 0.588,
   viewport: () => ({ xMin: -0.2, xMax: 14.2, yMin: -0.4, yMax: 8.2 }),
 
   pointer: {

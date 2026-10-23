@@ -645,6 +645,7 @@ export const nuclear = defineSim<NucState>({
     { id: "fissao-um", label: "Repetir a fissão", run: (s) => ({ ...s, clock: 0 }) },
     { id: "zerar-fusao", label: "Zerar contador de fusões", run: (s) => ({ ...s, attempts: 0, fusions: 0 }) },
   ],
+  narrowSplit: () => 0.672,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

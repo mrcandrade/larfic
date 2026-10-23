@@ -90,7 +90,7 @@ export const grandezas: Grandeza[] = [
       { id: "lb", nome: "libra (massa)", simbolo: "lb", si: 0.45359237, exata: true },
       { id: "oz", nome: "onça", simbolo: "oz", si: 0.45359237 / 16, exata: true },
       { id: "slug", nome: "slug", simbolo: "slug", si: LBF / 0.3048 },
-      { id: "u", nome: "unidade de massa atômica", simbolo: "u", si: 1.6605390666e-27 },
+      { id: "u", nome: "unidade de massa atômica", simbolo: "u", si: 1.66053906892e-27 },
     ],
   },
   {

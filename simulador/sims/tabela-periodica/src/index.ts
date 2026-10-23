@@ -345,6 +345,7 @@ export const tabelaPeriodica = defineSim<AtomState>({
     cursor: (_s, p, pt) => (pickZ(p, pt) ? "pointer" : undefined),
   },
 
+  narrowSplit: () => 0.503,
   viewport: () => ({ xMin: 0, xMax: 20, yMin: 0, yMax: 12 }),
 
   render(ctx, frame) {

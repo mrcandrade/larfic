@@ -197,6 +197,7 @@ export const epidemiaSir = defineSim<EpiState>({
     cursor: (_s, _p, pt) => (pt.x > SQ.x0 && pt.x < SQ.x0 + SQ.L && pt.y > SQ.y0 && pt.y < SQ.y0 + SQ.L ? "crosshair" : undefined),
   },
 
+  narrowSplit: () => 0.508,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 9 }),
 
   render(ctx, frame) {

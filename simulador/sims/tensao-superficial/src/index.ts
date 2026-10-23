@@ -198,6 +198,7 @@ O mercúrio tem ângulo de contato de cerca de 140° com o vidro: $\\cos\\theta 
     return Math.abs(at(s, HSEL) - heq) - 1e-4 * Math.abs(heq) - 1e-8;
   },
 
+  narrowSplit: () => 0.523,
   viewport(p) {
     if (modeOf(p) === 0) return { xMin: -48, xMax: 112, yMin: -32, yMax: 92 };
     const hs = [jurin(p, tubeR(p)), ...TUBES.map((r) => jurin(p, r))].map((h) => h * 1000);

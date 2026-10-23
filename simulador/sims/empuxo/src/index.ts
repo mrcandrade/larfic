@@ -307,6 +307,7 @@ export const empuxo = defineSim({
     cursor: (_s, p) => (modeOf(p) === 1 ? undefined : "grab"),
   },
 
+  narrowSplit: () => 0.569,
   viewport(p) {
     const m = modeOf(p);
     if (m === 0) {

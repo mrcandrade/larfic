@@ -234,6 +234,7 @@ export const ressonancia = defineSim({
   sampleEvery: 10,
   tEnd: 120,
 
+  narrowSplit: () => 0.500,
   viewport: () => ({ xMin: -1.15, xMax: 2.45, yMin: -1.05, yMax: 1.05, unit: "" }),
 
   render(ctx, frame) {

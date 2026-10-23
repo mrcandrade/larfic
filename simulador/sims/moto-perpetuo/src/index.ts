@@ -674,6 +674,7 @@ A bola sobe a rampa atraída pelo ímã, cai pelo furo e volta pela calha… mas
     { id: "encher", label: "Encher o reservatório", run: (s) => ({ ...s, Vup: V_TANK }) },
   ],
 
+  narrowSplit: () => 0.497,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 9 }),
 
   render(ctx, frame) {

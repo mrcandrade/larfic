@@ -414,6 +414,7 @@ export const estadosMateria = defineSim<MD>({
     cursor: (s, p, pt) => (modo(p) === 1 && Math.abs(pt.x - rx(s.r2)) < 0.9 && Math.abs(pt.y - ATOM_Y) < 1.2 ? "grab" : undefined),
   },
 
+  narrowSplit: () => 0.603,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: -0.9, yMax: 9.2 }),
 
   render(ctx, frame) {

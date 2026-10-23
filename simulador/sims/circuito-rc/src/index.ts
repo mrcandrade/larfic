@@ -273,6 +273,7 @@ A fonte alterna entre $V_0$ e 0 a cada meio período. O osciloscópio dispara a 
   dt: 1e-4,
   sampleEvery: 10,
 
+  narrowSplit: () => 0.404,
   viewport: () => ({ xMin: -0.2, xMax: SX + DIVX + 0.5, yMin: -1.7, yMax: DIVY + 1.1 }),
 
   pointer: {

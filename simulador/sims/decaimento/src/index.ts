@@ -213,6 +213,7 @@ export const decaimento = defineSim<DecayState>({
   maxSamples: 1000,
   stopWhen: (s, p) => tStop(p) - s.k * DT + 1e-9,
 
+  narrowSplit: () => 0.497,
   viewport: () => ({ xMin: 0, xMax: 20, yMin: 0, yMax: 10 }),
 
   render(ctx, frame) {

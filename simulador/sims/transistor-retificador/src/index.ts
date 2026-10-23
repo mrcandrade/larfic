@@ -816,6 +816,7 @@ export const transistorRetificador = defineSim<TRState>({
   sampleEvery: 10,
   maxSamples: 3000,
 
+  narrowSplit: () => 0.436,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

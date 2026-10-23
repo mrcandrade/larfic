@@ -172,7 +172,7 @@ export interface Reaction {
   K?: number;
 }
 
-/** Reações prontas (algumas permitidas, outras proibidas). */
+/** Reações prontas (algumas permitidas, outras proibidas). O parâmetro `reacao` e o livro usam o índice: acrescente só no fim. */
 export const REACTIONS: Reaction[] = [
   { label: "n → p + e⁻ + ν̄ₑ (decaimento β)", left: ["n"], right: ["p", "e-", "anti-nue"] },
   { label: "π⁺ → μ⁺ + ν_μ", left: ["pi+"], right: ["anti-mu-", "numu"] },

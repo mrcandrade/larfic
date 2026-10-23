@@ -223,6 +223,7 @@ export const vanDerWaals = defineSim({
     { id: "critico", label: "Ir ao volume crítico", run: () => [1] },
   ],
 
+  narrowSplit: () => 0.282,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 9 }),
 
   render(ctx, frame) {

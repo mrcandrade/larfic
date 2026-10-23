@@ -428,6 +428,7 @@ export const curvaInclinada = defineSim<Curva>({
     return 1;
   },
 
+  narrowSplit: () => 0.432,
   viewport: () => ({ xMin: 0, xMax: 100, yMin: 0, yMax: 60, unit: "" }),
 
   render(ctx, frame) {

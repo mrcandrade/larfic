@@ -46,6 +46,11 @@ function inline(text: string): ReactNode {
   });
 }
 
+/** Uma linha de texto com $tex$, **negrito** e *itálico* (sem parágrafos nem listas). */
+export function InlineText({ text }: { text: string }) {
+  return <>{inline(text)}</>;
+}
+
 /** Mantido para compatibilidade: roteiro de um cenário. */
 export function Guide({ markdown }: { markdown: string }) {
   return <Markdown text={markdown} />;

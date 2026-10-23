@@ -186,6 +186,7 @@ export const movimentoCircular = defineSim({
   sampleEvery: 20,
   tEnd: T_END,
 
+  narrowSplit: () => 0.541,
   viewport: (p) => {
     const r = num(p, "r", 1.5);
     return { xMin: -1.75 * r, xMax: 4.6 * r, yMin: -1.75 * r, yMax: 1.75 * r };

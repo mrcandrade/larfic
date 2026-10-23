@@ -887,6 +887,7 @@ export const cosmologia = defineSim<CState>({
       return theme(p) === 0 && hubbleHit(s, p, pt) !== null ? "pointer" : undefined;
     },
   },
+  narrowSplit: () => 0.512,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

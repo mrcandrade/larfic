@@ -461,6 +461,7 @@ Porto Alegre fica em latitude geográfica $\\approx -30°$, mas o eixo do dipolo
     { id: "limpar", label: "Limpar bússolas", run: (s) => ({ ...s, comps: [] }) },
   ],
 
+  narrowSplit: () => 0.589,
   viewport: (p) => (vista(p) === 1 ? { xMin: -2.7, xMax: 6.5, yMin: -2.5, yMax: 2.5, unit: "" } : { ...BENCH, unit: "m" }),
 
   render(ctx, frame) {

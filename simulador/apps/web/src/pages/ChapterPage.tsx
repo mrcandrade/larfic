@@ -6,6 +6,8 @@ import { findSim } from "../catalog.ts";
 import { findPractice } from "../practices.ts";
 import { findConcept } from "../concepts.ts";
 import { findChallenge, LEVELS } from "../challenge-core.ts";
+import { checkKey, chapterChecks, loadChecks, sectionChecks } from "../livro/testes.ts";
+import { QuickChecks } from "./QuickChecks.tsx";
 import { BOOK_HREF, answersHref, chapterHref, experimentHref, plural, sectionAnchor, sectionHeading } from "../livro/livro.ts";
 import "./book.css";
 
@@ -13,6 +15,8 @@ export function ChapterPage({ n, sectionId }: { n: number; sectionId?: string })
   const ch = findChapter(n);
   const content = chapterContents[n];
   const active = useActiveSection(ch, sectionId);
+  const [score, setScore] = useState(() => checksScore(n));
+  useEffect(() => setScore(checksScore(n)), [n]);
 
   // Rola até a seção pedida na URL (ou para o topo ao trocar de capítulo).
   useEffect(() => {
@@ -51,6 +55,11 @@ export function ChapterPage({ n, sectionId }: { n: number; sectionId?: string })
         <h1>
           <span className="chapter-n">Capítulo {ch.n}</span> {ch.title}
         </h1>
+        {score.total > 0 && (
+          <p className="chapter-checks-score">
+            Testes rápidos: {score.right} de {score.total} acertados neste navegador.
+          </p>
+        )}
       </header>
 
       <div className="chapter-layout">
@@ -75,7 +84,7 @@ export function ChapterPage({ n, sectionId }: { n: number; sectionId?: string })
           )}
 
           {ch.sections.map((s) => (
-            <SectionView key={s.id} chapter={ch} section={s} content={content?.sections[s.id]} />
+            <SectionView key={s.id} chapter={ch} section={s} content={content?.sections[s.id]} onAnswer={() => setScore(checksScore(n))} />
           ))}
 
           <nav className="chapter-pager" aria-label="Outros capítulos">
@@ -158,7 +167,30 @@ function useActiveSection(ch: BookChapter | undefined, initial?: string): string
   return active;
 }
 
-function SectionView({ chapter, section, content }: { chapter: BookChapter; section: BookSection; content?: SectionContent }) {
+/** Perguntas do capítulo e quantas já foram acertadas (progresso guardado no navegador). */
+function checksScore(n: number): { right: number; total: number } {
+  const done = loadChecks();
+  let right = 0;
+  let total = 0;
+  for (const [sid, list] of Object.entries(chapterChecks[n]?.sections ?? {}))
+    list.forEach((_, i) => {
+      total++;
+      if (done[checkKey(sid, i)]) right++;
+    });
+  return { right, total };
+}
+
+function SectionView({
+  chapter,
+  section,
+  content,
+  onAnswer,
+}: {
+  chapter: BookChapter;
+  section: BookSection;
+  content?: SectionContent;
+  onAnswer?(): void;
+}) {
   const [open, setOpen] = useState<number | null>(null);
   const openRef = open !== null ? content?.experiments[open] : undefined;
   const openSim = openRef?.kind === "sim" ? findSim(openRef.id) : undefined;
@@ -181,6 +213,7 @@ function SectionView({ chapter, section, content }: { chapter: BookChapter; sect
       {content ? (
         <>
           <Markdown text={content.text} />
+          <QuickChecks sectionId={section.id} checks={sectionChecks(chapter.n, section.id)} onAnswer={onAnswer} />
           {content.experiments.length > 0 && (
             <div className="chapter-experiments">
               <h3>{plural(content.experiments.length, "Experimento", "Experimentos")}</h3>

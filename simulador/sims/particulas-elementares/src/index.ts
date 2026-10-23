@@ -1299,6 +1299,7 @@ export const particulasElementares = defineSim<PState>({
       return undefined;
     },
   },
+  narrowSplit: () => 0.600,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

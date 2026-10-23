@@ -379,6 +379,7 @@ export const forcasConservativas = defineSim<FC>({
     { id: "padrao", label: "Restaurar caminho desenhado", run: (s) => ({ ...s, custom: defaultCustom(s.A, s.B), s: 0 }) },
   ],
 
+  narrowSplit: () => 0.578,
   viewport: () => ({ xMin: VIEW.x0 - 0.3, xMax: 15.5, yMin: VIEW.y0 - 0.3, yMax: VIEW.y1 + 0.3, unit: "" }),
 
   render(ctx, frame) {

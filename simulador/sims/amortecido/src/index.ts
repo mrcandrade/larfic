@@ -241,6 +241,7 @@ Os três blocos partem do mesmo ponto com $\\zeta = \\gamma/\\omega_0 = 0{,}2$, 
   sampleEvery: 10,
   tEnd: 60,
 
+  narrowSplit: () => 0.517,
   viewport: () => ({ xMin: -1.15, xMax: 2.45, yMin: -1.05, yMax: 1.05, unit: "" }),
 
   render(ctx, frame) {

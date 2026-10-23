@@ -37,18 +37,79 @@ export interface InkProps {
   color?: string;
 }
 
-interface Layout {
+/** Faixa da cena desenhada num retângulo do palco: [xMin, xMax] do mundo, canto superior esquerdo em (ox, oy) px. */
+export interface StagePane {
+  xMin: number;
+  xMax: number;
+  ox: number;
+  oy: number;
+}
+
+export interface StageLayout {
   vp: Viewport;
   scale: number;
-  cssW: number;
   cssH: number;
+  /** Uma faixa (cena inteira) ou duas empilhadas (telas estreitas, `narrowSplit`). */
+  panes: StagePane[];
+}
+
+/** Abaixo desta largura (px) o palco empilha os painéis das cenas que definem `narrowSplit`. */
+export const NARROW_PX = 640;
+
+/**
+ * Enquadra o viewport no palco. Em telas estreitas, com o corte (fração da largura) dentro da cena, corta-a em duas
+ * faixas e empilha a direita embaixo da esquerda (só em cenas largas, e se a escala crescer ao menos 25%).
+ */
+export function stageLayout(vp: Viewport, cssW: number, maxHeight: number, splitFraction?: number): StageLayout {
+  const w = vp.xMax - vp.xMin;
+  const split = splitFraction === undefined ? undefined : vp.xMin + splitFraction * w;
+  const h = vp.yMax - vp.yMin;
+  const maxH = Math.max(200, maxHeight);
+  const scale = Math.min((cssW - 2 * PAD) / w, (maxH - 2 * PAD) / h);
+  if (split !== undefined && cssW < NARROW_PX && !vp.unit && w >= 1.5 * h && split > vp.xMin && split < vp.xMax) {
+    const wL = split - vp.xMin;
+    const wR = vp.xMax - split;
+    const gap = 0.04 * h;
+    const s2 = Math.min((cssW - 2 * PAD) / Math.max(wL, wR), (2 * maxH - 2 * PAD) / (2 * h + gap));
+    if (s2 >= 1.25 * scale) {
+      return {
+        vp,
+        scale: s2,
+        cssH: (2 * h + gap) * s2 + 2 * PAD,
+        panes: [
+          { xMin: vp.xMin, xMax: split, ox: (cssW - wL * s2) / 2, oy: PAD },
+          { xMin: split, xMax: vp.xMax, ox: (cssW - wR * s2) / 2, oy: PAD + (h + gap) * s2 },
+        ],
+      };
+    }
+  }
+  const cssH = Math.max(160, h * scale + 2 * PAD);
+  // Centraliza horizontalmente quando a altura limita a escala.
+  return { vp, scale, cssH, panes: [{ xMin: vp.xMin, xMax: vp.xMax, ox: (cssW - w * scale) / 2, oy: cssH - PAD - h * scale }] };
+}
+
+/** Ponto do palco (px, relativo ao canto do canvas) em coordenadas do mundo, pela faixa que o contém. */
+export function stageToWorld(L: StageLayout, px: number, py: number): WorldPoint {
+  const { vp, scale } = L;
+  const h = vp.yMax - vp.yMin;
+  // A faixa cujo intervalo vertical contém o ponto; entre faixas, a mais próxima.
+  let pane = L.panes[0]!;
+  let best = Infinity;
+  for (const p of L.panes) {
+    const d = py < p.oy ? p.oy - py : py > p.oy + h * scale ? py - p.oy - h * scale : 0;
+    if (d < best) {
+      best = d;
+      pane = p;
+    }
+  }
+  return { x: pane.xMin + (px - pane.ox) / scale, y: vp.yMax - (py - pane.oy) / scale };
 }
 
 /** Canvas que enquadra o `viewport` da simulação e chama `sim.render` em coordenadas do mundo. */
 export function Stage({ sim, runner, theme, onInteract, ref, maxHeight = MAX_H, description, onKeyDown, ink }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const layoutRef = useRef<Layout | null>(null);
+  const layoutRef = useRef<StageLayout | null>(null);
   const dragging = useRef(false);
 
   const redraw = useCallback(() => {
@@ -58,37 +119,41 @@ export function Stage({ sim, runner, theme, onInteract, ref, maxHeight = MAX_H, 
     const dpr = window.devicePixelRatio || 1;
     const cssW = wrap.clientWidth;
     const vp = sim.viewport(runner.params, runner.state);
-    const w = vp.xMax - vp.xMin;
-    const h = vp.yMax - vp.yMin;
-    const scale = Math.min((cssW - 2 * PAD) / w, (Math.max(200, maxHeight) - 2 * PAD) / h);
-    const cssH = Math.max(160, h * scale + 2 * PAD);
+    const L = stageLayout(vp, cssW, maxHeight, sim.narrowSplit?.(runner.params, runner.state));
+    const { scale, cssH } = L;
     if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
       canvas.width = Math.round(cssW * dpr);
       canvas.height = Math.round(cssH * dpr);
       canvas.style.height = `${cssH}px`;
     }
-    layoutRef.current = { vp, scale, cssW, cssH };
+    layoutRef.current = L;
 
     const ctx = canvas.getContext("2d")!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
-    // Centraliza horizontalmente quando a altura limita a escala.
-    const ox = (cssW - w * scale) / 2;
-    if (vp.unit) drawAxes(ctx, vp, scale, ox, cssH, theme);
+    const stacked = L.panes.length > 1;
+    if (vp.unit) drawAxes(ctx, vp, scale, L.panes[0]!.ox, cssH, theme);
 
-    ctx.setTransform(dpr * scale, 0, 0, -dpr * scale, dpr * (ox - vp.xMin * scale), dpr * (cssH - PAD + vp.yMin * scale));
-    ctx.save();
-    try {
-      sim.render(ctx, {
-        state: runner.state,
-        params: runner.params,
-        t: runner.t,
-        trail: runner.samples.map((s) => s.state),
-        scale,
-        theme,
-      });
-    } finally {
-      ctx.restore();
+    for (const pane of L.panes) {
+      ctx.setTransform(dpr * scale, 0, 0, -dpr * scale, dpr * (pane.ox - pane.xMin * scale), dpr * (pane.oy + vp.yMax * scale));
+      ctx.save();
+      if (stacked) {
+        ctx.beginPath();
+        ctx.rect(pane.xMin, vp.yMin, pane.xMax - pane.xMin, vp.yMax - vp.yMin);
+        ctx.clip();
+      }
+      try {
+        sim.render(ctx, {
+          state: runner.state,
+          params: runner.params,
+          t: runner.t,
+          trail: runner.samples.map((s) => s.state),
+          scale,
+          theme,
+        });
+      } finally {
+        ctx.restore();
+      }
     }
   }, [sim, runner, theme, maxHeight]);
 
@@ -109,11 +174,7 @@ export function Stage({ sim, runner, theme, onInteract, ref, maxHeight = MAX_H, 
     const canvas = canvasRef.current;
     if (!L || !canvas) return null;
     const r = canvas.getBoundingClientRect();
-    const ox = (L.cssW - (L.vp.xMax - L.vp.xMin) * L.scale) / 2;
-    return {
-      x: L.vp.xMin + (e.clientX - r.left - ox) / L.scale,
-      y: L.vp.yMin + (L.cssH - PAD - (e.clientY - r.top)) / L.scale,
-    };
+    return stageToWorld(L, e.clientX - r.left, e.clientY - r.top);
   };
 
   const handle = (kind: "down" | "move" | "up", e: React.PointerEvent<HTMLCanvasElement>) => {

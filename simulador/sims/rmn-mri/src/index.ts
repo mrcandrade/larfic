@@ -639,6 +639,7 @@ export const rmnMri = defineSim<MRState>({
   sampleEvery: 1,
   maxSamples: 4000,
 
+  narrowSplit: () => 0.512,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

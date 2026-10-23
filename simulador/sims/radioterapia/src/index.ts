@@ -656,6 +656,7 @@ export const radioterapia = defineSim<RState>({
     up: (s) => (s.drag ? { ...s, drag: null } : undefined),
     cursor: (_s, p, pt) => (mode(p) === 0 ? (pt.x > TANK.x0 && pt.x < TANK.x1 && pt.y > TANK.y0 && pt.y < TANK.y1 ? "crosshair" : undefined) : pt.x < -0.5 ? "grab" : undefined),
   },
+  narrowSplit: () => 0.504,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

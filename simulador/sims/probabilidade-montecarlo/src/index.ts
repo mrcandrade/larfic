@@ -223,6 +223,7 @@ export const probabilidadeMontecarlo = defineSim<PState>({
     },
   ],
 
+  narrowSplit: () => 0.575,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 9 }),
 
   render(ctx, frame) {

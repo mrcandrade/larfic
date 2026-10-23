@@ -636,6 +636,7 @@ export const semicondutores = defineSim({
   integrator: "euler",
   dt: 1 / 60,
   sampleEvery: 6,
+  narrowSplit: () => 0.498,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

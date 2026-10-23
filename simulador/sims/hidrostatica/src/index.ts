@@ -356,6 +356,7 @@ export const hidrostatica = defineSim({
     },
   },
 
+  narrowSplit: () => 0.526,
   viewport(p) {
     const m = modeOf(p);
     if (m === 0) {

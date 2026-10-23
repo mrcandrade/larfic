@@ -338,6 +338,7 @@ export const modelosAtomicos = defineSim<AtomState>({
     { id: "zerar", label: "Zerar contagens", run: (s) => ({ ...s, n: 0, hist: new Array<number>(NBINS).fill(0), recent: [], back: 0, lines: [] }) },
   ],
 
+  narrowSplit: () => 0.589,
   viewport: () => ({ xMin: 0, xMax: 20, yMin: 0, yMax: 12.2 }),
 
   render(ctx, frame) {

@@ -670,6 +670,7 @@ export const pendulosEspeciais = defineSim<PState>({
   sampleEvery: 20,
   tEnd: 600,
 
+  narrowSplit: () => 0.592,
   viewport(p) {
     const m = modeOf(p);
     const L = num(p, "L", 1);

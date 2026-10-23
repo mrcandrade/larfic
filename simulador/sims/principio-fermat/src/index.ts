@@ -605,6 +605,7 @@ export const principioFermat = defineSim<FermatState>({
     { id: "mais", label: "θ₁ + 1°", run: (s) => ({ ...s, th1: Math.min(80, s.th1 + 1) }) },
   ],
 
+  narrowSplit: () => 0.551,
   viewport: (p) => (modo(p) === LAMINA ? { xMin: -7, xMax: 15, yMin: -6, yMax: 6 } : { xMin: -5.8, xMax: 14.5, yMin: -5.2, yMax: 5.2 }),
 
   render(ctx, frame) {

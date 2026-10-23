@@ -175,3 +175,17 @@ describe("partículas: simulação", () => {
     expect(s4.bag).toEqual([{ f: "u", bar: false }]);
   });
 });
+
+describe("ordem das reações prontas", () => {
+  // O livro (cap. 44) e os links salvos escolhem a reação pelo índice: acrescente novas só no fim.
+  it("mantém os índices usados pelo livro", () => {
+    const at = (i: number) => REACTIONS[i]!.label;
+    expect(at(1)).toBe("π⁺ → μ⁺ + ν_μ");
+    expect(at(2)).toBe("μ⁻ → e⁻ + ν̄ₑ + ν_μ");
+    expect(at(5)).toBe("Δ⁺⁺ → p + π⁺");
+    expect(at(9)).toBe("p → e⁺ + π⁰ ?");
+    expect(at(10)).toBe("μ⁻ → e⁻ + γ ?");
+    expect(at(13)).toBe("p + p → p + p + π⁰");
+    expect(at(16)).toBe("p + p̄ → π⁺ + π⁻ + π⁰");
+  });
+});

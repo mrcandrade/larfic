@@ -197,6 +197,12 @@ export interface Simulation<S = State> {
 
   /** Região do mundo que o palco deve enquadrar. */
   viewport(params: Params, state: S): Viewport;
+  /**
+   * Cenas com dois painéis lado a lado: onde o palco corta a cena em telas estreitas, como fração
+   * (0–1) da largura do viewport; a parte direita vai para baixo da esquerda. Indefinido mantém a
+   * cena inteira. O corte deve passar numa faixa vazia, entre os painéis.
+   */
+  narrowSplit?(params: Params, state: S): number | undefined;
   /** Desenho 2D a partir do estado, em coordenadas do mundo (y para cima). */
   render(ctx: CanvasRenderingContext2D, frame: RenderFrame<S>): void;
 

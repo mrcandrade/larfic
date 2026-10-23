@@ -34,6 +34,8 @@ describe("catálogo", () => {
           expect(vp.yMax).toBeGreaterThan(vp.yMin);
           sim.render(fakeCtx(), { state: r.state, params: r.params, t: r.t, trail: r.samples.map((s) => s.state), scale: 40, theme: lightTheme });
           sim.liveEquations?.(r.state, r.params, r.t);
+          const f = sim.narrowSplit?.(r.params, r.state);
+          if (f !== undefined) expect(f > 0.2 && f < 0.8).toBe(true);
         });
       }
       for (const ex of sim.exercises ?? []) {

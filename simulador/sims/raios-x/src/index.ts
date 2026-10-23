@@ -787,6 +787,7 @@ export const raiosX = defineSim<XState>({
     up: (s) => (s.drag ? { ...s, drag: null } : undefined),
     cursor: (_s, p, pt) => (mode(p) === 1 && pt.x < 1 ? "grab" : mode(p) === 2 && pt.x < 3 ? "pointer" : mode(p) === 3 && pt.x < -1.2 && pt.y > -0.6 ? "ew-resize" : undefined),
   },
+  narrowSplit: () => 0.487,
   viewport: () => ({ ...VIEW, unit: "" }),
   render(ctx, frame) {
     const d = draw(ctx, frame);

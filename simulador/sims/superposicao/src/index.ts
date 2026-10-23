@@ -423,6 +423,7 @@ Duas ondas de mesmo $k$ e mesmo $\\omega$, $y_1 = A_1\\,\\mathrm{sen}(kx - \\ome
     },
   },
 
+  narrowSplit: () => 0.589,
   viewport: () => ({ xMin: -0.9, xMax: 21.6, yMin: -5.1, yMax: 5.5, unit: "" }),
 
   render(ctx, frame) {

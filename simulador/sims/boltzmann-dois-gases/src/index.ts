@@ -301,6 +301,7 @@ export const boltzmannDoisGases = defineSim<BzState>({
     },
   ],
 
+  narrowSplit: () => 0.421,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 9 }),
 
   render(ctx, frame) {

@@ -1,10 +1,10 @@
 export { SimView, type SimViewProps } from "./SimView.tsx";
-export { Stage, type StageHandle } from "./Stage.tsx";
+export { Stage, stageLayout, stageToWorld, NARROW_PX, type StageHandle, type StageLayout, type StagePane } from "./Stage.tsx";
 export { Controls } from "./Controls.tsx";
 export { Chart } from "./Chart.tsx";
 export { Plot, fmtAxis, type PlotSeries, type PlotProps } from "./Plot.tsx";
 export { Equation, InlineMath } from "./Equation.tsx";
-export { Markdown, Guide } from "./Guide.tsx";
+export { Markdown, Guide, InlineText } from "./Guide.tsx";
 export { Predict } from "./Predict.tsx";
 export { Exercises } from "./Exercises.tsx";
 export { useTheme } from "./theme.ts";

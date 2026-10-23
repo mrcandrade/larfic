@@ -323,6 +323,7 @@ export const velocidadeLuz = defineSim<VState>({
   dt: 0.01,
   sampleEvery: 5,
 
+  narrowSplit: () => 0.578,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 10, unit: "" }),
 
   pointer: {

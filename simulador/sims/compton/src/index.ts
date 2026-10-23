@@ -257,6 +257,7 @@ export const compton = defineSim<ComptonState>({
     { id: "limpar", label: "Limpar medidas", run: (s) => ({ ...s, pts: [], msg: "Medidas apagadas." }) },
   ],
 
+  narrowSplit: () => 0.504,
   viewport: () => ({ xMin: 0, xMax: 20, yMin: 0, yMax: 12 }),
 
   render(ctx, frame) {

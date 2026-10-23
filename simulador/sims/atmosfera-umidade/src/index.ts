@@ -513,6 +513,7 @@ export const atmosferaUmidade = defineSim<Atm>({
     { id: "solta", label: "Novo balão / reiniciar copo", run: (s, p) => ({ ...s, h: 0, burst: false, Tc: Tar(p), mc: 0 }) },
   ],
 
+  narrowSplit: () => 0.499,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: -0.2, yMax: 9 }),
 
   render(ctx, frame) {

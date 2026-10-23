@@ -267,6 +267,7 @@ export const magnetismoMateria = defineSim<MState>({
   sampleEvery: 2,
   maxSamples: 3000,
 
+  narrowSplit: () => 0.535,
   viewport: () => ({ xMin: -2, xMax: 78, yMin: -7, yMax: 42 }),
 
   render(ctx, frame) {

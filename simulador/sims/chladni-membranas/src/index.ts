@@ -367,6 +367,7 @@ export const chladniMembranas = defineSim<CState>({
   maxSamples: 400,
   tEnd: 600,
 
+  narrowSplit: () => 0.517,
   viewport() {
     return { xMin: -1.15, xMax: 3.35, yMin: -1.15, yMax: 1.18 };
   },

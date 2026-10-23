@@ -254,6 +254,7 @@ export const difusaoBrowniano = defineSim<DBState>({
   sampleEvery: 2,
   maxSamples: 600,
 
+  narrowSplit: () => 0.555,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 9 }),
 
   render(ctx, frame) {

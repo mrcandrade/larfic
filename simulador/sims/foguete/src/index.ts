@@ -280,6 +280,7 @@ export const foguete = defineSim({
     return nStages(p) * num(p, "tb", 60) + 40 - t;
   },
 
+  narrowSplit: () => 0.317,
   viewport: () => ({ xMin: 0, xMax: 100, yMin: 0, yMax: 60, unit: "" }),
 
   render(ctx, frame) {

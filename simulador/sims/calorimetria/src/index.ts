@@ -278,6 +278,7 @@ Só 20 g de vapor a 100 °C aquecem bastante 300 g de água: ao condensar, cada 
   sampleEvery: 5,
   stopWhen: (s, p) => (modeOf(p) === 0 ? T_STOP - phaseOf(heatingSub(p), at(s, H)).T : 1),
 
+  narrowSplit: () => 0.419,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 9 }),
 
   render(ctx, frame) {

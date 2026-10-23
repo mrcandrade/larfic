@@ -3,7 +3,7 @@
  *
  * Desde a revisão do SI de 2019, sete constantes têm valor exato por definição (h, e, k, N_A, c,
  * Δν_Cs e K_cd); outras, como R, F e σ, são exatas por serem combinações delas. As demais são
- * medidas: valores recomendados do CODATA 2018, com a incerteza padrão nos últimos algarismos
+ * medidas: valores recomendados do CODATA 2022, com a incerteza padrão nos últimos algarismos
  * entre parênteses.
  */
 export interface Constante {
@@ -14,7 +14,7 @@ export interface Constante {
   valor: number;
   /** Unidade em LaTeX (vazio para adimensional). */
   unidade: string;
-  /** "definida": fixa o SI; "exata": derivada só das definidas; "medida": CODATA 2018. */
+  /** "definida": fixa o SI; "exata": derivada só das definidas; "medida": CODATA 2022. */
   tipo: "definida" | "exata" | "medida";
   /** Incerteza padrão nos últimos algarismos, como no CODATA: "(15)". */
   incerteza?: string;
@@ -39,28 +39,28 @@ export const constantes: Constante[] = [
   { id: "b", nome: "Constante de Wien", simbolo: "b", valor: 2.897771955e-3, unidade: "m\\cdot K", tipo: "exata", texto: "2,897771955…" },
   { id: "eV", nome: "Elétron-volt", simbolo: "\\text{eV}", valor: 1.602176634e-19, unidade: "J", tipo: "exata" },
   { id: "Vm", nome: "Volume molar de um gás ideal (0 °C, 1 atm)", simbolo: "V_m", valor: (6.02214076e23 * 1.380649e-23 * 273.15) / 101325, unidade: "m^3/mol", tipo: "exata", texto: "2,241396954…" },
-  // Medidas (CODATA 2018)
+  // Medidas (CODATA 2022)
   { id: "G", nome: "Constante gravitacional", simbolo: "G", valor: 6.6743e-11, unidade: "N\\cdot m^2/kg^2", tipo: "medida", incerteza: "(15)", texto: "6,67430" },
-  { id: "mu0", nome: "Permeabilidade magnética do vácuo", simbolo: "\\mu_0", valor: 1.25663706212e-6, unidade: "H/m", tipo: "medida", incerteza: "(19)" },
-  { id: "eps0", nome: "Permissividade elétrica do vácuo", simbolo: "\\varepsilon_0", valor: 8.8541878128e-12, unidade: "F/m", tipo: "medida", incerteza: "(13)" },
-  { id: "ke", nome: "Constante de Coulomb", simbolo: "1/4\\pi\\varepsilon_0", valor: 8.9875517923e9, unidade: "N\\cdot m^2/C^2", tipo: "medida", incerteza: "(14)" },
-  { id: "me", nome: "Massa do elétron", simbolo: "m_e", valor: 9.1093837015e-31, unidade: "kg", tipo: "medida", incerteza: "(28)" },
-  { id: "mp", nome: "Massa do próton", simbolo: "m_p", valor: 1.67262192369e-27, unidade: "kg", tipo: "medida", incerteza: "(51)" },
-  { id: "mn", nome: "Massa do nêutron", simbolo: "m_n", valor: 1.67492749804e-27, unidade: "kg", tipo: "medida", incerteza: "(95)" },
-  { id: "md", nome: "Massa do dêuteron", simbolo: "m_d", valor: 3.3435837724e-27, unidade: "kg", tipo: "medida", incerteza: "(10)" },
-  { id: "u", nome: "Unidade de massa atômica", simbolo: "u", valor: 1.6605390666e-27, unidade: "kg", tipo: "medida", incerteza: "(50)", texto: "1,66053906660" },
-  { id: "mec2", nome: "Energia de repouso do elétron", simbolo: "m_e c^2", valor: 0.51099895, unidade: "MeV", tipo: "medida", incerteza: "(15)", texto: "0,51099895000" },
-  { id: "mpc2", nome: "Energia de repouso do próton", simbolo: "m_p c^2", valor: 938.27208816, unidade: "MeV", tipo: "medida", incerteza: "(29)" },
-  { id: "mnc2", nome: "Energia de repouso do nêutron", simbolo: "m_n c^2", valor: 939.56542052, unidade: "MeV", tipo: "medida", incerteza: "(54)" },
-  { id: "uc2", nome: "Energia de repouso da unidade de massa atômica", simbolo: "u c^2", valor: 931.49410242, unidade: "MeV", tipo: "medida", incerteza: "(28)" },
-  { id: "em", nome: "Razão carga-massa do elétron", simbolo: "e/m_e", valor: 1.75882001076e11, unidade: "C/kg", tipo: "medida", incerteza: "(53)" },
-  { id: "mpme", nome: "Razão entre as massas do próton e do elétron", simbolo: "m_p/m_e", valor: 1836.15267343, unidade: "", tipo: "medida", incerteza: "(11)" },
-  { id: "alpha", nome: "Constante de estrutura fina", simbolo: "\\alpha", valor: 7.2973525693e-3, unidade: "", tipo: "medida", incerteza: "(11)" },
-  { id: "Rinf", nome: "Constante de Rydberg", simbolo: "R_\\infty", valor: 10973731.56816, unidade: "m^{-1}", tipo: "medida", incerteza: "(21)", texto: "1,0973731568160" },
-  { id: "a0", nome: "Raio de Bohr", simbolo: "a_0", valor: 5.29177210903e-11, unidade: "m", tipo: "medida", incerteza: "(80)" },
-  { id: "lambdaC", nome: "Comprimento de onda Compton do elétron", simbolo: "\\lambda_C", valor: 2.42631023867e-12, unidade: "m", tipo: "medida", incerteza: "(73)" },
-  { id: "muB", nome: "Magnéton de Bohr", simbolo: "\\mu_B", valor: 9.2740100783e-24, unidade: "J/T", tipo: "medida", incerteza: "(28)" },
-  { id: "muN", nome: "Magnéton nuclear", simbolo: "\\mu_N", valor: 5.0507837461e-27, unidade: "J/T", tipo: "medida", incerteza: "(15)" },
+  { id: "mu0", nome: "Permeabilidade magnética do vácuo", simbolo: "\\mu_0", valor: 1.25663706127e-6, unidade: "H/m", tipo: "medida", incerteza: "(20)" },
+  { id: "eps0", nome: "Permissividade elétrica do vácuo", simbolo: "\\varepsilon_0", valor: 8.8541878188e-12, unidade: "F/m", tipo: "medida", incerteza: "(14)" },
+  { id: "ke", nome: "Constante de Coulomb", simbolo: "1/4\\pi\\varepsilon_0", valor: 8.9875517862e9, unidade: "N\\cdot m^2/C^2", tipo: "medida", incerteza: "(14)" },
+  { id: "me", nome: "Massa do elétron", simbolo: "m_e", valor: 9.1093837139e-31, unidade: "kg", tipo: "medida", incerteza: "(28)" },
+  { id: "mp", nome: "Massa do próton", simbolo: "m_p", valor: 1.67262192595e-27, unidade: "kg", tipo: "medida", incerteza: "(52)" },
+  { id: "mn", nome: "Massa do nêutron", simbolo: "m_n", valor: 1.67492750056e-27, unidade: "kg", tipo: "medida", incerteza: "(85)" },
+  { id: "md", nome: "Massa do dêuteron", simbolo: "m_d", valor: 3.3435837768e-27, unidade: "kg", tipo: "medida", incerteza: "(10)" },
+  { id: "u", nome: "Unidade de massa atômica", simbolo: "u", valor: 1.66053906892e-27, unidade: "kg", tipo: "medida", incerteza: "(52)" },
+  { id: "mec2", nome: "Energia de repouso do elétron", simbolo: "m_e c^2", valor: 0.51099895069, unidade: "MeV", tipo: "medida", incerteza: "(16)" },
+  { id: "mpc2", nome: "Energia de repouso do próton", simbolo: "m_p c^2", valor: 938.27208943, unidade: "MeV", tipo: "medida", incerteza: "(29)" },
+  { id: "mnc2", nome: "Energia de repouso do nêutron", simbolo: "m_n c^2", valor: 939.56542194, unidade: "MeV", tipo: "medida", incerteza: "(48)" },
+  { id: "uc2", nome: "Energia de repouso da unidade de massa atômica", simbolo: "u c^2", valor: 931.49410372, unidade: "MeV", tipo: "medida", incerteza: "(29)" },
+  { id: "em", nome: "Razão carga-massa do elétron", simbolo: "e/m_e", valor: 1.75882000838e11, unidade: "C/kg", tipo: "medida", incerteza: "(55)" },
+  { id: "mpme", nome: "Razão entre as massas do próton e do elétron", simbolo: "m_p/m_e", valor: 1836.152673426, unidade: "", tipo: "medida", incerteza: "(32)" },
+  { id: "alpha", nome: "Constante de estrutura fina", simbolo: "\\alpha", valor: 7.2973525643e-3, unidade: "", tipo: "medida", incerteza: "(11)" },
+  { id: "Rinf", nome: "Constante de Rydberg", simbolo: "R_\\infty", valor: 10973731.568157, unidade: "m^{-1}", tipo: "medida", incerteza: "(12)" },
+  { id: "a0", nome: "Raio de Bohr", simbolo: "a_0", valor: 5.29177210544e-11, unidade: "m", tipo: "medida", incerteza: "(82)" },
+  { id: "lambdaC", nome: "Comprimento de onda Compton do elétron", simbolo: "\\lambda_C", valor: 2.42631023538e-12, unidade: "m", tipo: "medida", incerteza: "(76)" },
+  { id: "muB", nome: "Magnéton de Bohr", simbolo: "\\mu_B", valor: 9.2740100657e-24, unidade: "J/T", tipo: "medida", incerteza: "(29)" },
+  { id: "muN", nome: "Magnéton nuclear", simbolo: "\\mu_N", valor: 5.0507837393e-27, unidade: "J/T", tipo: "medida", incerteza: "(16)" },
 ];
 
 /** Outros valores úteis (convencionais, não fundamentais). */

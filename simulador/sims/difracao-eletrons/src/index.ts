@@ -333,6 +333,7 @@ export const difracaoEletrons = defineSim<DEState>({
     },
   },
 
+  narrowSplit: () => 0.403,
   viewport: () => ({ xMin: 0, xMax: 20, yMin: 0, yMax: 12 }),
 
   render(ctx, frame) {

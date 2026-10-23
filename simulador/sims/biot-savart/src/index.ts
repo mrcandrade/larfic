@@ -513,6 +513,7 @@ export const biotSavart = defineSim<BiotState>({
     { id: "centro", label: "Sonda na origem", run: (s) => ({ ...s, probe: [0, 0, 0] }) },
   ],
 
+  narrowSplit: () => 0.499,
   viewport: (p) => (is3D(p) ? { xMin: -21, xMax: 21, yMin: -11, yMax: 10.8, unit: "" } : { ...PLANAR, unit: "cm" }),
 
   render(ctx, frame) {

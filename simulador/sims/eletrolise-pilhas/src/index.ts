@@ -641,6 +641,7 @@ export const eletrolisePilhas = defineSim<EState>({
     { id: "zerar", label: "Zerar carga e tempo", run: (s) => ({ ...s, Q: 0, clock: 0, Wh: 0, Ah: 0 }) },
   ],
 
+  narrowSplit: () => 0.579,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: 0, yMax: 10, unit: "" }),
 
   render(ctx, frame) {

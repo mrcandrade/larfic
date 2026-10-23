@@ -365,6 +365,7 @@ export const relatividadeDinamica = defineSim<RDState>({
   },
   actions: [{ id: "simetrica", label: "Viagem simétrica (β e D dos controles)", run: (s, p) => ({ ...s, T: 0, trip: tripOf(p) }) }],
 
+  narrowSplit: () => 0.587,
   viewport: () => ({ xMin: 0, xMax: 20, yMin: 0, yMax: 12 }),
 
   render(ctx, frame) {

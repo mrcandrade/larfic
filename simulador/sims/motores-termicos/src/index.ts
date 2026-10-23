@@ -490,6 +490,7 @@ export const motoresTermicos = defineSim<S>({
     { id: "pms", label: "Voltar ao início do ciclo", run: (s, p) => { const T = period(engineOf(p).motor); return [Math.floor((s[0] ?? 0) / T) * T]; } },
   ],
 
+  narrowSplit: () => 0.477,
   viewport: () => ({ xMin: 0, xMax: 16, yMin: -1.2, yMax: 9.2 }),
 
   render(ctx, frame) {

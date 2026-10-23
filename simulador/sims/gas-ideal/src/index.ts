@@ -217,6 +217,7 @@ export const gasIdeal = defineSim<GasState>({
     { id: "zerar", label: "Zerar médias", run: (s, p) => resetAverages(s, mass(p)) },
   ],
 
+  narrowSplit: () => 0.547,
   viewport: () => ({ xMin: -2, xMax: 63, yMin: -4, yMax: 23 }),
 
   render(ctx, frame) {

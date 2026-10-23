@@ -187,7 +187,7 @@ function AppendixConstants() {
     <>
       <section className="book-block">
         <Markdown
-          text={String.raw`Na revisão do SI de 2019, sete constantes passaram a ter valor **exato**, escolhido para definir as unidades. Constantes que só dependem delas (como $R = N_A k$) também são exatas; as reticências indicam que a dízima continua. As demais são **medidas**: valores recomendados do CODATA 2018, com a incerteza padrão nos últimos algarismos entre parênteses. Por exemplo, $G = 6{,}67430(15) \times 10^{-11}$ significa $G = (6{,}67430 \pm 0{,}00015) \times 10^{-11}$, nas unidades da tabela.`}
+          text={String.raw`Na revisão do SI de 2019, sete constantes passaram a ter valor **exato**, escolhido para definir as unidades. Constantes que só dependem delas (como $R = N_A k$) também são exatas; as reticências indicam que a dízima continua. As demais são **medidas**: valores recomendados do CODATA 2022, com a incerteza padrão nos últimos algarismos entre parênteses. Por exemplo, $G = 6{,}67430(15) \times 10^{-11}$ significa $G = (6{,}67430 \pm 0{,}00015) \times 10^{-11}$, nas unidades da tabela.`}
         />
       </section>
       <section className="book-block">
