@@ -1,0 +1,58 @@
+# Publica o Simulador FisiLab no GitHub Pages a cada merge na main que mexa em simulador/.
+#
+# Antes da primeira vez: Settings › Pages › Build and deployment › Source = "GitHub Actions".
+# O endereço fica https://<dono>.github.io/<repositório>/ (o build usa base relativa e rotas com #).
+# Para ligar login, turmas e tutor, crie as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY em
+# Settings › Secrets and variables › Actions › Variables; sem elas o app roda em modo local.
+name: Simulador (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+    paths: ["simulador/**", ".github/workflows/simulador-pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: simulador-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: simulador
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: simulador/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: simulador/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: simulador/apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
