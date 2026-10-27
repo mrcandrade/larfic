@@ -17,12 +17,504 @@ importers:
 
   apps/web:
     dependencies:
+      '@fisilab/analysis':
+        specifier: workspace:*
+        version: link:../../packages/analysis
       '@fisilab/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fisilab/lab':
+        specifier: workspace:*
+        version: link:../../packages/lab
+      '@fisilab/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@fisilab/sim-aerofolio':
+        specifier: workspace:*
+        version: link:../../sims/aerofolio
+      '@fisilab/sim-amortecedor-predio':
+        specifier: workspace:*
+        version: link:../../sims/amortecedor-predio
+      '@fisilab/sim-amortecido':
+        specifier: workspace:*
+        version: link:../../sims/amortecido
+      '@fisilab/sim-ampere':
+        specifier: workspace:*
+        version: link:../../sims/ampere
+      '@fisilab/sim-atividade-otica':
+        specifier: workspace:*
+        version: link:../../sims/atividade-otica
+      '@fisilab/sim-atmosfera-umidade':
+        specifier: workspace:*
+        version: link:../../sims/atmosfera-umidade
+      '@fisilab/sim-atwood':
+        specifier: workspace:*
+        version: link:../../sims/atwood
+      '@fisilab/sim-bernoulli':
+        specifier: workspace:*
+        version: link:../../sims/bernoulli
+      '@fisilab/sim-biot-savart':
+        specifier: workspace:*
+        version: link:../../sims/biot-savart
+      '@fisilab/sim-boltzmann-dois-gases':
+        specifier: workspace:*
+        version: link:../../sims/boltzmann-dois-gases
+      '@fisilab/sim-braquistocrona':
+        specifier: workspace:*
+        version: link:../../sims/braquistocrona
+      '@fisilab/sim-calor-especifico-gases':
+        specifier: workspace:*
+        version: link:../../sims/calor-especifico-gases
+      '@fisilab/sim-calorimetria':
+        specifier: workspace:*
+        version: link:../../sims/calorimetria
+      '@fisilab/sim-campo-eletrico':
+        specifier: workspace:*
+        version: link:../../sims/campo-eletrico
+      '@fisilab/sim-capacitores':
+        specifier: workspace:*
+        version: link:../../sims/capacitores
+      '@fisilab/sim-cavendish':
+        specifier: workspace:*
+        version: link:../../sims/cavendish
+      '@fisilab/sim-centro-massa':
+        specifier: workspace:*
+        version: link:../../sims/centro-massa
+      '@fisilab/sim-chladni-membranas':
+        specifier: workspace:*
+        version: link:../../sims/chladni-membranas
+      '@fisilab/sim-ciclos-termicos':
+        specifier: workspace:*
+        version: link:../../sims/ciclos-termicos
+      '@fisilab/sim-cinematica-1d':
+        specifier: workspace:*
+        version: link:../../sims/cinematica-1d
+      '@fisilab/sim-circuito-rc':
+        specifier: workspace:*
+        version: link:../../sims/circuito-rc
+      '@fisilab/sim-circuitos-dc':
+        specifier: workspace:*
+        version: link:../../sims/circuitos-dc
+      '@fisilab/sim-colisoes':
+        specifier: workspace:*
+        version: link:../../sims/colisoes
+      '@fisilab/sim-compton':
+        specifier: workspace:*
+        version: link:../../sims/compton
+      '@fisilab/sim-conducao-calor':
+        specifier: workspace:*
+        version: link:../../sims/conducao-calor
+      '@fisilab/sim-condutores-blindagem':
+        specifier: workspace:*
+        version: link:../../sims/condutores-blindagem
+      '@fisilab/sim-consumo-energia':
+        specifier: workspace:*
+        version: link:../../sims/consumo-energia
+      '@fisilab/sim-cores-visao':
+        specifier: workspace:*
+        version: link:../../sims/cores-visao
+      '@fisilab/sim-corpo-negro':
+        specifier: workspace:*
+        version: link:../../sims/corpo-negro
+      '@fisilab/sim-cosmologia':
+        specifier: workspace:*
+        version: link:../../sims/cosmologia
+      '@fisilab/sim-coulomb':
+        specifier: workspace:*
+        version: link:../../sims/coulomb
+      '@fisilab/sim-cuba-ondas':
+        specifier: workspace:*
+        version: link:../../sims/cuba-ondas
+      '@fisilab/sim-curva-inclinada':
+        specifier: workspace:*
+        version: link:../../sims/curva-inclinada
+      '@fisilab/sim-curva-iv':
+        specifier: workspace:*
+        version: link:../../sims/curva-iv
+      '@fisilab/sim-de-broglie':
+        specifier: workspace:*
+        version: link:../../sims/de-broglie
+      '@fisilab/sim-decaimento':
+        specifier: workspace:*
+        version: link:../../sims/decaimento
+      '@fisilab/sim-descargas-gases':
+        specifier: workspace:*
+        version: link:../../sims/descargas-gases
+      '@fisilab/sim-difracao':
+        specifier: workspace:*
+        version: link:../../sims/difracao
+      '@fisilab/sim-difracao-eletrons':
+        specifier: workspace:*
+        version: link:../../sims/difracao-eletrons
+      '@fisilab/sim-difusao-browniano':
+        specifier: workspace:*
+        version: link:../../sims/difusao-browniano
+      '@fisilab/sim-dilatacao-termica':
+        specifier: workspace:*
+        version: link:../../sims/dilatacao-termica
+      '@fisilab/sim-doppler':
+        specifier: workspace:*
+        version: link:../../sims/doppler
+      '@fisilab/sim-drude':
+        specifier: workspace:*
+        version: link:../../sims/drude
+      '@fisilab/sim-elasticidade':
+        specifier: workspace:*
+        version: link:../../sims/elasticidade
+      '@fisilab/sim-eletrizacao':
+        specifier: workspace:*
+        version: link:../../sims/eletrizacao
+      '@fisilab/sim-eletrolise-pilhas':
+        specifier: workspace:*
+        version: link:../../sims/eletrolise-pilhas
+      '@fisilab/sim-empuxo':
+        specifier: workspace:*
+        version: link:../../sims/empuxo
+      '@fisilab/sim-entropia':
+        specifier: workspace:*
+        version: link:../../sims/entropia
+      '@fisilab/sim-epidemia-sir':
+        specifier: workspace:*
+        version: link:../../sims/epidemia-sir
+      '@fisilab/sim-equilibrio-corpos':
+        specifier: workspace:*
+        version: link:../../sims/equilibrio-corpos
+      '@fisilab/sim-equivalente-mecanico':
+        specifier: workspace:*
+        version: link:../../sims/equivalente-mecanico
+      '@fisilab/sim-escalas-unidades':
+        specifier: workspace:*
+        version: link:../../sims/escalas-unidades
+      '@fisilab/sim-escoamento-viscoso':
+        specifier: workspace:*
+        version: link:../../sims/escoamento-viscoso
+      '@fisilab/sim-espectro-em':
+        specifier: workspace:*
+        version: link:../../sims/espectro-em
+      '@fisilab/sim-espectros-laser':
+        specifier: workspace:*
+        version: link:../../sims/espectros-laser
+      '@fisilab/sim-espectroscopia':
+        specifier: workspace:*
+        version: link:../../sims/espectroscopia
+      '@fisilab/sim-espelhos':
+        specifier: workspace:*
+        version: link:../../sims/espelhos
+      '@fisilab/sim-estados-materia':
+        specifier: workspace:*
+        version: link:../../sims/estados-materia
+      '@fisilab/sim-estrelas-hr':
+        specifier: workspace:*
+        version: link:../../sims/estrelas-hr
+      '@fisilab/sim-faraday-lenz':
+        specifier: workspace:*
+        version: link:../../sims/faraday-lenz
+      '@fisilab/sim-fenda-dupla':
+        specifier: workspace:*
+        version: link:../../sims/fenda-dupla
+      '@fisilab/sim-filmes-finos':
+        specifier: workspace:*
+        version: link:../../sims/filmes-finos
+      '@fisilab/sim-foguete':
+        specifier: workspace:*
+        version: link:../../sims/foguete
+      '@fisilab/sim-forcas-conservativas':
+        specifier: workspace:*
+        version: link:../../sims/forcas-conservativas
+      '@fisilab/sim-forcas-dcl':
+        specifier: workspace:*
+        version: link:../../sims/forcas-dcl
+      '@fisilab/sim-formas-energia':
+        specifier: workspace:*
+        version: link:../../sims/formas-energia
+      '@fisilab/sim-fotoeletrico':
+        specifier: workspace:*
+        version: link:../../sims/fotoeletrico
+      '@fisilab/sim-fotometria':
+        specifier: workspace:*
+        version: link:../../sims/fotometria
+      '@fisilab/sim-franck-hertz':
+        specifier: workspace:*
+        version: link:../../sims/franck-hertz
+      '@fisilab/sim-gas-ideal':
+        specifier: workspace:*
+        version: link:../../sims/gas-ideal
+      '@fisilab/sim-gauss':
+        specifier: workspace:*
+        version: link:../../sims/gauss
+      '@fisilab/sim-giroscopio':
+        specifier: workspace:*
+        version: link:../../sims/giroscopio
+      '@fisilab/sim-gravitacao-terra':
+        specifier: workspace:*
+        version: link:../../sims/gravitacao-terra
+      '@fisilab/sim-hidrogenio':
+        specifier: workspace:*
+        version: link:../../sims/hidrogenio
+      '@fisilab/sim-hidrostatica':
+        specifier: workspace:*
+        version: link:../../sims/hidrostatica
+      '@fisilab/sim-imas-bussola':
+        specifier: workspace:*
+        version: link:../../sims/imas-bussola
+      '@fisilab/sim-incerteza':
+        specifier: workspace:*
+        version: link:../../sims/incerteza
+      '@fisilab/sim-instrumentos-medida':
+        specifier: workspace:*
+        version: link:../../sims/instrumentos-medida
+      '@fisilab/sim-interferometros':
+        specifier: workspace:*
+        version: link:../../sims/interferometros
+      '@fisilab/sim-jogos-fisica':
+        specifier: workspace:*
+        version: link:../../sims/jogos-fisica
+      '@fisilab/sim-lei-hooke':
+        specifier: workspace:*
+        version: link:../../sims/lei-hooke
+      '@fisilab/sim-lentes':
+        specifier: workspace:*
+        version: link:../../sims/lentes
+      '@fisilab/sim-lissajous-fourier':
+        specifier: workspace:*
+        version: link:../../sims/lissajous-fourier
+      '@fisilab/sim-magnetismo-materia':
+        specifier: workspace:*
+        version: link:../../sims/magnetismo-materia
+      '@fisilab/sim-maquinas-eletrostaticas':
+        specifier: workspace:*
+        version: link:../../sims/maquinas-eletrostaticas
+      '@fisilab/sim-maquinas-simples':
+        specifier: workspace:*
+        version: link:../../sims/maquinas-simples
+      '@fisilab/sim-mares-lagrange':
+        specifier: workspace:*
+        version: link:../../sims/mares-lagrange
+      '@fisilab/sim-massa-mola':
+        specifier: workspace:*
+        version: link:../../sims/massa-mola
+      '@fisilab/sim-medidas-erros':
+        specifier: workspace:*
+        version: link:../../sims/medidas-erros
+      '@fisilab/sim-mhs':
+        specifier: workspace:*
+        version: link:../../sims/mhs
+      '@fisilab/sim-millikan':
+        specifier: workspace:*
+        version: link:../../sims/millikan
+      '@fisilab/sim-modelos-atomicos':
+        specifier: workspace:*
+        version: link:../../sims/modelos-atomicos
+      '@fisilab/sim-moleculas-luz':
+        specifier: workspace:*
+        version: link:../../sims/moleculas-luz
+      '@fisilab/sim-momento-angular':
+        specifier: workspace:*
+        version: link:../../sims/momento-angular
+      '@fisilab/sim-montanha-russa':
+        specifier: workspace:*
+        version: link:../../sims/montanha-russa
+      '@fisilab/sim-moto-perpetuo':
+        specifier: workspace:*
+        version: link:../../sims/moto-perpetuo
+      '@fisilab/sim-motor-hall':
+        specifier: workspace:*
+        version: link:../../sims/motor-hall
+      '@fisilab/sim-motores-geradores':
+        specifier: workspace:*
+        version: link:../../sims/motores-geradores
+      '@fisilab/sim-motores-termicos':
+        specifier: workspace:*
+        version: link:../../sims/motores-termicos
+      '@fisilab/sim-movimento-circular':
+        specifier: workspace:*
+        version: link:../../sims/movimento-circular
+      '@fisilab/sim-movimento-relativo':
+        specifier: workspace:*
+        version: link:../../sims/movimento-relativo
+      '@fisilab/sim-multimetro-osciloscopio':
+        specifier: workspace:*
+        version: link:../../sims/multimetro-osciloscopio
+      '@fisilab/sim-nuclear':
+        specifier: workspace:*
+        version: link:../../sims/nuclear
+      '@fisilab/sim-onda-corda':
+        specifier: workspace:*
+        version: link:../../sims/onda-corda
+      '@fisilab/sim-onda-em':
+        specifier: workspace:*
+        version: link:../../sims/onda-em
+      '@fisilab/sim-ondas-estacionarias':
+        specifier: workspace:*
+        version: link:../../sims/ondas-estacionarias
+      '@fisilab/sim-orbitas-kepler':
+        specifier: workspace:*
+        version: link:../../sims/orbitas-kepler
+      '@fisilab/sim-osciladores-acoplados':
+        specifier: workspace:*
+        version: link:../../sims/osciladores-acoplados
+      '@fisilab/sim-particula-campo-b':
+        specifier: workspace:*
+        version: link:../../sims/particula-campo-b
+      '@fisilab/sim-particulas-elementares':
+        specifier: workspace:*
+        version: link:../../sims/particulas-elementares
+      '@fisilab/sim-pendulo-duplo':
+        specifier: workspace:*
+        version: link:../../sims/pendulo-duplo
+      '@fisilab/sim-pendulos':
+        specifier: workspace:*
+        version: link:../../sims/pendulos
+      '@fisilab/sim-pendulos-especiais':
+        specifier: workspace:*
+        version: link:../../sims/pendulos-especiais
+      '@fisilab/sim-plano-inclinado':
+        specifier: workspace:*
+        version: link:../../sims/plano-inclinado
+      '@fisilab/sim-poco-quantico':
+        specifier: workspace:*
+        version: link:../../sims/poco-quantico
+      '@fisilab/sim-polarizacao':
+        specifier: workspace:*
+        version: link:../../sims/polarizacao
+      '@fisilab/sim-ponte-wheatstone':
+        specifier: workspace:*
+        version: link:../../sims/ponte-wheatstone
+      '@fisilab/sim-potencial':
+        specifier: workspace:*
+        version: link:../../sims/potencial
+      '@fisilab/sim-principio-fermat':
+        specifier: workspace:*
+        version: link:../../sims/principio-fermat
+      '@fisilab/sim-prisma':
+        specifier: workspace:*
+        version: link:../../sims/prisma
+      '@fisilab/sim-probabilidade-montecarlo':
+        specifier: workspace:*
+        version: link:../../sims/probabilidade-montecarlo
+      '@fisilab/sim-processos-pv':
+        specifier: workspace:*
+        version: link:../../sims/processos-pv
       '@fisilab/sim-projetil-arrasto':
         specifier: workspace:*
         version: link:../../sims/projetil-arrasto
+      '@fisilab/sim-qubit-dois-niveis':
+        specifier: workspace:*
+        version: link:../../sims/qubit-dois-niveis
+      '@fisilab/sim-queda-livre':
+        specifier: workspace:*
+        version: link:../../sims/queda-livre
+      '@fisilab/sim-radioterapia':
+        specifier: workspace:*
+        version: link:../../sims/radioterapia
+      '@fisilab/sim-raios-x':
+        specifier: workspace:*
+        version: link:../../sims/raios-x
+      '@fisilab/sim-razao-em':
+        specifier: workspace:*
+        version: link:../../sims/razao-em
+      '@fisilab/sim-referenciais-nao-inerciais':
+        specifier: workspace:*
+        version: link:../../sims/referenciais-nao-inerciais
+      '@fisilab/sim-refracao':
+        specifier: workspace:*
+        version: link:../../sims/refracao
+      '@fisilab/sim-refrigerador':
+        specifier: workspace:*
+        version: link:../../sims/refrigerador
+      '@fisilab/sim-relatividade':
+        specifier: workspace:*
+        version: link:../../sims/relatividade
+      '@fisilab/sim-relatividade-dinamica':
+        specifier: workspace:*
+        version: link:../../sims/relatividade-dinamica
+      '@fisilab/sim-resfriamento-laser':
+        specifier: workspace:*
+        version: link:../../sims/resfriamento-laser
+      '@fisilab/sim-ressonancia':
+        specifier: workspace:*
+        version: link:../../sims/ressonancia
+      '@fisilab/sim-rl-lc':
+        specifier: workspace:*
+        version: link:../../sims/rl-lc
+      '@fisilab/sim-rlc-ca':
+        specifier: workspace:*
+        version: link:../../sims/rlc-ca
+      '@fisilab/sim-rmn-mri':
+        specifier: workspace:*
+        version: link:../../sims/rmn-mri
+      '@fisilab/sim-roda-maxwell':
+        specifier: workspace:*
+        version: link:../../sims/roda-maxwell
+      '@fisilab/sim-rolamento':
+        specifier: workspace:*
+        version: link:../../sims/rolamento
+      '@fisilab/sim-rotacao-torque':
+        specifier: workspace:*
+        version: link:../../sims/rotacao-torque
+      '@fisilab/sim-semicondutores':
+        specifier: workspace:*
+        version: link:../../sims/semicondutores
+      '@fisilab/sim-sistema-solar':
+        specifier: workspace:*
+        version: link:../../sims/sistema-solar
+      '@fisilab/sim-som-intensidade':
+        specifier: workspace:*
+        version: link:../../sims/som-intensidade
+      '@fisilab/sim-stern-gerlach':
+        specifier: workspace:*
+        version: link:../../sims/stern-gerlach
+      '@fisilab/sim-superposicao':
+        specifier: workspace:*
+        version: link:../../sims/superposicao
+      '@fisilab/sim-tabela-periodica':
+        specifier: workspace:*
+        version: link:../../sims/tabela-periodica
+      '@fisilab/sim-tensao-superficial':
+        specifier: workspace:*
+        version: link:../../sims/tensao-superficial
+      '@fisilab/sim-termometro-gas':
+        specifier: workspace:*
+        version: link:../../sims/termometro-gas
+      '@fisilab/sim-transferencia-calor':
+        specifier: workspace:*
+        version: link:../../sims/transferencia-calor
+      '@fisilab/sim-transformador':
+        specifier: workspace:*
+        version: link:../../sims/transformador
+      '@fisilab/sim-transistor-retificador':
+        specifier: workspace:*
+        version: link:../../sims/transistor-retificador
+      '@fisilab/sim-trilho-de-ar':
+        specifier: workspace:*
+        version: link:../../sims/trilho-de-ar
+      '@fisilab/sim-tubo-kundt':
+        specifier: workspace:*
+        version: link:../../sims/tubo-kundt
+      '@fisilab/sim-tubos-sonoros':
+        specifier: workspace:*
+        version: link:../../sims/tubos-sonoros
+      '@fisilab/sim-tunelamento':
+        specifier: workspace:*
+        version: link:../../sims/tunelamento
+      '@fisilab/sim-van-der-waals':
+        specifier: workspace:*
+        version: link:../../sims/van-der-waals
+      '@fisilab/sim-vasos-comunicantes':
+        specifier: workspace:*
+        version: link:../../sims/vasos-comunicantes
+      '@fisilab/sim-velocidade-luz':
+        specifier: workspace:*
+        version: link:../../sims/velocidade-luz
+      '@fisilab/sim-vetores-3d':
+        specifier: workspace:*
+        version: link:../../sims/vetores-3d
+      '@fisilab/sim-viscosidade-stokes':
+        specifier: workspace:*
+        version: link:../../sims/viscosidade-stokes
+      '@fisilab/ui-kit':
+        specifier: workspace:*
+        version: link:../../packages/ui-kit
       katex:
         specifier: ^0.16.22
         version: 0.16.47
@@ -32,9 +524,6 @@ importers:
       react-dom:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
-      uplot:
-        specifier: ^1.6.32
-        version: 1.6.32
     devDependencies:
       '@types/katex':
         specifier: ^0.16.8
@@ -52,9 +541,1015 @@ importers:
         specifier: ^8.3.4
         version: 8.3.4
 
+  packages/analysis:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/core: {}
 
+  packages/lab:
+    dependencies:
+      '@fisilab/analysis':
+        specifier: workspace:*
+        version: link:../analysis
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/platform:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/ui-kit:
+    dependencies:
+      '@fisilab/analysis':
+        specifier: workspace:*
+        version: link:../analysis
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../core
+      '@fisilab/platform':
+        specifier: workspace:*
+        version: link:../platform
+      katex:
+        specifier: ^0.16.22
+        version: 0.16.47
+    devDependencies:
+      '@types/katex':
+        specifier: ^0.16.8
+        version: 0.16.8
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+
+  sims/aerofolio:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/amortecedor-predio:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/amortecido:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/ampere:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/atividade-otica:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/atmosfera-umidade:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/atwood:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/bernoulli:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/biot-savart:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/boltzmann-dois-gases:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/braquistocrona:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/calor-especifico-gases:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/calorimetria:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/campo-eletrico:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/capacitores:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/cavendish:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/centro-massa:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/chladni-membranas:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/ciclos-termicos:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/cinematica-1d:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/circuito-rc:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/circuitos-dc:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/colisoes:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/compton:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/conducao-calor:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/condutores-blindagem:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/consumo-energia:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/cores-visao:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/corpo-negro:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/cosmologia:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/coulomb:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/cuba-ondas:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/curva-inclinada:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/curva-iv:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/de-broglie:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/decaimento:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/descargas-gases:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/difracao:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/difracao-eletrons:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/difusao-browniano:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/dilatacao-termica:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/doppler:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/drude:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/elasticidade:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/eletrizacao:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/eletrolise-pilhas:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/empuxo:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/entropia:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/epidemia-sir:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/equilibrio-corpos:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/equivalente-mecanico:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/escalas-unidades:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/escoamento-viscoso:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/espectro-em:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/espectros-laser:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/espectroscopia:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/espelhos:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/estados-materia:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/estrelas-hr:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/faraday-lenz:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/fenda-dupla:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/filmes-finos:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/foguete:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/forcas-conservativas:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/forcas-dcl:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/formas-energia:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/fotoeletrico:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/fotometria:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/franck-hertz:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/gas-ideal:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/gauss:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/giroscopio:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/gravitacao-terra:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/hidrogenio:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/hidrostatica:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/imas-bussola:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/incerteza:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/instrumentos-medida:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/interferometros:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/jogos-fisica:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/lei-hooke:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/lentes:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/lissajous-fourier:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/magnetismo-materia:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/maquinas-eletrostaticas:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/maquinas-simples:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/mares-lagrange:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/massa-mola:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/medidas-erros:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/mhs:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/millikan:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/modelos-atomicos:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/moleculas-luz:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/momento-angular:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/montanha-russa:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/moto-perpetuo:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/motor-hall:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/motores-geradores:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/motores-termicos:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/movimento-circular:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/movimento-relativo:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/multimetro-osciloscopio:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/nuclear:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/onda-corda:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/onda-em:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/ondas-estacionarias:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/orbitas-kepler:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/osciladores-acoplados:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/particula-campo-b:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/particulas-elementares:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/pendulo-duplo:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/pendulos:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/pendulos-especiais:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/plano-inclinado:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/poco-quantico:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/polarizacao:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/ponte-wheatstone:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/potencial:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/principio-fermat:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/prisma:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/probabilidade-montecarlo:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/processos-pv:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
   sims/projetil-arrasto:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/qubit-dois-niveis:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/queda-livre:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/radioterapia:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/raios-x:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/razao-em:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/referenciais-nao-inerciais:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/refracao:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/refrigerador:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/relatividade:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/relatividade-dinamica:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/resfriamento-laser:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/ressonancia:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/rl-lc:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/rlc-ca:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/rmn-mri:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/roda-maxwell:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/rolamento:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/rotacao-torque:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/semicondutores:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/sistema-solar:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/som-intensidade:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/stern-gerlach:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/superposicao:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/tabela-periodica:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/tensao-superficial:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/termometro-gas:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/transferencia-calor:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/transformador:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/transistor-retificador:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/trilho-de-ar:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/tubo-kundt:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/tubos-sonoros:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/tunelamento:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/van-der-waals:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/vasos-comunicantes:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/velocidade-luz:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/vetores-3d:
+    dependencies:
+      '@fisilab/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  sims/viscosidade-stokes:
     dependencies:
       '@fisilab/core':
         specifier: workspace:*
@@ -399,9 +1894,6 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  uplot@1.6.32:
-    resolution: {integrity: sha512-KIMVnG68zvu5XXUbC4LQEPnhwOxBuLyW1AHtpm6IKTXImkbLgkMy+jabjLgSLMasNuGGzQm/ep3tOkyTxpiQIw==}
-
   vite@8.3.4:
     resolution: {integrity: sha512-IftLE8phJhdNRIGNEV4JCCvfNScoZQVfcXaN8TQropWGJtOHcu+iAB9pHcuGvmEb/kddw0LBe/jS8ztdC6xdiQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -726,8 +2218,6 @@ snapshots:
       picomatch: 4.0.7
 
   typescript@5.9.3: {}
-
-  uplot@1.6.32: {}
 
   vite@8.3.4:
     dependencies:
