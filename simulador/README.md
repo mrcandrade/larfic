@@ -21,6 +21,14 @@ pnpm typecheck
 pnpm build      # gera apps/web/dist
 ```
 
+## Publicação
+
+Cada merge na `main` que mexa em `simulador/` publica o app no GitHub Pages
+(`.github/workflows/simulador-pages.yml`), em https://mrcandrade.github.io/larfic/. Na primeira
+vez, ative em Settings › Pages › Source = "GitHub Actions". As variáveis de repositório
+`VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`, quando existirem, ligam o servidor (login, turmas,
+tutor); sem elas o app roda em modo local.
+
 ## Estrutura
 
 | Pacote | Papel |
